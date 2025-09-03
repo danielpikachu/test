@@ -1,0 +1,4 @@
+streamlit>=1.18
+plotly>=5.0
+networkx>=2.6
+numpy>=1.20
