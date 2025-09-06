@@ -1,175 +1,82 @@
-import streamlit as st
 import json
 import networkx as nx
-import re
+import streamlit as st
 import plotly.graph_objects as go
 
-# ==============================
-# Load JSON Data
-# ==============================
-@st.cache_data
-def load_data():
-    with open("scis_map.json", "r") as f:
-        return json.load(f)
+# -------- Load JSON --------
+uploaded_file = st.file_uploader("Upload your school_map.json", type="json")
+if uploaded_file:
+    school = json.load(uploaded_file)
+else:
+    st.warning("Upload a JSON file to display the map.")
+    st.stop()
 
-school = load_data()
+# -------- Create Graph --------
+G = nx.Graph()
+rooms = {}
 
-# ==============================
-# Build Graph from JSON
-# ==============================
-def build_graph(school):
-    G = nx.Graph()
+for building in school["buildings"]:
+    for level in building["levels"]:
+        for room in level["rooms"]:
+            rid = room["roomId"]
+            x = (room["coords"]["xMin"] + room["coords"]["xMax"]) / 2
+            y = (room["coords"]["yMin"] + room["coords"]["yMax"]) / 2
+            z = (room["coords"]["zMin"] + room["coords"]["zMax"]) / 2
+            G.add_node(rid, pos=(x, y, z))
+            rooms[rid] = room
 
-    for building in school.get("buildings", []):
-        for level in building.get("levels", []):
-            level_id = level.get("levelId")
+        # connections
+        if "connections" in level:
+            for conn in level["connections"]:
+                target = conn["targetBuildingId"]
+                # Connect corridor midpoint to nearest node in target building
+                x1 = (conn["coords"]["xMin"] + conn["coords"]["xMax"]) / 2
+                y1 = (conn["coords"]["yMin"] + conn["coords"]["yMax"]) / 2
+                z1 = (conn["coords"]["zMin"] + conn["coords"]["zMax"]) / 2
+                # Find nearest room in target building
+                target_rooms = [r for b in school["buildings"] if b["buildingId"]==target for l in b["levels"] for r in l["rooms"]]
+                nearest = min(target_rooms, key=lambda r: ((x1-(r["coords"]["xMin"]+r["coords"]["xMax"])/2)**2 + (y1-(r["coords"]["yMin"]+r["coords"]["yMax"])/2)**2 + (z1-(r["coords"]["zMin"]+r["coords"]["zMax"])/2)**2)**0.5)
+                G.add_edge(conn["name"], nearest["roomId"], weight=1)
+                G.add_edge(conn["name"], rid, weight=1)
+                G.add_node(conn["name"], pos=(x1, y1, z1))
 
-            # Add rooms
-            for room in level.get("rooms", []):
-                G.add_node(room["roomId"], label=room["roomName"], level=level_id, type="room")
+# -------- Room Selection --------
+room_ids = list(rooms.keys())
+start_room = st.selectbox("Start Room", room_ids)
+end_room = st.selectbox("End Room", room_ids)
 
-            # Add entrances
-            for ent in level.get("entrances", []):
-                G.add_node(ent["entranceId"], label=ent["entranceName"], level=level_id, type="entrance")
+# -------- Find Path --------
+if start_room and end_room:
+    path = nx.shortest_path(G, start_room, end_room, weight="weight")
+    st.write("Path:", " → ".join(path))
 
-            # Add connections
-            for conn in level.get("connections", []):
-                conn_id = conn.get("connectionId", "")
-                conn_name = conn.get("connectionName", "")
+# -------- Plot 3D Map --------
+fig = go.Figure()
 
-                # Try to find room IDs in the text
-                rooms = re.findall(r"[A-Z]\d{2,3}", conn_id + " " + conn_name)
+# Draw boxes
+for room in rooms.values():
+    x0, x1 = room["coords"]["xMin"], room["coords"]["xMax"]
+    y0, y1 = room["coords"]["yMin"], room["coords"]["yMax"]
+    z0, z1 = room["coords"]["zMin"], room["coords"]["zMax"]
 
-                if len(rooms) >= 2:
-                    u, v = rooms[0], rooms[1]
-                else:
-                    # fallback: link entrance to first room if available
-                    if level.get("rooms") and level.get("entrances"):
-                        u = level["entrances"][0]["entranceId"]
-                        v = level["rooms"][0]["roomId"]
-                    else:
-                        continue
-
-                weight = 1.0
-                attrs = {k: v for k, v in conn.items() if k not in ["weight"]}
-                G.add_edge(u, v, weight=weight, **attrs)
-
-    return G
-
-G = build_graph(school)
-
-# ==============================
-# Pathfinding
-# ==============================
-def find_path(G, start, end):
-    try:
-        return nx.shortest_path(G, source=start, target=end, weight="weight")
-    except nx.NetworkXNoPath:
-        return None
-
-# ==============================
-# 3D Visualization
-# ==============================
-def plot_school_3d(G, path=None):
-    pos = {}
-    z_levels = {}
-    level_heights = {}
-
-    # Assign Z by level
-    for i, building in enumerate(school.get("buildings", [])):
-        for j, level in enumerate(building.get("levels", [])):
-            level_id = level.get("levelId")
-            level_heights[level_id] = j * 10 + i * 50  # space out buildings
-
-    # Assign positions
-    for k, node in enumerate(G.nodes()):
-        level_id = G.nodes[node].get("level")
-        z = level_heights.get(level_id, 0)
-        pos[node] = (k % 10 * 10, (k // 10) * 10, z)
-        z_levels[node] = z
-
-    # Draw edges
-    edge_x, edge_y, edge_z = [], [], []
-    for u, v in G.edges():
-        x0, y0, z0 = pos[u]
-        x1, y1, z1 = pos[v]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-        edge_z.extend([z0, z1, None])
-
-    # Highlight path
-    path_x, path_y, path_z = [], [], []
-    if path:
-        for i in range(len(path) - 1):
-            x0, y0, z0 = pos[path[i]]
-            x1, y1, z1 = pos[path[i + 1]]
-            path_x.extend([x0, x1, None])
-            path_y.extend([y0, y1, None])
-            path_z.extend([z0, z1, None])
-
-    fig = go.Figure()
-
-    # Edges
-    fig.add_trace(go.Scatter3d(
-        x=edge_x, y=edge_y, z=edge_z,
-        mode="lines",
-        line=dict(color="gray", width=2),
-        name="Connections"
+    fig.add_trace(go.Mesh3d(
+        x=[x0,x1,x1,x0,x0,x1,x1,x0],
+        y=[y0,y0,y1,y1,y0,y0,y1,y1],
+        z=[z0,z0,z0,z0,z1,z1,z1,z1],
+        color='lightblue',
+        opacity=0.5,
+        name=room["roomId"]
     ))
 
-    # Nodes
-    fig.add_trace(go.Scatter3d(
-        x=[pos[n][0] for n in G.nodes()],
-        y=[pos[n][1] for n in G.nodes()],
-        z=[pos[n][2] for n in G.nodes()],
-        mode="markers+text",
-        text=[G.nodes[n].get("label", n) for n in G.nodes()],
-        textposition="top center",
-        marker=dict(size=6, color="blue"),
-        name="Nodes"
-    ))
+# Draw path as line
+if start_room and end_room:
+    px, py, pz = zip(*[G.nodes[n]["pos"] for n in path])
+    fig.add_trace(go.Scatter3d(x=px, y=py, z=pz, mode='lines+markers', line=dict(color='red', width=5), marker=dict(size=3), name='Path'))
 
-    # Path highlight
-    if path:
-        fig.add_trace(go.Scatter3d(
-            x=path_x, y=path_y, z=path_z,
-            mode="lines+markers",
-            line=dict(color="red", width=6),
-            marker=dict(size=8, color="red"),
-            name="Shortest Path"
-        ))
+fig.update_layout(scene=dict(
+    xaxis_title='X (m)',
+    yaxis_title='Y (m)',
+    zaxis_title='Z (m)',
+), height=800, width=1000)
 
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            zaxis=dict(visible=False),
-        ),
-        margin=dict(l=0, r=0, b=0, t=0),
-        showlegend=True
-    )
-
-    return fig
-
-# ==============================
-# Streamlit UI
-# ==============================
-st.title(f"Pathfinding App - {school.get('schoolName', 'School')}")
-
-room_ids = [n for n, d in G.nodes(data=True) if d.get("type") == "room"]
-
-col1, col2 = st.columns(2)
-with col1:
-    start = st.selectbox("Select Start Room", room_ids)
-with col2:
-    end = st.selectbox("Select End Room", room_ids)
-
-if st.button("Find Path"):
-    path = find_path(G, start, end)
-    if path:
-        st.success(" → ".join(path))
-        fig = plot_school_3d(G, path)
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.error("No path found.")
-
+st.plotly_chart(fig, use_container_width=True)
