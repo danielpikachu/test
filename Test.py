@@ -1,216 +1,276 @@
-# app.py
-
-import json
-import math
-from pathlib import Path
-
-import networkx as nx
 import plotly.graph_objects as go
-import streamlit as st
+import numpy as np
 
-# ---------- Config ----------
-DATAFILE = "scis_map.json"  # your external cleaned JSON file
-STAIRS_PENALTY = 3.0       # multiplier for edges that change z significantly
-AUTO_ADJ_THRESHOLD = 0.01  # adjacency eps (in meters) for touching boxes
+# ---------------------- 1. 定义教室3D坐标（与之前JSON保持一致） ----------------------
+# 格式：(x坐标, y坐标, z坐标, 教室名称, 所属建筑-楼层)
+# 注：z坐标对应楼层（1=低层，2=2楼，...，5=5楼），单位为米
+rooms_data = [
+    # 建筑A - 低层（Lower Level）
+    (12, 70, 1, "A005", "A-低层"),
+    (12, 80, 1, "A008", "A-低层"),
+    (12, 90, 1, "A010", "A-低层"),
+    (22, 70, 1, "Welcome Center", "A-低层"),
+    (22, 82, 1, "Cafe", "A-低层"),
+    (40, 70, 1, "The Forum", "A-低层"),
 
-st.set_page_config(layout="wide", page_title="SCIS 3D Pathfinder")
-st.title("SCIS 3D Pathfinder — 3D Visualization & Routing")
+    # 建筑A - 2楼（Level 2）
+    (12, 70, 2, "A201", "A-2楼"),
+    (12, 80, 2, "A202(图书馆)", "A-2楼"),
+    (28, 70, 2, "A203", "A-2楼"),
+    (28, 80, 2, "A204", "A-2楼"),
+    (28, 90, 2, "A205", "A-2楼"),
+    (37, 70, 2, "A206", "A-2楼"),
+    (37, 80, 2, "A207", "A-2楼"),
+    (37, 90, 2, "A208", "A-2楼"),
+    (45, 80, 2, "A210", "A-2楼"),
 
-# ---------- Helpers ----------
-def load_map(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    # 建筑A - 3楼（Level 3）
+    (12, 70, 3, "A303", "A-3楼"),
+    (12, 80, 3, "A304", "A-3楼"),
+    (12, 90, 3, "A305", "A-3楼"),
+    (22, 70, 3, "A306", "A-3楼"),
+    (22, 80, 3, "A307", "A-3楼"),
+    (22, 90, 3, "A308", "A-3楼"),
+    (32, 70, 3, "A309", "A-3楼"),
+    (32, 80, 3, "A310", "A-3楼"),
 
-def centroid_of_box(coords):
-    x = (coords["xMin"] + coords["xMax"]) / 2.0
-    y = (coords["yMin"] + coords["yMax"]) / 2.0
-    z = (coords["zMin"] + coords["zMax"]) / 2.0
-    return (x, y, z)
+    # 建筑A - 4楼（Level 4）
+    (12, 70, 4, "A403", "A-4楼"),
+    (12, 80, 4, "A404", "A-4楼"),
+    (12, 90, 4, "A405", "A-4楼"),
+    (22, 70, 4, "A406", "A-4楼"),
+    (22, 80, 4, "A407", "A-4楼"),
+    (22, 90, 4, "A408", "A-4楼"),
+    (32, 70, 4, "A409", "A-4楼"),
+    (32, 80, 4, "A410", "A-4楼"),
+    (32, 90, 4, "A411", "A-4楼"),
+    (42, 70, 4, "A412", "A-4楼"),
+    (42, 80, 4, "A413", "A-4楼"),
+    (42, 90, 4, "A414", "A-4楼"),
+    (32, 80, 4, "A415", "A-4楼"),
 
-def box_touch_or_close(a, b, eps=AUTO_ADJ_THRESHOLD):
-    axmin, axmax = a["xMin"], a["xMax"]
-    aymin, aymax = a["yMin"], a["yMax"]
-    bxmin, bxmax = b["xMin"], b["xMax"]
-    bymin, bymax = b["yMin"], b["yMax"]
-    overlap_x = (axmin <= bxmax + eps) and (bxmin <= axmax + eps)
-    overlap_y = (aymin <= bymax + eps) and (bymin <= aymax + eps)
-    return overlap_x and overlap_y
+    # 建筑A - 5楼（Level 5）
+    (15, 72, 5, "US Gym", "A-5楼"),
 
-def make_cuboid_mesh(coords):
-    x0, x1 = coords["xMin"], coords["xMax"]
-    y0, y1 = coords["yMin"], coords["yMax"]
-    z0, z1 = coords["zMin"], coords["zMax"]
-    verts = [
-        (x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0),
-        (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1),
-    ]
-    xs = [v[0] for v in verts]
-    ys = [v[1] for v in verts]
-    zs = [v[2] for v in verts]
-    i = [0,0,0,4,5,6,0,1,2,4,5,6]
-    j = [1,2,3,5,6,7,4,5,6,0,1,2]
-    k = [4,4,4,0,0,0,1,2,3,5,6,7]
-    return xs, ys, zs, i, j, k
+    # 建筑C - 低层（Lower Level）
+    (55, 70, 1, "C001", "C-低层"),
+    (55, 80, 1, "C001B", "C-低层"),
+    (55, 90, 1, "C002", "C-低层"),
+    (64, 70, 1, "C003", "C-低层"),
+    (64, 80, 1, "C004", "C-低层"),
+    (64, 90, 1, "C005", "C-低层"),
+    (73, 70, 1, "C006", "C-低层"),
+    (73, 80, 1, "C007", "C-低层"),
+    (73, 90, 1, "C009", "C-低层"),
+    (82, 70, 1, "C011", "C-低层"),
+    (82, 80, 1, "C012", "C-低层"),
+    (82, 90, 1, "C013", "C-低层"),
+    (55, 66, 1, "C015", "C-低层"),
+    (64, 66, 1, "C016", "C-低层"),
+    (73, 66, 1, "C017", "C-低层"),
+    (55, 58, 1, "C018", "C-低层"),
+    (67, 58, 1, "C018A", "C-低层"),
+    (74, 58, 1, "C018B", "C-低层"),
+    (82, 58, 1, "C020", "C-低层"),
+    (82, 52, 1, "C021", "C-低层"),
+    (73, 52, 1, "C024", "C-低层"),
+    (64, 52, 1, "C025", "C-低层"),
+    (55, 52, 1, "Schoolhouse Warehouse", "C-低层"),
 
-def euclid(a, b):
-    return math.dist(a, b)
+    # 建筑C - 3楼（Level 3）
+    (55, 70, 3, "C311", "C-3楼"),
+    (55, 80, 3, "C313", "C-3楼"),
+    (55, 90, 3, "C315", "C-3楼"),
+    (64, 70, 3, "C317", "C-3楼"),
+    (64, 80, 3, "C319", "C-3楼"),
+    (64, 90, 3, "C321", "C-3楼"),
+    (73, 70, 3, "C322", "C-3楼"),
+    (73, 80, 3, "C323", "C-3楼"),
+    (73, 90, 3, "C324", "C-3楼"),
+    (82, 70, 3, "C325", "C-3楼"),
+    (82, 80, 3, "C326", "C-3楼"),
+    (82, 90, 3, "C327", "C-3楼"),
+    (58, 58, 3, "Garden Commons", "C-3楼"),
+    (55, 35, 3, "Lower School Gym", "C-3楼"),
 
-# ---------- Load Map ----------
-path = Path(DATAFILE)
-if not path.exists():
-    st.error(f"Map file not found: {DATAFILE}. Put your cleaned JSON file beside app.py.")
-    st.stop()
+    # 建筑B - 1楼（Level 1）
+    (12, 15, 1, "B101", "B-1楼"),
+    (12, 25, 1, "B102", "B-1楼"),
+    (12, 35, 1, "B103", "B-1楼"),
+    (22, 15, 1, "B104", "B-1楼"),
+    (22, 25, 1, "B105", "B-1楼"),
+    (22, 35, 1, "B106", "B-1楼"),
+    (32, 15, 1, "B107", "B-1楼"),
+    (32, 25, 1, "B108(图书馆)", "B-1楼"),
+    (40, 15, 1, "B1 Lobby", "B-1楼"),
 
-school = load_map(DATAFILE)
+    # 建筑B - 2楼（Level 2）
+    (12, 15, 2, "B201", "B-2楼"),
+    (12, 25, 2, "B202", "B-2楼"),
+    (12, 35, 2, "B203", "B-2楼"),
+    (22, 15, 2, "B204", "B-2楼"),
+    (22, 25, 2, "B205", "B-2楼"),
+    (22, 35, 2, "B206", "B-2楼"),
+    (32, 15, 2, "B207", "B-2楼"),
+    (32, 25, 2, "B2Library", "B-2楼"),
 
-# ---------- Build Nodes and Edges ----------
-nodes = {}
-edges = []
+    # 建筑B - 3楼（Level 3）
+    (12, 15, 3, "B301", "B-3楼"),
+    (12, 25, 3, "B302", "B-3楼"),
+    (12, 35, 3, "B303", "B-3楼"),
+    (22, 15, 3, "B304", "B-3楼"),
+    (22, 25, 3, "B305", "B-3楼"),
+    (22, 35, 3, "B3Music", "B-3楼"),
+    (32, 15, 3, "B307", "B-3楼"),
+    (32, 25, 3, "B308", "B-3楼"),
 
-for b in school.get("buildings", []):
-    b_id = b.get("buildingId")
-    for lvl in b.get("levels", []):
-        lvl_id = lvl.get("levelId")
-        for r in lvl.get("rooms", []):
-            rid = r["roomId"]
-            coords = r.get("coords") or {
-                "xMin": b.get("position", {}).get("xMin", 0)+0.1,
-                "xMax": b.get("position", {}).get("xMax", 0)-0.1,
-                "yMin": b.get("position", {}).get("yMin", 0)+0.1,
-                "yMax": b.get("position", {}).get("yMax", 0)-0.1,
-                "zMin": lvl.get("zRange", {}).get("zMin",0),
-                "zMax": lvl.get("zRange", {}).get("zMax", lvl.get("zRange", {}).get("zMin",3.5))
-            }
-            nodes[rid] = {
-                "id": rid,
-                "label": r.get("name", r.get("roomName", rid)),
-                "function": r.get("function",""),
-                "building": b_id,
-                "level": lvl_id,
-                "coords": coords,
-                "centroid": centroid_of_box(coords)
-            }
-        for e in lvl.get("entrances", []):
-            eid = e["entranceId"]
-            coords = e.get("coords") or {
-                "xMin": b.get("position", {}).get("xMin",0),
-                "xMax": b.get("position", {}).get("xMin",0)+1,
-                "yMin": b.get("position", {}).get("yMin",0),
-                "yMax": b.get("position", {}).get("yMin",0)+1,
-                "zMin": lvl.get("zRange", {}).get("zMin",0),
-                "zMax": lvl.get("zRange", {}).get("zMin",0)+1
-            }
-            nodes[eid] = {
-                "id": eid,
-                "label": e.get("entranceName", eid),
-                "function": "entrance",
-                "building": b_id,
-                "level": lvl_id,
-                "coords": coords,
-                "centroid": centroid_of_box(coords)
-            }
-        for c in lvl.get("connections", []):
-            src = c.get("from")
-            dst = c.get("to")
-            if src and dst:
-                edges.append((src, dst, {"type": c.get("type","hallway"), "meta": c}))
+    # 建筑B - 4楼（Level 4）
+    (15, 15, 4, "BAuditorium(礼堂)", "B-4楼"),
+    (12, 20, 4, "BAuditoriumBackstage(后台)", "B-4楼")
+]
 
-# ---------- Auto-connect adjacent rooms ----------
-for b in school.get("buildings", []):
-    for lvl in b.get("levels", []):
-        level_ids = [r["roomId"] for r in lvl.get("rooms", [])] + [e["entranceId"] for e in lvl.get("entrances",[])]
-        for i in range(len(level_ids)):
-            for j in range(i+1,len(level_ids)):
-                a_id,b_id2 = level_ids[i],level_ids[j]
-                if a_id not in nodes or b_id2 not in nodes: continue
-                if box_touch_or_close(nodes[a_id]["coords"], nodes[b_id2]["coords"]):
-                    w = euclid(nodes[a_id]["centroid"], nodes[b_id2]["centroid"])
-                    edges.append((a_id,b_id2,{"type":"adjacency","weight":float(w)}))
+# ---------------------- 2. 定义教室间路径（按实际连通关系） ----------------------
+# 格式：(起点教室名称, 终点教室名称)，包含：
+# - 同层教室连通（如A005→A008）
+# - 上下层教室连通（如The Forum→A201）
+# - 跨建筑连通（如The Forum→C001，通过A-C走廊）
+paths = [
+    # 建筑A低层内部路径
+    ("A005", "A008"), ("A008", "A010"), ("A010", "Welcome Center"),
+    ("Welcome Center", "Cafe"), ("Cafe", "The Forum"),
+    # 建筑A上下层路径
+    ("The Forum", "A201"), ("A201", "A202(图书馆)"), ("A202(图书馆)", "A203"),
+    ("A203", "A204"), ("A204", "A205"), ("A205", "A206"),
+    ("A206", "A207"), ("A207", "A208"), ("A208", "A210"),
+    ("A210", "A303"), ("A303", "A304"), ("A304", "A305"),
+    ("A305", "A306"), ("A306", "A307"), ("A307", "A308"),
+    ("A308", "A309"), ("A309", "A310"), ("A310", "A403"),
+    ("A403", "A404"), ("A404", "A405"), ("A405", "A406"),
+    ("A406", "A407"), ("A407", "A408"), ("A408", "A409"),
+    ("A409", "A410"), ("A410", "A411"), ("A411", "A412"),
+    ("A412", "A413"), ("A413", "A414"), ("A414", "A415"),
+    ("A415", "US Gym"),
+    # 建筑C低层内部路径
+    ("C001", "C001B"), ("C001B", "C002"), ("C002", "C003"),
+    ("C003", "C004"), ("C004", "C005"), ("C005", "C006"),
+    ("C006", "C007"), ("C007", "C009"), ("C009", "C011"),
+    ("C011", "C012"), ("C012", "C013"), ("C013", "C015"),
+    ("C015", "C016"), ("C016", "C017"), ("C017", "C018"),
+    ("C018", "C018A"), ("C018A", "C018B"), ("C018B", "C020"),
+    ("C020", "C021"), ("C021", "C024"), ("C024", "C025"),
+    ("C025", "Schoolhouse Warehouse"),
+    # 建筑C上下层路径
+    ("Schoolhouse Warehouse", "C311"), ("C311", "C313"), ("C313", "C315"),
+    ("C315", "C317"), ("C317", "C319"), ("C319", "C321"),
+    ("C321", "C322"), ("C322", "C323"), ("C323", "C324"),
+    ("C324", "C325"), ("C325", "C326"), ("C326", "C327"),
+    ("C327", "Garden Commons"), ("Garden Commons", "Lower School Gym"),
+    # 建筑B内部路径
+    ("B101", "B102"), ("B102", "B103"), ("B103", "B106"),
+    ("B106", "B105"), ("B105", "B104"), ("B104", "B107"),
+    ("B107", "B108(图书馆)"), ("B108(图书馆)", "B1 Lobby"),
+    ("B1 Lobby", "B201"), ("B201", "B202"), ("B202", "B203"),
+    ("B203", "B206"), ("B206", "B205"), ("B205", "B204"),
+    ("B204", "B207"), ("B207", "B2Library"), ("B2Library", "B301"),
+    ("B301", "B302"), ("B302", "B303"), ("B303", "B3Music"),
+    ("B3Music", "B305"), ("B305", "B304"), ("B304", "B307"),
+    ("B307", "B308"), ("B308", "BAuditorium(礼堂)"),
+    ("BAuditorium(礼堂)", "BAuditoriumBackstage(后台)"),
+    # 跨建筑路径（A→C）
+    ("The Forum", "C001")
+]
 
-# ---------- Build Graph ----------
-G = nx.Graph()
-for nid, meta in nodes.items():
-    G.add_node(nid, **meta)
-for u,v,attrs in edges:
-    if u not in G or v not in G: continue
-    w = attrs.get("weight") or euclid(G.nodes[u]["centroid"], G.nodes[v]["centroid"])
-    zu, zv = G.nodes[u]["centroid"][2], G.nodes[v]["centroid"][2]
-    if abs(zu - zv) > 0.5 and attrs.get("type") != "elevator":
-        w *= STAIRS_PENALTY
-    attrs_no_weight = {k: v for k, v in attrs.items() if k != "weight"}
-    G.add_edge(u, v, weight=float(w), **attrs_no_weight)
+# ---------------------- 3. 数据预处理：教室名称→坐标映射 ----------------------
+# 便于快速查找起点/终点教室的3D坐标
+room_coords = {room_name: (x, y, z) for x, y, z, room_name, _ in rooms_data}
 
-# ---------- Sidebar Controls ----------
-st.sidebar.header("Controls")
-floors = sorted({d.get("level") for n,d in G.nodes(data=True) if d.get("level")})
-floor_choice = st.sidebar.selectbox("Floor", ["All"]+floors)
-show_buildings = st.sidebar.multiselect("Buildings", [b["buildingId"] for b in school.get("buildings", [])])
-if not show_buildings:
-    show_buildings = [b["buildingId"] for b in school.get("buildings", [])]
-
-node_list = list(G.nodes)
-def node_label(nid):
-    meta = G.nodes[nid]
-    return f"{meta.get('label')} ({nid}) - {meta.get('building')} / {meta.get('level')}"
-
-start = st.sidebar.selectbox("Start node", node_list, format_func=node_label)
-end = st.sidebar.selectbox("End node", node_list, index=min(1,len(node_list)-1), format_func=node_label)
-find_btn = st.sidebar.button("Find path (A*)")
-path = None
-path_length = None
-if find_btn:
-    try:
-        path = nx.astar_path(G,start,end,heuristic=lambda a,b: euclid(G.nodes[a]["centroid"],G.nodes[b]["centroid"]),weight="weight")
-        path_length = sum(G[u][v]["weight"] for u,v in zip(path,path[1:]))
-        st.sidebar.success(f"Path ≈ {path_length:.1f} m")
-    except nx.NetworkXNoPath:
-        st.sidebar.error("No path found")
-
-# ---------- 3D Visualization ----------
+# ---------------------- 4. 创建3D可视化图表 ----------------------
 fig = go.Figure()
-colors = ["lightblue","lightgreen","lightpink","lightyellow","lightgray","wheat","lavender"]
-building_ids = [b["buildingId"] for b in school.get("buildings",[])]
-palette = {bid: colors[i%len(colors)] for i,bid in enumerate(building_ids)}
 
-for nid,data in G.nodes(data=True):
-    if data.get("building") not in show_buildings: continue
-    if floor_choice!="All" and data.get("level")!=floor_choice: continue
-    xs,ys,zs,i,j,k = make_cuboid_mesh(data["coords"])
-    opacity = 0.35
-    color = palette.get(data["building"],"lightgray")
-    if path and nid in path:
-        opacity = 0.9
-        color = "red"
-    fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color=color,opacity=opacity,hovertext=data["label"],hoverinfo="text"))
+# 4.1 添加教室：用彩色立方体表示（不同建筑用不同颜色）
+for x, y, z, room_name, building_level in rooms_data:
+    # 定义立方体尺寸（长×宽×高，单位米，匹配实际教室大小）
+    dx, dy, dz = 5, 8, 3  # 教室：5米宽、8米深、3米高
+    # 立方体顶点坐标（8个顶点，构成3D立方体）
+    x_vertices = [x, x+dx, x+dx, x, x, x+dx, x+dx, x]
+    y_vertices = [y, y, y+dy, y+dy, y, y, y+dy, y+dy]
+    z_vertices = [z, z, z, z, z+dz, z+dz, z+dz, z+dz]
+    
+    # 按建筑设置颜色（A=蓝色，C=绿色，B=橙色）
+    if "A-" in building_level:
+        color = "#1f77b4"  # 蓝色
+    elif "C-" in building_level:
+        color = "#2ca02c"  # 绿色
+    else:
+        color = "#ff7f0e"  # 橙色
+    
+    # 添加立方体到3D图
+    fig.add_trace(go.Mesh3d(
+        x=x_vertices, y=y_vertices, z=z_vertices,
+        # 立方体面索引（定义哪些顶点构成一个面）
+        i=[0, 0, 0, 1, 2, 3],
+        j=[1, 2, 3, 2, 3, 0],
+        k=[2, 3, 1, 3, 0, 1],
+        opacity=0.7,  # 透明度（0=完全透明，1=不透明）
+        color=color,
+        hovertext=f"教室：{room_name}<br>位置：{building_level}",  # 鼠标hover显示信息
+        name=room_name,  # 图例名称
+        showlegend=False  # 不单独显示教室图例（避免冗余）
+    ))
 
-for u,v in G.edges():
-    u_meta,v_meta = G.nodes[u], G.nodes[v]
-    if u_meta.get("building") not in show_buildings or v_meta.get("building") not in show_buildings: continue
-    if floor_choice!="All" and not(u_meta.get("level")==floor_choice or v_meta.get("level")==floor_choice): continue
-    x0,y0,z0 = u_meta["centroid"]
-    x1,y1,z1 = v_meta["centroid"]
-    fig.add_trace(go.Scatter3d(x=[x0,x1],y=[y0,y1],z=[z0,z1],mode="lines",line=dict(width=2,color="gray"),opacity=0.25,showlegend=False))
+# 4.2 添加路径：用黑色线段连接连通的教室
+for start_room, end_room in paths:
+    # 检查起点/终点教室是否在坐标映射中（避免报错）
+    if start_room in room_coords and end_room in room_coords:
+        x1, y1, z1 = room_coords[start_room]
+        x2, y2, z2 = room_coords[end_room]
+        
+        # 调整线段起点/终点为教室中心（避免线段从角落出发）
+        x1_center = x1 + 2.5  # dx=5，中心x= x+2.5
+        y1_center = y1 + 4    # dy=8，中心y= y+4
+        z1_center = z1 + 1.5  # dz=3，中心z= z+1.5
+        x2_center = x2 + 2.5
+        y2_center = y2 + 4
+        z2_center = z2 + 1.5
+        
+        # 添加路径线段
+        fig.add_trace(go.Scatter3d(
+            x=[x1_center, x2_center],
+            y=[y1_center, y2_center],
+            z=[z1_center, z2_center],
+            mode="lines",  # 模式：线段
+            line=dict(color="#000000", width=2),  # 黑色，2px宽
+            hovertext=f"路径：{start_room} → {end_room}",  # hover显示路径信息
+            showlegend=False  # 不显示路径图例
+        ))
 
-if path:
-    px,py,pz = zip(*[G.nodes[n]["centroid"] for n in path])
-    fig.add_trace(go.Scatter3d(x=px,y=py,z=pz,mode="lines+markers",line=dict(width=8,color="red"),marker=dict(size=4,color="red"),name="Route"))
+# 4.3 设置3D图布局（坐标轴、视角、标题等）
+fig.update_layout(
+    # 3D场景配置
+    scene=dict(
+        xaxis_title="X轴（水平方向，单位：米）",
+        yaxis_title="Y轴（深度方向，单位：米）",
+        zaxis_title="Z轴（楼层，1=低层，5=5楼）",
+        # 坐标轴范围（覆盖所有教室坐标，避免显示不全）
+        xaxis=dict(range=[0, 90], tickmode="linear", dtick=10),
+        yaxis=dict(range=[0, 100], tickmode="linear", dtick=10),
+        zaxis=dict(range=[0, 6], tickmode="linear", dtick=1),
+        # 初始视角（x,y,z轴方向的观察点，可调整）
+        camera=dict(eye=dict(x=1.8, y=1.8, z=1.2))
+    ),
+    # 图表标题
+    title=dict(
+        text="学校教室3D立体图（含路径连接）",
+        font=dict(size=20),  # 移除了不支持的weight属性
+        x=0.5  # 标题居中
+    ),
+    # 图表大小
+    width=1200,
+    height=800,
+    # 背景色
+    paper_bgcolor="#f8f9fa"
+)
 
-fig.update_layout(scene=dict(aspectmode="data",xaxis_title="X",yaxis_title="Y",zaxis_title="Z"),margin=dict(l=0,r=0,t=0,b=0),height=800)
-st.plotly_chart(fig,use_container_width=True)
-
-# ---------- Route Details ----------
-st.subheader("Route Details")
-if path:
-    st.markdown("**Step-by-step nodes:**")
-    for i,nid in enumerate(path):
-        meta = G.nodes[nid]
-        st.write(f"{i+1}. {meta['label']} — {meta['building']} / {meta['level']} ({meta['function']})")
-    st.markdown(f"**Approx. distance:** {path_length:.1f} meters")
-else:
-    st.info("Select start and end nodes, then click **Find path (A\*)**.")
-
-# ---------- Export JSON ----------
-if st.sidebar.button("Export route JSON") and path:
-    out = {"start":start,"end":end,"path":path,"distance_m":float(path_length)}
-    st.sidebar.download_button("Download route",data=json.dumps(out,indent=2),file_name="route.json",mime="application/json")
-
+# 4.4 显示图表（自动打开浏览器，支持交互式操作）
+fig.show()
+    
