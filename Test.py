@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 # ==============================
 @st.cache_data
 def load_data():
-    with open("school_map.json", "r") as f:
+    with open("scis_map.json", "r") as f:
         return json.load(f)
 
 school = load_data()
@@ -172,3 +172,4 @@ if st.button("Find Path"):
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.error("No path found.")
+
