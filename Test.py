@@ -134,10 +134,11 @@ for nid, meta in nodes.items():
 for u,v,attrs in edges:
     if u not in G or v not in G: continue
     w = attrs.get("weight") or euclid(G.nodes[u]["centroid"], G.nodes[v]["centroid"])
-    zu,zv = G.nodes[u]["centroid"][2], G.nodes[v]["centroid"][2]
-    if abs(zu-zv) > 0.5 and attrs.get("type") != "elevator":
+    zu, zv = G.nodes[u]["centroid"][2], G.nodes[v]["centroid"][2]
+    if abs(zu - zv) > 0.5 and attrs.get("type") != "elevator":
         w *= STAIRS_PENALTY
-    G.add_edge(u,v,weight=float(w),**attrs)
+    attrs_no_weight = {k: v for k, v in attrs.items() if k != "weight"}
+    G.add_edge(u, v, weight=float(w), **attrs_no_weight)
 
 # ---------- Sidebar Controls ----------
 st.sidebar.header("Controls")
@@ -212,3 +213,4 @@ else:
 if st.sidebar.button("Export route JSON") and path:
     out = {"start":start,"end":end,"path":path,"distance_m":float(path_length)}
     st.sidebar.download_button("Download route",data=json.dumps(out,indent=2),file_name="route.json",mime="application/json")
+
