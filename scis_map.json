@@ -1,231 +1,68 @@
 {
-  "schoolName": "Shanghai Community International School",
-  "buildings": [
-    {
-      "buildingId": "BuildingA",
-      "buildingName": "Building A",
-      "note": "Main Upper School Building",
-      "levels": [
+    "floors": [
         {
-          "levelId": "BuildingA_LowerLevel",
-          "levelName": "Lower Level",
-          "zLevel": -1,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "A005", "roomName": "A005", "function": "MYP Arts - Media / DP Film"},
-            {"roomId": "A010", "roomName": "A010", "function": "MYP Arts - Music / Theatre"},
-            {"roomId": "A008", "roomName": "A008", "function": "MYP/DP Arts - Music"},
-            {"roomId": "WelcomeCenter", "roomName": "Welcome Center", "function": "Welcome Center"},
-            {"roomId": "Cafe", "roomName": "Cafe", "function": "Cafe"},
-            {"roomId": "TheForum", "roomName": "The Forum", "function": "The Forum"}
-          ],
-          "entrances": [
-            {"entranceId": "EntranceToUpperSchoolBuilding", "entranceName": "Entrance to Upper School Building"},
-            {"entranceId": "EntranceToForum", "entranceName": "Entrance to Forum"}
-          ],
-          "connections": [
-            {"from": "EntranceToUpperSchoolBuilding", "to": "WelcomeCenter"},
-            {"from": "WelcomeCenter", "to": "Cafe"},
-            {"from": "Cafe", "to": "TheForum"},
-            {"from": "TheForum", "to": "A005"},
-            {"from": "TheForum", "to": "A008"},
-            {"from": "TheForum", "to": "A010"},
-            {"from": "TheForum", "to": "EntranceToForum"},
-            {"from": "TheForum", "to": "StaircaseForumToLevel2"},
-            {"from": "TheForum", "to": "StaircaseForumToLevel3"},
-            {"from": "TheForum", "to": "StaircaseForumToLevel4"},
-            {"from": "TheForum", "to": "StaircaseForumToLevel5"}
-          ]
+            "floor": 1,
+            "rooms": [
+                {"id": "101", "name": "一年级一班", "x": 10, "y": 10},
+                {"id": "102", "name": "一年级二班", "x": 30, "y": 10},
+                {"id": "103", "name": "二年级一班", "x": 50, "y": 10},
+                {"id": "104", "name": "二年级二班", "x": 70, "y": 10},
+                {"id": "105", "name": "三年级一班", "x": 10, "y": 30},
+                {"id": "106", "name": "三年级二班", "x": 30, "y": 30},
+                {"id": "107", "name": "教师办公室", "x": 50, "y": 30},
+                {"id": "108", "name": "卫生间", "x": 70, "y": 30},
+                {"id": "stair1", "name": "楼梯1", "x": 40, "y": 50}
+            ],
+            "connections": [
+                {"from": "101", "to": "102", "distance": 20},
+                {"from": "102", "to": "103", "distance": 20},
+                {"from": "103", "to": "104", "distance": 20},
+                {"from": "101", "to": "105", "distance": 20},
+                {"from": "102", "to": "106", "distance": 20},
+                {"from": "103", "to": "107", "distance": 20},
+                {"from": "104", "to": "108", "distance": 20},
+                {"from": "105", "to": "106", "distance": 20},
+                {"from": "106", "to": "107", "distance": 20},
+                {"from": "107", "to": "108", "distance": 20},
+                {"from": "105", "to": "stair1", "distance": 20},
+                {"from": "106", "to": "stair1", "distance": 10},
+                {"from": "107", "to": "stair1", "distance": 10},
+                {"from": "108", "to": "stair1", "distance": 20}
+            ]
         },
         {
-          "levelId": "BuildingA_Level2",
-          "levelName": "Level 2",
-          "zLevel": 2,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "A205", "roomName": "A205", "function": "MYP English Language Acquisition"},
-            {"roomId": "A207", "roomName": "A207", "function": "MYP Individuals & Societies"},
-            {"roomId": "A206", "roomName": "A206", "function": "MYP Individuals & Societies"},
-            {"roomId": "A208", "roomName": "A208", "function": "MYP Individuals & Societies"},
-            {"roomId": "A201", "roomName": "A201", "function": "MYP Design"},
-            {"roomId": "A203", "roomName": "A203", "function": "MYP/DP Language Acquisition"},
-            {"roomId": "A204", "roomName": "A204", "function": "MYP/DP Visual Arts"},
-            {"roomId": "A210", "roomName": "A210", "function": "Library"},
-            {"roomId": "A202", "roomName": "A202", "function": "Library"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseForumToLevel2", "entranceName": "Staircase from Forum to Level 2"}
-          ],
-          "connections": [
-            {"from": "StaircaseForumToLevel2", "to": "A201"},
-            {"from": "A201", "to": "A202"},
-            {"from": "A202", "to": "A203"},
-            {"from": "A203", "to": "A204"},
-            {"from": "A204", "to": "A205"},
-            {"from": "A205", "to": "A206"},
-            {"from": "A206", "to": "A207"},
-            {"from": "A207", "to": "A208"},
-            {"from": "A204", "to": "A210"}
-          ]
-        },
-        {
-          "levelId": "BuildingA_Level3",
-          "levelName": "Level 3",
-          "zLevel": 3,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "A305", "roomName": "A305", "function": "MYP Design / DP Design Technology"},
-            {"roomId": "A306", "roomName": "A306", "function": "MYP Science / DP Biology"},
-            {"roomId": "A304", "roomName": "A304", "function": "MYP Design"},
-            {"roomId": "A310", "roomName": "A310", "function": "MYP Science / DP ESS"},
-            {"roomId": "A307", "roomName": "A307", "function": "MYP Design"},
-            {"roomId": "A303", "roomName": "A303", "function": "MYP Sciences / DP Chemistry"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseForumToLevel3", "entranceName": "Staircase from Forum to Level 3"}
-          ],
-          "connections": [
-            {"from": "StaircaseForumToLevel3", "to": "A303"},
-            {"from": "A303", "to": "A304"},
-            {"from": "A304", "to": "A305"},
-            {"from": "A305", "to": "A306"},
-            {"from": "A306", "to": "A307"},
-            {"from": "A307", "to": "A310"}
-          ]
-        },
-        {
-          "levelId": "BuildingA_Level4",
-          "levelName": "Level 4",
-          "zLevel": 4,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "A403", "roomName": "A403", "function": "MYP Physical & Health Education"},
-            {"roomId": "A404", "roomName": "A404", "function": "MYP/DP Language Acquisition / MYP Lang & Lit"},
-            {"roomId": "A405", "roomName": "A405", "function": "MYP/DP Learning Support"},
-            {"roomId": "A406", "roomName": "A406", "function": "MYP/DP Learning Support"},
-            {"roomId": "A407", "roomName": "A407", "function": "MYP/DP Language Acquisition"},
-            {"roomId": "A408", "roomName": "A408", "function": "MYP/DP Language Acquisition / TOK"},
-            {"roomId": "A412", "roomName": "A412", "function": "MYP Language Acquisition / DP Literature"},
-            {"roomId": "A413", "roomName": "A413", "function": "MYP Physical & Health Education / DP Literature"},
-            {"roomId": "A414", "roomName": "A414", "function": "MYP Language Acquisition"},
-            {"roomId": "A415", "roomName": "A415", "function": "MYP/DP Language Acquisition / DP Literature"},
-            {"roomId": "A411", "roomName": "A411", "function": "MYP Language Acquisition"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseForumToLevel4", "entranceName": "Staircase from Forum to Level 4"}
-          ],
-          "connections": [
-            {"from": "StaircaseForumToLevel4", "to": "A403"},
-            {"from": "A403", "to": "A404"},
-            {"from": "A404", "to": "A405"},
-            {"from": "A405", "to": "A406"},
-            {"from": "A406", "to": "A407"},
-            {"from": "A407", "to": "A408"},
-            {"from": "A408", "to": "A411"},
-            {"from": "A411", "to": "A412"},
-            {"from": "A412", "to": "A413"},
-            {"from": "A413", "to": "A414"},
-            {"from": "A414", "to": "A415"}
-          ]
-        },
-        {
-          "levelId": "BuildingA_Level5",
-          "levelName": "Level 5",
-          "zLevel": 5,
-          "zLevelHeight": 5,
-          "rooms": [
-            {"roomId": "USGym", "roomName": "US Gym", "function": "MYP Physical & Health Education"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseForumToLevel5", "entranceName": "Staircase from Forum to Level 5"}
-          ],
-          "connections": [
-            {"from": "StaircaseForumToLevel5", "to": "USGym"}
-          ]
+            "floor": 2,
+            "rooms": [
+                {"id": "201", "name": "四年级一班", "x": 10, "y": 10},
+                {"id": "202", "name": "四年级二班", "x": 30, "y": 10},
+                {"id": "203", "name": "五年级一班", "x": 50, "y": 10},
+                {"id": "204", "name": "五年级二班", "x": 70, "y": 10},
+                {"id": "205", "name": "六年级一班", "x": 10, "y": 30},
+                {"id": "206", "name": "六年级二班", "x": 30, "y": 30},
+                {"id": "207", "name": "实验室", "x": 50, "y": 30},
+                {"id": "208", "name": "音乐教室", "x": 70, "y": 30},
+                {"id": "stair1", "name": "楼梯1", "x": 40, "y": 50}
+            ],
+            "connections": [
+                {"from": "201", "to": "202", "distance": 20},
+                {"from": "202", "to": "203", "distance": 20},
+                {"from": "203", "to": "204", "distance": 20},
+                {"from": "201", "to": "205", "distance": 20},
+                {"from": "202", "to": "206", "distance": 20},
+                {"from": "203", "to": "207", "distance": 20},
+                {"from": "204", "to": "208", "distance": 20},
+                {"from": "205", "to": "206", "distance": 20},
+                {"from": "206", "to": "207", "distance": 20},
+                {"from": "207", "to": "208", "distance": 20},
+                {"from": "205", "to": "stair1", "distance": 20},
+                {"from": "206", "to": "stair1", "distance": 10},
+                {"from": "207", "to": "stair1", "distance": 10},
+                {"from": "208", "to": "stair1", "distance": 20}
+            ]
         }
-      ]
-    },
-    {
-      "buildingId": "BuildingC",
-      "buildingName": "Building C",
-      "note": "Secondary classrooms and commons",
-      "levels": [
-        {
-          "levelId": "BuildingC_LowerLevel",
-          "levelName": "Lower Level",
-          "zLevel": -1,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "C015", "roomName": "C015", "function": "DP Global Politics"},
-            {"roomId": "C016", "roomName": "C016", "function": "DP Psychology / MYP Individuals & Societies"},
-            {"roomId": "C013", "roomName": "C013", "function": "MYP Visual Arts"},
-            {"roomId": "C017", "roomName": "C017", "function": "MYP Physical & Health Education / DP Bus. Mgt."},
-            {"roomId": "C011", "roomName": "C011", "function": "MYP Individuals & Societies"},
-            {"roomId": "C012", "roomName": "C012", "function": "DP Korean Literature"},
-            {"roomId": "SchoolhouseWarehouse", "roomName": "Schoolhouse Warehouse", "function": "Schoolhouse Warehouse"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseC_LowerToLevel1", "entranceName": "Staircase connecting Lower Level to Level 1"}
-          ],
-          "connections": [
-            {"from": "StaircaseC_LowerToLevel1", "to": "C011"},
-            {"from": "C011", "to": "C012"},
-            {"from": "C012", "to": "C013"},
-            {"from": "C013", "to": "C015"},
-            {"from": "C015", "to": "C016"},
-            {"from": "C016", "to": "C017"},
-            {"from": "C017", "to": "SchoolhouseWarehouse"}
-          ]
-        },
-        {
-          "levelId": "BuildingC_Level3",
-          "levelName": "Level 3",
-          "zLevel": 3,
-          "zLevelHeight": 3.5,
-          "rooms": [
-            {"roomId": "C311", "roomName": "C311", "function": "MYP Mathematics"},
-            {"roomId": "C313", "roomName": "C313", "function": "MYP English Language & Literature"},
-            {"roomId": "C327", "roomName": "C327", "function": "MYP Language & Literature"},
-            {"roomId": "C325", "roomName": "C325", "function": "DP Mathematics / DP Economics"},
-            {"roomId": "C326", "roomName": "C326", "function": "MYP/DP Mathematics"},
-            {"roomId": "C319", "roomName": "C319", "function": "MYP Mathematics"},
-            {"roomId": "C321", "roomName": "C321", "function": "MYP Sciences"},
-            {"roomId": "C323", "roomName": "C323", "function": "MYP/DP Language & Literature"},
-            {"roomId": "C324", "roomName": "C324", "function": "DP Mathematics / DP Physics"},
-            {"roomId": "GardenCommons", "roomName": "Garden Commons", "function": "Garden Commons"},
-            {"roomId": "LowerSchoolGym", "roomName": "Lower School Gym", "function": "Lower School Gym"}
-          ],
-          "entrances": [
-            {"entranceId": "StaircaseC_PlazaToLevel3", "entranceName": "Staircase from Plaza to Level 3"}
-          ],
-          "connections": [
-            {"from": "StaircaseC_PlazaToLevel3", "to": "C311"},
-            {"from": "C311", "to": "C313"},
-            {"from": "C313", "to": "C319"},
-            {"from": "C319", "to": "C321"},
-            {"from": "C321", "to": "C323"},
-            {"from": "C323", "to": "C324"},
-            {"from": "C324", "to": "C325"},
-            {"from": "C325", "to": "C326"},
-            {"from": "C326", "to": "C327"},
-            {"from": "C323", "to": "GardenCommons"},
-            {"from": "GardenCommons", "to": "LowerSchoolGym"}
-          ]
-        }
-      ]
-    }
-  ],
-  "receptions": [
-    {
-      "receptionId": "UpperSchoolReception_Level1",
-      "receptionName": "Upper School Reception",
-      "level": "Level 1",
-      "associatedRooms": [
-        {"roomId": "MYPDPTheatre", "roomName": "MYP/DP Theatre"},
-        {"roomId": "ThePlaza", "roomName": "The Plaza"},
-        {"roomId": "MSLobby", "roomName": "MS Lobby"}
-      ]
-    }
-  ]
-
+    ],
+    "inter_floor_connections": [
+        {"from": "1:stair1", "to": "2:stair1", "distance": 10}
+    ]
 }
+      
