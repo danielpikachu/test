@@ -1,68 +1,37 @@
 {
-    "floors": [
-        {
-            "floor": 1,
-            "rooms": [
-                {"id": "101", "name": "一年级一班", "x": 10, "y": 10},
-                {"id": "102", "name": "一年级二班", "x": 30, "y": 10},
-                {"id": "103", "name": "二年级一班", "x": 50, "y": 10},
-                {"id": "104", "name": "二年级二班", "x": 70, "y": 10},
-                {"id": "105", "name": "三年级一班", "x": 10, "y": 30},
-                {"id": "106", "name": "三年级二班", "x": 30, "y": 30},
-                {"id": "107", "name": "教师办公室", "x": 50, "y": 30},
-                {"id": "108", "name": "卫生间", "x": 70, "y": 30},
-                {"id": "stair1", "name": "楼梯1", "x": 40, "y": 50}
-            ],
-            "connections": [
-                {"from": "101", "to": "102", "distance": 20},
-                {"from": "102", "to": "103", "distance": 20},
-                {"from": "103", "to": "104", "distance": 20},
-                {"from": "101", "to": "105", "distance": 20},
-                {"from": "102", "to": "106", "distance": 20},
-                {"from": "103", "to": "107", "distance": 20},
-                {"from": "104", "to": "108", "distance": 20},
-                {"from": "105", "to": "106", "distance": 20},
-                {"from": "106", "to": "107", "distance": 20},
-                {"from": "107", "to": "108", "distance": 20},
-                {"from": "105", "to": "stair1", "distance": 20},
-                {"from": "106", "to": "stair1", "distance": 10},
-                {"from": "107", "to": "stair1", "distance": 10},
-                {"from": "108", "to": "stair1", "distance": 20}
-            ]
-        },
-        {
-            "floor": 2,
-            "rooms": [
-                {"id": "201", "name": "四年级一班", "x": 10, "y": 10},
-                {"id": "202", "name": "四年级二班", "x": 30, "y": 10},
-                {"id": "203", "name": "五年级一班", "x": 50, "y": 10},
-                {"id": "204", "name": "五年级二班", "x": 70, "y": 10},
-                {"id": "205", "name": "六年级一班", "x": 10, "y": 30},
-                {"id": "206", "name": "六年级二班", "x": 30, "y": 30},
-                {"id": "207", "name": "实验室", "x": 50, "y": 30},
-                {"id": "208", "name": "音乐教室", "x": 70, "y": 30},
-                {"id": "stair1", "name": "楼梯1", "x": 40, "y": 50}
-            ],
-            "connections": [
-                {"from": "201", "to": "202", "distance": 20},
-                {"from": "202", "to": "203", "distance": 20},
-                {"from": "203", "to": "204", "distance": 20},
-                {"from": "201", "to": "205", "distance": 20},
-                {"from": "202", "to": "206", "distance": 20},
-                {"from": "203", "to": "207", "distance": 20},
-                {"from": "204", "to": "208", "distance": 20},
-                {"from": "205", "to": "206", "distance": 20},
-                {"from": "206", "to": "207", "distance": 20},
-                {"from": "207", "to": "208", "distance": 20},
-                {"from": "205", "to": "stair1", "distance": 20},
-                {"from": "206", "to": "stair1", "distance": 10},
-                {"from": "207", "to": "stair1", "distance": 10},
-                {"from": "208", "to": "stair1", "distance": 20}
-            ]
-        }
-    ],
-    "inter_floor_connections": [
-        {"from": "1:stair1", "to": "2:stair1", "distance": 10}
-    ]
+  "floors": [
+    {
+      "floor_id": 0,
+      "name": "Lower Level",
+      "nodes": [
+        {"id": "cafe", "name": "Cafeteria", "x": -200, "y": -100, "z": 0, "type": "room"},
+        {"id": "forum", "name": "The Forum", "x": -100, "y": -100, "z": 0, "type": "room"},
+        {"id": "stair1_lower", "name": "Staircase 1", "x": 0, "y": 0, "z": 0, "type": "stair"}
+      ],
+      "edges": [
+        {"from": "cafe", "to": "stair1_lower", "distance": 15},
+        {"from": "forum", "to": "stair1_lower", "distance": 12},
+        {"from": "cafe", "to": "forum", "distance": 10}
+      ]
+    },
+    {
+      "floor_id": 1,
+      "name": "Level 2",
+      "nodes": [
+        {"id": "a205", "name": "Classroom A205", "x": -200, "y": -100, "z": 50, "type": "room"},
+        {"id": "a206", "name": "Classroom A206", "x": -100, "y": -100, "z": 50, "type": "room"},
+        {"id": "library", "name": "Library", "x": -100, "y": 0, "z": 50, "type": "room"},
+        {"id": "stair1_upper", "name": "Staircase 1", "x": 0, "y": 0, "z": 50, "type": "stair"}
+      ],
+      "edges": [
+        {"from": "a205", "to": "a206", "distance": 5},
+        {"from": "a206", "to": "library", "distance": 8},
+        {"from": "library", "to": "stair1_upper", "distance": 10},
+        {"from": "a205", "to": "stair1_upper", "distance": 20}
+      ]
+    }
+  ],
+  "inter_floor_edges": [
+    {"from": "stair1_lower", "to": "stair1_upper", "distance": 3}
+  ]
 }
-      
