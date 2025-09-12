@@ -1,214 +1,150 @@
 import json
-import heapq
+import networkx as nx
+import matplotlib.pyplot as plt
 
-class SchoolPathFinder:
-    def __init__(self, map_file):
-        """初始化路径查找器，加载学校地图数据"""
-        self.map_data = self.load_map(map_file)
-        self.graph = self.build_graph()
+class ClassroomNavigator:
+    def __init__(self, json_path):
+        # 加载JSON数据
+        with open(json_path, 'r') as f:
+            self.data = json.load(f)
         
-    def load_map(self, file_path):
-        """从JSON文件加载地图数据"""
+        # 构建导航图
+        self.graph = nx.Graph()
+        self._build_graph()
+        
+        # 存储节点坐标信息
+        self.node_positions = self._get_node_positions()
+
+    def _build_graph(self):
+        """从JSON数据构建图网络"""
+        # 添加所有楼层的节点和边
+        for floor in self.data['floors']:
+            # 添加节点
+            for node in floor['nodes']:
+                self.graph.add_node(
+                    node['id'],
+                    name=node['name'],
+                    floor=floor['floor_id'],
+                    type=node['type'],
+                    x=node['x'],
+                    y=node['y'],
+                    z=node['z']
+                )
+            
+            # 添加同层边
+            for edge in floor['edges']:
+                self.graph.add_edge(
+                    edge['from'],
+                    edge['to'],
+                    weight=edge['distance']
+                )
+        
+        # 添加楼层间连接（楼梯/电梯）
+        for edge in self.data['inter_floor_edges']:
+            self.graph.add_edge(
+                edge['from'],
+                edge['to'],
+                weight=edge['distance']
+            )
+
+    def _get_node_positions(self):
+        """提取所有节点的坐标信息"""
+        positions = {}
+        for floor in self.data['floors']:
+            for node in floor['nodes']:
+                positions[node['id']] = (node['x'], node['y'], node['z'])
+        return positions
+
+    def find_shortest_path(self, start_id, end_id):
+        """查找两个节点之间的最短路径"""
+        if start_id not in self.graph.nodes or end_id not in self.graph.nodes:
+            return None, 0
+        
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            print(f"错误：找不到地图文件 {file_path}")
-            return None
-        except json.JSONDecodeError:
-            print(f"错误：解析地图文件 {file_path} 失败")
-            return None
-    
-    def build_graph(self):
-        """构建图结构用于路径查找"""
-        if not self.map_data:
-            return {}
-            
-        graph = {}
-        
-        # 添加各楼层内部的连接
-        for floor in self.map_data['floors']:
-            floor_num = floor['floor']
-            for connection in floor['connections']:
-                from_node = f"{floor_num}:{connection['from']}"
-                to_node = f"{floor_num}:{connection['to']}"
-                distance = connection['distance']
-                
-                # 添加双向连接
-                if from_node not in graph:
-                    graph[from_node] = []
-                graph[from_node].append((to_node, distance))
-                
-                if to_node not in graph:
-                    graph[to_node] = []
-                graph[to_node].append((from_node, distance))
-        
-        # 添加楼层间的连接（如楼梯）
-        for connection in self.map_data['inter_floor_connections']:
-            from_node = connection['from']
-            to_node = connection['to']
-            distance = connection['distance']
-            
-            if from_node not in graph:
-                graph[from_node] = []
-            graph[from_node].append((to_node, distance))
-            
-            if to_node not in graph:
-                graph[to_node] = []
-            graph[to_node].append((from_node, distance))
-            
-        return graph
-    
- def get_room_id(self, floor, room_name):
-        """根据楼层和教室名称获取房间ID"""
-        for f in self.map_data['floors']:
-            if f['floor'] == floor:
-                for room in f['rooms']:
-                    if room['name'] == room_name:
-                        return f"{floor}:{room['id']}"
-        return None
-    
-    def get_room_name(self, node_id):
-        """根据节点ID获取房间名称"""
-        floor_num, room_id = node_id.split(':')
-        floor_num = int(floor_num)
-        
-        for f in self.map_data['floors']:
-            if f['floor'] == floor_num:
-                for room in f['rooms']:
-                    if room['id'] == room_id:
-                        return room['name']
-        return room_id
-    
-    def dijkstra(self, start, end):
-        """使用Dijkstra算法查找最短路径"""
-        if start not in self.graph or end not in self.graph:
+            path = nx.shortest_path(
+                self.graph, 
+                source=start_id, 
+                target=end_id, 
+                weight='weight'
+            )
+            distance = nx.shortest_path_length(
+                self.graph, 
+                source=start_id, 
+                target=end_id, 
+                weight='weight'
+            )
+            return path, distance
+        except nx.NetworkXNoPath:
             return None, 0
-            
-        # 初始化距离字典，存储从起点到每个节点的最短距离
-        distances = {node: float('infinity') for node in self.graph}
-        distances[start] = 0
-        
-        # 初始化优先队列，存储(距离, 节点)
-        priority_queue = [(0, start)]
-        
-        # 存储路径
-        previous_nodes = {node: None for node in self.graph}
-        
-        while priority_queue:
-            current_distance, current_node = heapq.heappop(priority_queue)
-            
-            # 如果到达终点，提前退出
-            if current_node == end:
-                break
-                
-            # 如果当前距离大于已知最短距离，跳过
-            if current_distance > distances[current_node]:
-                continue
-                
-            # 探索邻居节点
-            for neighbor, weight in self.graph[current_node]:
-                distance = current_distance + weight
-                
-                # 如果找到更短的路径
-                if distance < distances[neighbor]:
-                    distances[neighbor] = distance
-                    previous_nodes[neighbor] = current_node
-                    heapq.heappush(priority_queue, (distance, neighbor))
-        
-        # 重建路径
-        path = []
-        current = end
-        while current is not None:
-            path.append(current)
-            current = previous_nodes[current]
-        
-        # 反转路径，从起点到终点
-        path.reverse()
-        
-        # 如果路径只有一个节点且不是起点和终点相同的情况，则表示没有找到路径
-        if len(path) == 1 and path[0] != start:
-            return None, 0
-            
-        return path, distances[end]
-    
-    def find_path(self, start_floor, start_room, end_floor, end_room):
-        """查找从起始教室到目标教室的路径"""
-        start_node = self.get_room_id(start_floor, start_room)
-        end_node = self.get_room_id(end_floor, end_room)
-        
-        if not start_node or not end_node:
-            print("错误：起始教室或目标教室不存在")
-            return None, 0
-            
-        if start_node == end_node:
-            print("起始教室和目标教室相同")
-            return [start_node], 0
-            
-        path, distance = self.dijkstra(start_node, end_node)
-        
+
+    def get_path_details(self, path):
+        """获取路径的详细信息（包含名称、楼层等）"""
         if not path:
-            print("错误：找不到路径")
-            return None, 0
-            
-        return path, distance
-    
-    def print_path(self, path):
-        """打印路径"""
-        if not path:
-            return
-            
-        print("路径规划：")
-        for i, node in enumerate(path):
-            floor, room_id = node.split(':')
-            room_name = self.get_room_name(node)
-            
-            # 显示当前位置
-            print(f"{i+1}. 楼层 {floor}，{room_name}")
-            
-            # 如果不是最后一个节点，显示下一步
-            if i < len(path) - 1:
-                next_floor, next_room = path[i+1].split(':')
-                if floor != next_floor:
-                    print("   → 乘坐楼梯前往{}楼".format(next_floor))
-                else:
-                    print("   → 前往{}".format(self.get_room_name(path[i+1])))
-
-
-def main():
-    # 创建路径查找器实例
-    path_finder = SchoolPathFinder('school_map.json')
-    
-    if not path_finder.map_data:
-        return
-    
-    print("欢迎使用学校教室路径规划系统")
-    print("--------------------------")
-    
-    # 显示所有可用教室
-    print("可用教室：")
-    for floor in path_finder.map_data['floors']:
-        print(f"{floor['floor']}楼：")
-        for room in floor['rooms']:
-            print(f"  - {room['name']}")
-    print("--------------------------")
-    
-    # 获取用户输入
-    try:
-        start_floor = int(input("请输入起始楼层："))
-        start_room = input("请输入起始教室名称：")
-        end_floor = int(input("请输入目标楼层："))
-        end_room = input("请输入目标教室名称：")
+            return []
         
-        # 查找路径
-        path, distance = path_finder.find_path(start_floor, start_room, end_floor, end_room)
-        
-        if path:
-            print(f"\n找到最短路径，总距离：{distance}单位")
-            path_finder.print_path(path)
-    except ValueError:
-        print("输入错误，请确保楼层为数字")
+        details = []
+        for node_id in path:
+            node_data = self.graph.nodes[node_id]
+            details.append({
+                'id': node_id,
+                'name': node_data['name'],
+                'floor': node_data['floor'],
+                'type': node_data['type'],
+                'coordinates': (node_data['x'], node_data['y'], node_data['z'])
+            })
+        return details
 
+    def visualize_2d(self, path=None):
+        """2D可视化楼层平面图和路径"""
+        # 按楼层分别可视化
+        for floor in self.data['floors']:
+            floor_id = floor['floor_id']
+            floor_nodes = [n['id'] for n in floor['nodes']]
+            
+            # 筛选当前楼层的节点和边
+            floor_subgraph = self.graph.subgraph(floor_nodes)
+            pos = {n: (self.graph.nodes[n]['x'], self.graph.nodes[n]['y']) 
+                   for n in floor_subgraph.nodes}
+            
+            plt.figure(figsize=(10, 8))
+            plt.title(f"Floor {floor_id}: {floor['name']}")
+            
+            # 绘制所有节点和边
+            nx.draw_networkx_edges(floor_subgraph, pos, edge_color='gray', width=1)
+            nx.draw_networkx_nodes(floor_subgraph, pos, node_size=300, node_color='lightblue')
+            nx.draw_networkx_labels(floor_subgraph, pos, 
+                                   labels={n: self.graph.nodes[n]['name'] for n in floor_subgraph.nodes},
+                                   font_size=8)
+            
+            # 如果有路径，高亮显示当前楼层的路径部分
+            if path:
+                floor_path = [n for n in path if n in floor_nodes]
+                if len(floor_path) >= 2:
+                    path_edges = list(zip(floor_path[:-1], floor_path[1:]))
+                    nx.draw_networkx_edges(floor_subgraph, pos, edgelist=path_edges,
+                                          edge_color='red', width=2)
+            
+            plt.grid(True)
+            plt.axis('equal')
+            plt.show()
 
 if __name__ == "__main__":
-    main()
+    # 初始化导航系统
+    navigator = ClassroomNavigator('floor_plan_data.json')
+    
+    # 查找从A205到Cafeteria的路径
+    start = 'a205'
+    end = 'cafe'
+    path, distance = navigator.find_shortest_path(start, end)
+    
+    if path:
+        print(f"最短路径从 {navigator.graph.nodes[start]['name']} 到 {navigator.graph.nodes[end]['name']}:")
+        print(f"总距离: {distance} 单位")
+        print("路径详情:")
+        for i, step in enumerate(navigator.get_path_details(path)):
+            print(f"  {i+1}. {step['name']} (楼层 {step['floor']})")
+        
+        # 可视化路径
+        navigator.visualize_2d(path)
+    else:
+        print(f"无法找到从 {start} 到 {end} 的路径")
