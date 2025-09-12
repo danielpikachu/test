@@ -1,37 +1,37 @@
 {
-  "floors": [
-    {
-      "floor_id": 0,
-      "name": "Lower Level",
-      "nodes": [
-        {"id": "cafe", "name": "Cafeteria", "x": -200, "y": -100, "z": 0, "type": "room"},
-        {"id": "forum", "name": "The Forum", "x": -100, "y": -100, "z": 0, "type": "room"},
-        {"id": "stair1_lower", "name": "Staircase 1", "x": 0, "y": 0, "z": 0, "type": "stair"}
+  "Building A": {
+    "Lower Level": {
+      "rooms": [
+        {"name": "A005", "coords": [10, 20]},
+        {"name": "A008", "coords": [30, 40]},
+        {"name": "A010", "coords": [50, 60]}
       ],
-      "edges": [
-        {"from": "cafe", "to": "stair1_lower", "distance": 15},
-        {"from": "forum", "to": "stair1_lower", "distance": 12},
-        {"from": "cafe", "to": "forum", "distance": 10}
+      "connections": [
+        {"from": "A005", "to": "A008", "type": "corridor"},
+        {"from": "A008", "to": "A010", "type": "corridor"}
       ]
     },
-    {
-      "floor_id": 1,
-      "name": "Level 2",
-      "nodes": [
-        {"id": "a205", "name": "Classroom A205", "x": -200, "y": -100, "z": 50, "type": "room"},
-        {"id": "a206", "name": "Classroom A206", "x": -100, "y": -100, "z": 50, "type": "room"},
-        {"id": "library", "name": "Library", "x": -100, "y": 0, "z": 50, "type": "room"},
-        {"id": "stair1_upper", "name": "Staircase 1", "x": 0, "y": 0, "z": 50, "type": "stair"}
+    "Level 2": {
+      "rooms": [
+        {"name": "A205", "coords": [20, 30]},
+        {"name": "A206", "coords": [40, 50]},
+        {"name": "A207", "coords": [60, 70]},
+        {"name": "A208", "coords": [80, 90]},
+        {"name": "A210", "coords": [100, 110]},
+        {"name": "A201", "coords": [120, 130]},
+        {"name": "A203", "coords": [140, 150]},
+        {"name": "A204", "coords": [160, 170]},
+        {"name": "A202 Library", "coords": [180, 190]}
       ],
-      "edges": [
-        {"from": "a205", "to": "a206", "distance": 5},
-        {"from": "a206", "to": "library", "distance": 8},
-        {"from": "library", "to": "stair1_upper", "distance": 10},
-        {"from": "a205", "to": "stair1_upper", "distance": 20}
+      "connections": [
+        {"from": "A205", "to": "A206", "type": "corridor"},
+        {"from": "A206", "to": "A207", "type": "corridor"},
+        {"from": "A207", "to": "A208", "type": "corridor"},
+        {"from": "A208", "to": "A210", "type": "corridor"},
+        {"from": "A201", "to": "A203", "type": "corridor"},
+        {"from": "A203", "to": "A204", "type": "corridor"},
+        {"from": "A204", "to": "A202 Library", "type": "corridor"}
       ]
     }
-  ],
-  "inter_floor_edges": [
-    {"from": "stair1_lower", "to": "stair1_upper", "distance": 3}
-  ]
+  }
 }
