@@ -5,7 +5,7 @@ import networkx as nx
 from plotly.subplots import make_subplots
 
 # 加载 JSON 数据
-with open("floor_plans.json", "r") as f:
+with open("scis_map.json", "r") as f:
     floor_data = json.load(f)
 
 # 页面标题
@@ -136,3 +136,4 @@ elif start_room == end_room:
     st.info("起点和终点是同一房间，无需导航～")
 else:
     st.warning("所选房间之间无有效路径！")
+
