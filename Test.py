@@ -20,7 +20,7 @@ def plot_3d_map(school_data):
     ax = fig.add_subplot(111, projection='3d')
 
     # 为不同楼层使用不同颜色
-    floor_colors = {0: 'blue', 2: 'green', 5: 'orange'}  
+    floor_colors = {0: 'blue', 2: 'green', 5: 'orange'}
 
     # 处理每个楼层
     for level in school_data['buildingA']['levels']:
@@ -32,7 +32,7 @@ def plot_3d_map(school_data):
         for corridor in level['corridors']:
             all_corridor_points.extend(corridor['points'])
         if not all_corridor_points:  # 避免无走廊时报错
-            continue  
+            continue
 
         # 计算平面的X/Y轴范围（取走廊坐标的最大/最小值）
         xs = [p[0] for p in all_corridor_points]  # 所有走廊点的X坐标
@@ -116,7 +116,7 @@ class Graph:
 
 # 计算欧氏距离
 def euclidean_distance(coords1, coords2):
-    return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
+    return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
 # 构建导航图
 def build_navigation_graph(school_data):
@@ -171,6 +171,33 @@ def build_navigation_graph(school_data):
 
         if from_node in graph.nodes and to_node in graph.nodes:
             graph.add_edge(from_node, to_node, 1.0)
+
+    # 3. 添加走廊与教室、楼梯的连接
+    for level in school_data['buildingA']['levels']:
+        level_name = level['name']
+        z = level['z']
+
+        # 教室与走廊连接
+        for classroom in level['classrooms']:
+            classroom_node = f"{classroom['name']}@{level_name}"
+            for corridor in level['corridors']:
+                for point in corridor['points']:
+                    corridor_node = f"corridor_{point[0]}_{point[1]}_{z}"
+                    if corridor_node not in graph.nodes:
+                        graph.add_node(corridor_node, 'corridor', '', level_name, point)
+                    distance = euclidean_distance(classroom['coordinates'], point)
+                    graph.add_edge(classroom_node, corridor_node, distance)
+
+        # 楼梯与走廊连接
+        for stair in level['stairs']:
+            stair_node = f"{stair['name']}@{level_name}"
+            for corridor in level['corridors']:
+                for point in corridor['points']:
+                    corridor_node = f"corridor_{point[0]}_{point[1]}_{z}"
+                    if corridor_node not in graph.nodes:
+                        graph.add_node(corridor_node, 'corridor', '', level_name, point)
+                    distance = euclidean_distance(stair['coordinates'], point)
+                    graph.add_edge(stair_node, corridor_node, distance)
 
     return graph
 
@@ -229,10 +256,17 @@ def plot_path(ax, graph, path):
     z = []
 
     for node in path:
-        coords = graph.nodes[node]['coordinates']
-        x.append(coords[0])
-        y.append(coords[1])
-        z.append(coords[2])
+        if node.startswith("corridor_"):
+            # 处理走廊节点，获取其坐标
+            parts = node.split("_")
+            x.append(float(parts[1]))
+            y.append(float(parts[2]))
+            z.append(float(parts[3]))
+        else:
+            coords = graph.nodes[node]['coordinates']
+            x.append(coords[0])
+            y.append(coords[1])
+            z.append(coords[2])
 
     # 绘制路径
     ax.plot(x, y, z, color='red', linewidth=3, linestyle='-', marker='o')
@@ -245,13 +279,13 @@ def plot_path(ax, graph, path):
 def get_classroom_info(school_data):
     levels = []
     classrooms_by_level = {}
-    
+
     for level in school_data['buildingA']['levels']:
         level_name = level['name']
         levels.append(level_name)
         classrooms = [classroom['name'] for classroom in level['classrooms']]
         classrooms_by_level[level_name] = classrooms
-        
+
     return levels, classrooms_by_level
 
 # -------------------------- 3. Streamlit界面逻辑（替换原Tkinter界面） --------------------------
@@ -267,7 +301,7 @@ def main():
         levels, classrooms_by_level = get_classroom_info(school_data)
         st.success("✅ School data loaded successfully!")
     except FileNotFoundError:
-        st.error("❌ Error: 'school_data_detailed.json' not found. Please check the file path.")
+        st.error("❌ Error:'school_data_detailed.json' not found. Please check the file path.")
         return  # 数据加载失败，终止程序
 
     # 2. 布局：左右分栏（左侧选择器，右侧结果显示）
@@ -276,7 +310,7 @@ def main():
     with col1:
         # 左侧：起点和终点选择（下拉框）
         st.markdown("### 📍 Select Locations")
-        
+
         # 起点选择（楼层→教室联动）
         st.markdown("#### Start Point")
         start_level = st.selectbox("Floor", levels, key="start_level")
@@ -295,33 +329,36 @@ def main():
     with col2:
         # 右侧：显示3D地图和导航结果
         st.markdown("### 🗺️ 3D Campus Map")
-        
+
         # 初始显示空的3D地图
         if 'fig' not in st.session_state:
             fig, ax = plot_3d_map(school_data)
             st.session_state['fig'] = fig  # 用session_state保存图，避免重复绘制
-        
+
         # 点击导航按钮后，计算路径并更新地图
         if nav_button:
             # 调用导航函数
             path, message = navigate(nav_graph, start_classroom, start_level, end_classroom, end_level)
-            
+
             # 显示导航结果
             if path:
                 st.success(f"📊 Navigation Result: {message}")
                 # 显示路径详情
                 st.markdown("#### 🛤️ Path Details")
                 for i, node in enumerate(path, 1):
-                    room, floor = node.split('@')
-                    st.write(f"{i}. {room} (Floor: {floor})")
-                
+                    if node.startswith("corridor_"):
+                        st.write(f"{i}. Corridor")
+                    else:
+                        room, floor = node.split('@')
+                        st.write(f"{i}. {room} (Floor: {floor})")
+
                 # 重新绘制带路径的3D图
                 fig, ax = plot_3d_map(school_data)
                 plot_path(ax, nav_graph, path)
                 st.session_state['fig'] = fig  # 更新保存的图
             else:
                 st.error(f"❌ {message}")
-        
+
         # 显示3D图（Streamlit用st.pyplot()渲染matplotlib图）
         st.pyplot(st.session_state['fig'])
 
