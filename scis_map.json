@@ -20,7 +20,7 @@
           {"points": [[5, 30, 0], [25, 30, 0]]}
         ],
         "stairs": [
-          {"name": "Stairs1", "coordinates": [5, 25, 0]}
+          {"name": "Stairs1", "coordinates": [35, 25, 0]}
         ]
       },
       {
@@ -75,3 +75,4 @@
     ]
   }
 }
+
