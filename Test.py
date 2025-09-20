@@ -2,16 +2,19 @@ import json
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-import tkinter as tk
-from tkinter import ttk, messagebox  # 新增：导入tkinter模块用于创建界面
+import streamlit as st
 
+# -------------------------- 1. 基础配置：解决Streamlit matplotlib渲染问题 --------------------------
+# Streamlit 不支持 matplotlib 交互后端，必须切换为非交互后端
+plt.switch_backend('Agg')
+
+# -------------------------- 2. 原有核心功能：数据读取、3D绘图、路径计算（无修改） --------------------------
 # 读取JSON数据
 def load_school_data_detailed(filename):
     with open(filename, 'r') as f:
         return json.load(f)
 
-
-# 绘制3D地图
+# 绘制3D地图（返回fig用于Streamlit显示）
 def plot_3d_map(school_data):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
@@ -23,7 +26,6 @@ def plot_3d_map(school_data):
     for level in school_data['buildingA']['levels']:
         z = level['z']
         color = floor_colors.get(z, 'gray')
-        
 
         # 收集当前楼层所有走廊的坐标点（用于计算平面范围）
         all_corridor_points = []
@@ -93,7 +95,6 @@ def plot_3d_map(school_data):
 
     return fig, ax
 
-
 # 自定义图数据结构
 class Graph:
     def __init__(self):
@@ -113,11 +114,9 @@ class Graph:
             self.nodes[node1]['neighbors'][node2] = weight
             self.nodes[node2]['neighbors'][node1] = weight
 
-
 # 计算欧氏距离
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
-
 
 # 构建导航图
 def build_navigation_graph(school_data):
@@ -175,7 +174,6 @@ def build_navigation_graph(school_data):
 
     return graph
 
-
 # 自定义Dijkstra算法
 def dijkstra(graph, start_node):
     distances = {node: float('inf') for node in graph.nodes}
@@ -198,7 +196,6 @@ def dijkstra(graph, start_node):
 
     return distances, previous_nodes
 
-
 # 生成最短路径
 def construct_path(previous_nodes, end_node):
     path = []
@@ -207,7 +204,6 @@ def construct_path(previous_nodes, end_node):
         path.insert(0, current_node)
         current_node = previous_nodes[current_node]
     return path
-
 
 # 导航函数
 def navigate(graph, start_classroom, start_level, end_classroom, end_level):
@@ -225,7 +221,6 @@ def navigate(graph, start_classroom, start_level, end_classroom, end_level):
         return path, f"Total distance: {total_distance:.2f} units"
     else:
         return None, "No path exists between these classrooms"
-
 
 # 在3D图上绘制路径
 def plot_path(ax, graph, path):
@@ -246,8 +241,7 @@ def plot_path(ax, graph, path):
     ax.scatter(x[0], y[0], z[0], color='green', s=300, marker='*', label='Start')
     ax.scatter(x[-1], y[-1], z[-1], color='purple', s=300, marker='*', label='End')
 
-
-# 新增：获取所有楼层和教室信息的函数
+# 获取所有楼层和教室信息（适配Streamlit下拉框）
 def get_classroom_info(school_data):
     levels = []
     classrooms_by_level = {}
@@ -260,132 +254,77 @@ def get_classroom_info(school_data):
         
     return levels, classrooms_by_level
 
-
-# 新增：更新教室下拉菜单的函数
-def update_classrooms(event, level_combobox, classroom_combobox, classrooms_by_level):
-    selected_level = level_combobox.get()
-    classroom_combobox['values'] = classrooms_by_level.get(selected_level, [])
-    if classrooms_by_level.get(selected_level, []):
-        classroom_combobox.current(0)
-
-
-# 新增：导航按钮点击事件处理函数
-def handle_navigation(school_data, nav_graph, start_level_var, start_classroom_var, 
-                     end_level_var, end_classroom_var, window):
-    start_level = start_level_var.get()
-    start_classroom = start_classroom_var.get()
-    end_level = end_level_var.get()
-    end_classroom = end_classroom_var.get()
-    
-    if not all([start_level, start_classroom, end_level, end_classroom]):
-        messagebox.showerror("Error", "Please select all fields")
-        return
-        
-    path, message = navigate(nav_graph, start_classroom, start_level, end_classroom, end_level)
-    messagebox.showinfo("Navigation Result", message)
-    
-    if path:
-        print("Navigation path:")
-        for node in path:
-            print(f"  - {node.split('@')[0]} ({node.split('@')[1]})")
-        
-        # 绘制地图和路径
-        fig, ax = plot_3d_map(school_data)
-        plot_path(ax, nav_graph, path)
-        ax.legend()
-        plt.show()
-
-
-# 新增：创建互动界面的函数
-def create_interface(school_data, nav_graph):
-    # 获取教室信息
-    levels, classrooms_by_level = get_classroom_info(school_data)
-    
-    # 创建主窗口
-    window = tk.Tk()
-    window.title("School Navigation System")
-    window.geometry("400x300")
-    window.resizable(False, False)
-    
-    # 设置样式
-    style = ttk.Style()
-    style.configure("TLabel", font=("Arial", 10))
-    style.configure("TButton", font=("Arial", 10))
-    style.configure("TCombobox", font=("Arial", 10))
-    
-    # 创建标题
-    title_label = ttk.Label(window, text="Campus Navigation", font=("Arial", 14, "bold"))
-    title_label.pack(pady=10)
-    
-    # 创建起点选择
-    start_frame = ttk.LabelFrame(window, text="Start Location")
-    start_frame.pack(fill="x", padx=20, pady=5)
-    
-    ttk.Label(start_frame, text="Floor:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-    start_level_var = tk.StringVar()
-    start_level_combobox = ttk.Combobox(start_frame, textvariable=start_level_var, values=levels, state="readonly")
-    start_level_combobox.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-    start_level_combobox.current(0)
-    
-    ttk.Label(start_frame, text="Classroom:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-    start_classroom_var = tk.StringVar()
-    start_classroom_combobox = ttk.Combobox(start_frame, textvariable=start_classroom_var, state="readonly")
-    start_classroom_combobox.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-    
-    start_frame.columnconfigure(1, weight=1)
-    
-    # 创建终点选择
-    end_frame = ttk.LabelFrame(window, text="End Location")
-    end_frame.pack(fill="x", padx=20, pady=5)
-    
-    ttk.Label(end_frame, text="Floor:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-    end_level_var = tk.StringVar()
-    end_level_combobox = ttk.Combobox(end_frame, textvariable=end_level_var, values=levels, state="readonly")
-    end_level_combobox.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-    end_level_combobox.current(0)
-    
-    ttk.Label(end_frame, text="Classroom:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-    end_classroom_var = tk.StringVar()
-    end_classroom_combobox = ttk.Combobox(end_frame, textvariable=end_classroom_var, state="readonly")
-    end_classroom_combobox.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-    
-    end_frame.columnconfigure(1, weight=1)
-    
-    # 设置事件绑定，当楼层改变时更新教室列表
-    start_level_combobox.bind("<<ComboboxSelected>>", 
-                            lambda e: update_classrooms(e, start_level_combobox, 
-                                                      start_classroom_combobox, classrooms_by_level))
-    end_level_combobox.bind("<<ComboboxSelected>>", 
-                          lambda e: update_classrooms(e, end_level_combobox, 
-                                                    end_classroom_combobox, classrooms_by_level))
-    
-    # 初始化教室下拉菜单
-    update_classrooms(None, start_level_combobox, start_classroom_combobox, classrooms_by_level)
-    update_classrooms(None, end_level_combobox, end_classroom_combobox, classrooms_by_level)
-    
-    # 创建导航按钮
-    nav_button = ttk.Button(window, text="Find Navigation Path",
-                           command=lambda: handle_navigation(school_data, nav_graph,
-                                                             start_level_var, start_classroom_var,
-                                                             end_level_var, end_classroom_var,
-                                                             window))
-    nav_button.pack(pady=20)
-    
-    # 运行主循环
-    window.mainloop()
-
-
-# 主函数
+# -------------------------- 3. Streamlit界面逻辑（替换原Tkinter界面） --------------------------
 def main():
-    # 加载数据
-    school_data = load_school_data_detailed('school_data_detailed.json')
+    # 1. 页面标题和数据加载
+    st.title("🏫 School Campus Navigation System")
+    st.subheader("3D Map & Shortest Path Finder")
 
-    # 构建导航图
-    nav_graph = build_navigation_graph(school_data)
-    
-    # 启动互动界面（新增）
-    create_interface(school_data, nav_graph)
+    # 加载JSON数据（注意：确保 school_data_detailed.json 和代码在同一目录）
+    try:
+        school_data = load_school_data_detailed('school_data_detailed.json')
+        nav_graph = build_navigation_graph(school_data)
+        levels, classrooms_by_level = get_classroom_info(school_data)
+        st.success("✅ School data loaded successfully!")
+    except FileNotFoundError:
+        st.error("❌ Error: 'school_data_detailed.json' not found. Please check the file path.")
+        return  # 数据加载失败，终止程序
 
+    # 2. 布局：左右分栏（左侧选择器，右侧结果显示）
+    col1, col2 = st.columns([1, 2])  # 左侧占1份，右侧占2份
 
+    with col1:
+        # 左侧：起点和终点选择（下拉框）
+        st.markdown("### 📍 Select Locations")
+        
+        # 起点选择（楼层→教室联动）
+        st.markdown("#### Start Point")
+        start_level = st.selectbox("Floor", levels, key="start_level")
+        start_classrooms = classrooms_by_level[start_level]
+        start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+
+        # 终点选择（楼层→教室联动）
+        st.markdown("#### End Point")
+        end_level = st.selectbox("Floor", levels, key="end_level")
+        end_classrooms = classrooms_by_level[end_level]
+        end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+
+        # 导航按钮（点击触发路径计算）
+        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+
+    with col2:
+        # 右侧：显示3D地图和导航结果
+        st.markdown("### 🗺️ 3D Campus Map")
+        
+        # 初始显示空的3D地图
+        if 'fig' not in st.session_state:
+            fig, ax = plot_3d_map(school_data)
+            st.session_state['fig'] = fig  # 用session_state保存图，避免重复绘制
+        
+        # 点击导航按钮后，计算路径并更新地图
+        if nav_button:
+            # 调用导航函数
+            path, message = navigate(nav_graph, start_classroom, start_level, end_classroom, end_level)
+            
+            # 显示导航结果
+            if path:
+                st.success(f"📊 Navigation Result: {message}")
+                # 显示路径详情
+                st.markdown("#### 🛤️ Path Details")
+                for i, node in enumerate(path, 1):
+                    room, floor = node.split('@')
+                    st.write(f"{i}. {room} (Floor: {floor})")
+                
+                # 重新绘制带路径的3D图
+                fig, ax = plot_3d_map(school_data)
+                plot_path(ax, nav_graph, path)
+                st.session_state['fig'] = fig  # 更新保存的图
+            else:
+                st.error(f"❌ {message}")
+        
+        # 显示3D图（Streamlit用st.pyplot()渲染matplotlib图）
+        st.pyplot(st.session_state['fig'])
+
+# -------------------------- 4. 运行主函数 --------------------------
 if __name__ == "__main__":
     main()
