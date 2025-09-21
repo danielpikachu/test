@@ -4,7 +4,7 @@
       {
         "name": "lowerLevel",
         "z": 0,
-         "floorPlane": {
+        "floorPlane": {
           "minX": 0,
           "maxX": 30,
           "minY": 0,
@@ -67,11 +67,43 @@
         "stairs": [
           {"name": "Stairs1", "coordinates": [30, 35, 5]}
         ]
+      },
+      // 新增：level4（4层）数据
+      {
+        "name": "level4",
+        "z": 8, // 延续楼层高度差逻辑（level2→level3差3，此处level3→level4差3，保持一致性）
+        "floorPlane": { // 参考lowerLevel补充楼层平面范围，匹配上层空间尺度
+          "minX": 5,
+          "maxX": 45,
+          "minY": 25,
+          "maxY": 75
+        },
+        "classrooms": [ // 教室命名延续"A+楼层数+序号"规则，坐标分布匹配走廊可达性
+          {"name": "A401", "coordinates": [10, 65, 8], "size": [8, 8]},
+          {"name": "A402", "coordinates": [20, 65, 8], "size": [8, 8]},
+          {"name": "A403", "coordinates": [30, 65, 8], "size": [8, 8]},
+          {"name": "A404", "coordinates": [38, 55, 8], "size": [8, 8]},
+          {"name": "A405", "coordinates": [38, 45, 8], "size": [8, 8]},
+          {"name": "A406", "coordinates": [15, 45, 8], "size": [8, 8]},
+          {"name": "A407", "coordinates": [25, 45, 8], "size": [8, 8]},
+          {"name": "A408", "coordinates": [15, 35, 8], "size": [8, 8]},
+          {"name": "A409", "coordinates": [25, 35, 8], "size": [8, 8]}
+        ],
+        "corridors": [ // 走廊路径覆盖主要教室区域，与楼梯连通
+          {"points": [[10, 60, 8], [38, 60, 8]]}, // 横向走廊1：连接上层教室（A401-A403）
+          {"points": [[10, 50, 8], [38, 50, 8]]}, // 横向走廊2：连接中层教室（A404-A407）
+          {"points": [[10, 70, 8], [10, 35, 8]]}, // 纵向走廊1：连接纵向教室（A401、A406、A408）
+          {"points": [[30, 70, 8], [30, 35, 8]]}  // 纵向走廊2：连接纵向教室（A403、A405、A409）
+        ],
+        "stairs": [
+          {"name": "Stairs1", "coordinates": [43, 45, 8]} // 楼梯位置与level3的Stairs1形成垂直连通（x接近30→43，y保持45左右，符合建筑楼梯布局逻辑）
+        ]
       }
     ],
     "connections": [
       {"from": ["Stairs1", "lowerLevel"], "to": ["Stairs1", "level2"]},
-      {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]}
+      {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
+      {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]} // 新增：level3与level4的楼梯连通关系
     ]
   }
 }
