@@ -70,7 +70,7 @@
       },
       {
         "name": "level4",
-        "z": 8,
+        "z": 10,
         "floorPlane": {
           "minX": 5,
           "maxX": 45,
@@ -78,15 +78,14 @@
           "maxY": 75
         },
         "classrooms": [
-          {"name": "A401", "coordinates": [10, 65, 8], "size": [8, 8]},
-          {"name": "A402", "coordinates": [20, 65, 8], "size": [8, 8]},
-          {"name": "A403", "coordinates": [30, 65, 8], "size": [8, 8]},
-          {"name": "A404", "coordinates": [38, 55, 8], "size": [8, 8]},
-          {"name": "A405", "coordinates": [38, 45, 8], "size": [8, 8]},
-          {"name": "A406", "coordinates": [15, 45, 8], "size": [8, 8]},
-          {"name": "A407", "coordinates": [25, 45, 8], "size": [8, 8]},
-          {"name": "A408", "coordinates": [15, 35, 8], "size": [8, 8]},
-          {"name": "A409", "coordinates": [25, 35, 8], "size": [8, 8]}
+          
+          {"name": "A403", "coordinates": [10, 60, 10], "size": [5, 8]},
+          {"name": "A404", "coordinates": [15, 60, 10], "size": [5, 8]},
+          {"name": "A405", "coordinates": [20, 60, 10], "size": [5, 8]},
+          {"name": "A406", "coordinates": [25, 60, 10], "size": [5, 8]},
+          {"name": "A407", "coordinates": [30, 60, 10], "size": [5, 8]},
+          {"name": "A408", "coordinates": [35, 60, 10], "size": [5, 8]},
+          {"name": "A409", "coordinates": [25, 35, 10], "size": [8, 8]}
         ],
         "corridors": [
           {"points": [[10, 60, 8], [38, 60, 8]]},
