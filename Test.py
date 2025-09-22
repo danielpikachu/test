@@ -262,14 +262,16 @@ def constrained_dijkstra(graph, start_node, end_node):
         current_node = min(unvisited_nodes, key=lambda x: distances[x])
         unvisited_nodes.remove(current_node)
 
+        # 修复：先获取当前节点的属性再使用
+        current_level = graph.nodes[current_node]['level']
+        current_type = graph.nodes[current_node]['type']
+        current_phase = path_phase[current_node]
+
+        # 现在current_level已定义，可以安全使用
         if current_level == end_level and current_node == end_node:
             break
         if distances[current_node] == float('inf'):
             break
-
-        current_level = graph.nodes[current_node]['level']
-        current_type = graph.nodes[current_node]['type']
-        current_phase = path_phase[current_node]
 
         for neighbor, weight in graph.nodes[current_node]['neighbors'].items():
             neighbor_type = graph.nodes[neighbor]['type']
