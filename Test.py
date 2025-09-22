@@ -62,11 +62,11 @@ def plot_3d_map(school_data):
         # 绘制楼梯（突出显示，方便识别楼梯附近走廊）
         for stair in level['stairs']:
             x, y, _ = stair['coordinates']
-            ax.scatter(x, y, z, color='red', s=200, marker='^', label='Stairs' if z == 0 else "")
+            ax.scatter(x, y, z, c='red', s=200, marker='^', label='Stairs' if z == 0 else "")
             ax.text(x, y, z+0.1, stair['name'], color='red', fontweight='bold')
             
             # 标记楼梯附近的走廊区域（增加半透明圆圈）
-            ax.scatter(x, y, z, color='red', s=800, alpha=0.2, marker='o')
+            ax.scatter(x, y, z, c='red', s=800, alpha=0.2, marker='o')
 
         # 绘制教室
         for classroom in level['classrooms']:
@@ -76,7 +76,7 @@ def plot_3d_map(school_data):
             # 教室标签
             ax.text(x, y, z, classroom['name'], color='black', fontweight='bold')
             # 教室位置点
-            ax.scatter(x, y, z, color=color, s=50)
+            ax.scatter(x, y, z, c=color, s=50)
             # 教室边界
             ax.plot([x, x + width, x + width, x, x],
                     [y, y, y + depth, y + depth, y],
@@ -436,23 +436,23 @@ def plot_path(ax, graph, path):
     # 标记标准流程节点（按顺序高亮）
     for i, (x, y, z, node, node_type) in enumerate(zip(x_coords, y_coords, z_coords, path, path_types)):
         if i == 0:  # 起点教室
-            ax.scatter(x, y, z, color='darkgreen', s=500, marker='*', label='Start (Classroom)')
+            ax.scatter(x, y, z, c='darkgreen', s=500, marker='*', label='Start (Classroom)')
             ax.text(x, y, z+0.2, '起点教室', color='darkgreen', fontsize=10, fontweight='bold')
         elif i == len(path) - 1:  # 终点教室
-            ax.scatter(x, y, z, color='darkpurple', s=500, marker='*', label='End (Classroom)')
+            ax.scatter(x, y, z, c='darkpurple', s=500, marker='*', label='End (Classroom)')
             ax.text(x, y, z+0.2, '终点教室', color='darkpurple', fontsize=10, fontweight='bold')
         elif node_type == 'stair':  # 楼梯（跨楼层关键节点）
-            ax.scatter(x, y, z, color='darkred', s=400, marker='^', label='Stair (Cross Floor)')
+            ax.scatter(x, y, z, c='darkred', s=400, marker='^', label='Stair (Cross Floor)')
             ax.text(x, y, z+0.2, '楼梯', color='darkred', fontsize=10, fontweight='bold')
         elif node_type == 'corridor':  # 走廊（区分“起点后”和“终点前”）
             if i == 1:  # 起点教室后的第一个走廊（第一步）
-                ax.scatter(x, y, z, color='cyan', s=300, marker='s', label='Corridor (After Start)')
+                ax.scatter(x, y, z, c='cyan', s=300, marker='s', label='Corridor (After Start)')
                 ax.text(x, y, z+0.2, '起点后走廊', color='cyan', fontsize=9, fontweight='bold')
             elif i == len(path) - 2:  # 终点教室前的最后一个走廊（倒数第二步）
-                ax.scatter(x, y, z, color='orange', s=300, marker='s', label='Corridor (Before End)')
+                ax.scatter(x, y, z, c='orange', s=300, marker='s', label='Corridor (Before End)')
                 ax.text(x, y, z+0.2, '终点前走廊', color='orange', fontsize=9, fontweight='bold')
             else:  # 中间走廊
-                ax.scatter(x, y, z, color='blue', s=200, marker='o', label='Corridor (Middle)')
+                ax.scatter(x, y, z, c='blue', s=200, marker='o', label='Corridor (Middle)')
 
     # 调整图例（避免重复）
     handles, labels = ax.get_legend_handles_labels()
@@ -545,3 +545,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
