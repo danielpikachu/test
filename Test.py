@@ -7,6 +7,17 @@ import streamlit as st
 # -------------------------- 1. 基础配置 --------------------------
 plt.switch_backend('Agg')
 
+# 定义标准颜色（使用matplotlib支持的标准颜色名称）
+COLORS = {
+    'start_classroom': 'green',
+    'end_classroom': 'purple',
+    'stair': 'red',
+    'corridor_after_start': 'cyan',
+    'corridor_before_end': 'orange',
+    'corridor_middle': 'blue',
+    'stair_area': 'red'
+}
+
 # -------------------------- 2. 核心功能实现 --------------------------
 # 读取JSON数据
 def load_school_data_detailed(filename):
@@ -62,11 +73,11 @@ def plot_3d_map(school_data):
         # 绘制楼梯（突出显示，方便识别楼梯附近走廊）
         for stair in level['stairs']:
             x, y, _ = stair['coordinates']
-            ax.scatter(x, y, z, c='red', s=200, marker='^', label='Stairs' if z == 0 else "")
-            ax.text(x, y, z+0.1, stair['name'], color='red', fontweight='bold')
+            ax.scatter(x, y, z, c=COLORS['stair'], s=200, marker='^', label='Stairs' if z == 0 else "")
+            ax.text(x, y, z+0.1, stair['name'], color=COLORS['stair'], fontweight='bold')
             
             # 标记楼梯附近的走廊区域（增加半透明圆圈）
-            ax.scatter(x, y, z, c='red', s=800, alpha=0.2, marker='o')
+            ax.scatter(x, y, z, c=COLORS['stair_area'], s=800, alpha=0.2, marker='o')
 
         # 绘制教室
         for classroom in level['classrooms']:
@@ -418,6 +429,10 @@ def navigate(graph, start_classroom, start_level, end_classroom, end_level):
 
 # 在3D图上绘制路径（突出显示标准流程节点）
 def plot_path(ax, graph, path):
+    # 确保路径不为空
+    if not path:
+        return
+    
     x_coords = []
     y_coords = []
     z_coords = []
@@ -434,25 +449,41 @@ def plot_path(ax, graph, path):
     ax.plot(x_coords, y_coords, z_coords, color='red', linewidth=4, linestyle='-', marker='o', markersize=8)
 
     # 标记标准流程节点（按顺序高亮）
-    for i, (x, y, z, node, node_type) in enumerate(zip(x_coords, y_coords, z_coords, path, path_types)):
-        if i == 0:  # 起点教室
-            ax.scatter(x, y, z, c='darkgreen', s=500, marker='*', label='Start (Classroom)')
-            ax.text(x, y, z+0.2, '起点教室', color='darkgreen', fontsize=10, fontweight='bold')
-        elif i == len(path) - 1:  # 终点教室
-            ax.scatter(x, y, z, c='darkpurple', s=500, marker='*', label='End (Classroom)')
-            ax.text(x, y, z+0.2, '终点教室', color='darkpurple', fontsize=10, fontweight='bold')
-        elif node_type == 'stair':  # 楼梯（跨楼层关键节点）
-            ax.scatter(x, y, z, c='darkred', s=400, marker='^', label='Stair (Cross Floor)')
-            ax.text(x, y, z+0.2, '楼梯', color='darkred', fontsize=10, fontweight='bold')
-        elif node_type == 'corridor':  # 走廊（区分“起点后”和“终点前”）
-            if i == 1:  # 起点教室后的第一个走廊（第一步）
-                ax.scatter(x, y, z, c='cyan', s=300, marker='s', label='Corridor (After Start)')
-                ax.text(x, y, z+0.2, '起点后走廊', color='cyan', fontsize=9, fontweight='bold')
-            elif i == len(path) - 2:  # 终点教室前的最后一个走廊（倒数第二步）
-                ax.scatter(x, y, z, c='orange', s=300, marker='s', label='Corridor (Before End)')
-                ax.text(x, y, z+0.2, '终点前走廊', color='orange', fontsize=9, fontweight='bold')
-            else:  # 中间走廊
-                ax.scatter(x, y, z, c='blue', s=200, marker='o', label='Corridor (Middle)')
+    for i, (x, y, z_val, node, node_type) in enumerate(zip(x_coords, y_coords, z_coords, path, path_types)):
+        # 使用try-except块捕获可能的绘图错误
+        try:
+            if i == 0:  # 起点教室
+                ax.scatter([x], [y], [z_val], c=COLORS['start_classroom'], 
+                          s=500, marker='*', label='Start (Classroom)')
+                ax.text(x, y, z_val+0.2, '起点教室', color=COLORS['start_classroom'], 
+                       fontsize=10, fontweight='bold')
+            elif i == len(path) - 1:  # 终点教室
+                ax.scatter([x], [y], [z_val], c=COLORS['end_classroom'], 
+                          s=500, marker='*', label='End (Classroom)')
+                ax.text(x, y, z_val+0.2, '终点教室', color=COLORS['end_classroom'], 
+                       fontsize=10, fontweight='bold')
+            elif node_type == 'stair':  # 楼梯（跨楼层关键节点）
+                ax.scatter([x], [y], [z_val], c=COLORS['stair'], 
+                          s=400, marker='^', label='Stair (Cross Floor)')
+                ax.text(x, y, z_val+0.2, '楼梯', color=COLORS['stair'], 
+                       fontsize=10, fontweight='bold')
+            elif node_type == 'corridor':  # 走廊（区分“起点后”和“终点前”）
+                if i == 1:  # 起点教室后的第一个走廊（第一步）
+                    ax.scatter([x], [y], [z_val], c=COLORS['corridor_after_start'], 
+                              s=300, marker='s', label='Corridor (After Start)')
+                    ax.text(x, y, z_val+0.2, '起点后走廊', color=COLORS['corridor_after_start'], 
+                           fontsize=9, fontweight='bold')
+                elif i == len(path) - 2:  # 终点教室前的最后一个走廊（倒数第二步）
+                    ax.scatter([x], [y], [z_val], c=COLORS['corridor_before_end'], 
+                              s=300, marker='s', label='Corridor (Before End)')
+                    ax.text(x, y, z_val+0.2, '终点前走廊', color=COLORS['corridor_before_end'], 
+                           fontsize=9, fontweight='bold')
+                else:  # 中间走廊
+                    ax.scatter([x], [y], [z_val], c=COLORS['corridor_middle'], 
+                              s=200, marker='o', label='Corridor (Middle)')
+        except Exception as e:
+            print(f"绘制节点 {node} 时出错: {str(e)}")
+            continue
 
     # 调整图例（避免重复）
     handles, labels = ax.get_legend_handles_labels()
@@ -541,7 +572,10 @@ def main():
             else:
                 st.error(message)
         
-        st.pyplot(st.session_state['fig'])
+        try:
+            st.pyplot(st.session_state['fig'])
+        except Exception as e:
+            st.error(f"绘制地图时出错：{str(e)}")
 
 if __name__ == "__main__":
     main()
