@@ -175,50 +175,46 @@ def build_navigation_graph(school_data):
         level_name = level['name']
         z = level['z']
 
-        # 2.1 教室 ↔ 走廊：优先连接最近的走廊（临近教室的走廊）
+        # 2.1 教室 ↔ 走廊：仅连接走廊，删除与楼梯的任何直接连接
         for classroom in level['classrooms']:
             classroom_node_id = f"{classroom['name']}@{level_name}"
             classroom_coords = classroom['coordinates']
             
-            # 找出当前楼层所有走廊节点并按距离排序
+            # 仅筛选当前楼层的【走廊节点】（排除楼梯节点）
             corridor_nodes = [
                 node_id for node_id in graph.nodes 
-                if graph.nodes[node_id]['type'] == 'corridor' and graph.nodes[node_id]['level'] == level_name
+                if graph.nodes[node_id]['type'] == 'corridor'  # 只选走廊
+                and graph.nodes[node_id]['level'] == level_name
             ]
             
-            # 按距离排序，最近的走廊优先连接（权重更小）
+            # 按距离排序，连接最近的2个走廊（确保教室只能通过走廊出行）
             corridor_distances = [
                 (node_id, euclidean_distance(classroom_coords, graph.nodes[node_id]['coordinates']))
                 for node_id in corridor_nodes
             ]
             corridor_distances.sort(key=lambda x: x[1])
             
-            # 添加连接，对最近的几个走廊给予权重优势
-            for i, (node_id, distance) in enumerate(corridor_distances):
-                # 对最近的走廊给予权重折扣（更优先选择）
-                weight = distance * (0.5 if i < 2 else 1.0)  # 前2个最近的走廊权重减半
+            # 仅连接前2个最近的走廊（权重折扣，优先走最近走廊）
+            for i, (node_id, distance) in enumerate(corridor_distances[:2]):  # 只连前2个走廊
+                weight = distance * 0.5  # 走廊连接权重降低，优先选择
                 graph.add_edge(classroom_node_id, node_id, weight)
 
-        # 2.2 楼梯 ↔ 走廊：优先连接楼梯附近的走廊
+        # 2.2 楼梯 ↔ 走廊：仅连接走廊，切断楼梯与教室的直接连接
         for stair in level['stairs']:
             stair_node_id = f"{stair['name']}@{level_name}"
             stair_coords = stair['coordinates']
             
+            # 仅筛选当前楼层的【走廊节点】（排除教室节点）
             corridor_nodes = [
                 node_id for node_id in graph.nodes 
-                if graph.nodes[node_id]['type'] == 'corridor' and graph.nodes[node_id]['level'] == level_name
+                if graph.nodes[node_id]['type'] == 'corridor'  # 只选走廊
+                and graph.nodes[node_id]['level'] == level_name
             ]
             
-            # 计算楼梯到各走廊的距离
-            corridor_distances = [
-                (node_id, euclidean_distance(stair_coords, graph.nodes[node_id]['coordinates']))
-                for node_id in corridor_nodes
-            ]
-            
-            # 添加连接，楼梯附近的走廊权重更低
-            for node_id, distance in corridor_distances:
-                # 距离楼梯越近的走廊，权重越低（更优先选择）
-                weight = distance * (0.3 if distance < 5 else 1.0)  # 楼梯5单位内的走廊权重大幅降低
+            # 楼梯优先连接5单位内的走廊（权重更低，引导路径走楼梯附近走廊）
+            for node_id in corridor_nodes:
+                distance = euclidean_distance(stair_coords, graph.nodes[node_id]['coordinates'])
+                weight = distance * 0.3 if distance < 5 else distance  # 楼梯附近走廊权重低
                 graph.add_edge(stair_node_id, node_id, weight)
 
         # 2.3 走廊 ↔ 走廊：优化权重，使路径更倾向于通向楼梯附近的走廊
@@ -259,7 +255,7 @@ def build_navigation_graph(school_data):
 
     return graph
 
-# 改进的Dijkstra算法，优先选择经过楼梯附近走廊的路径
+# 改进的Dijkstra算法，强制路径遵循教室→走廊→楼梯→走廊→教室的流程
 def dijkstra(graph, start_node, end_node):
     # 初始化距离：起点为0，其他为无穷大
     distances = {node: float('inf') for node in graph.nodes}
@@ -267,8 +263,12 @@ def dijkstra(graph, start_node, end_node):
     previous_nodes = {node: None for node in graph.nodes}
     unvisited_nodes = set(graph.nodes.keys())
 
-    # 终点所在楼层（用于优化跨楼层路径）
-    end_level = graph.nodes[end_node]['level'] if end_node in graph.nodes else None
+    # 关键变量：记录路径是否已经过楼梯（跨楼层必须经过楼梯）
+    has_passed_stair = {node: False for node in graph.nodes}
+    # 起点和终点楼层（判断是否需要跨楼层）
+    start_level = graph.nodes[start_node]['level']
+    end_level = graph.nodes[end_node]['level']
+    need_cross_floor = (start_level != end_level)
 
     while unvisited_nodes:
         current_node = min(unvisited_nodes, key=lambda x: distances[x])
@@ -277,22 +277,38 @@ def dijkstra(graph, start_node, end_node):
         if distances[current_node] == float('inf'):
             break
 
+        # 更新当前节点是否经过楼梯（若当前节点是楼梯，标记为已经过）
+        current_has_stair = has_passed_stair[current_node] or (graph.nodes[current_node]['type'] == 'stair')
+
         for neighbor, weight in graph.nodes[current_node]['neighbors'].items():
-            # 额外的权重调整：如果需要跨楼层，优先靠近楼梯的走廊
+            # 核心约束：跨楼层时，未经过楼梯的路径必须惩罚
             extra_factor = 1.0
+            neighbor_level = graph.nodes[neighbor]['level']
             
-            # 当前节点是走廊且需要跨楼层时，靠近楼梯的走廊权重更低
-            current_level = graph.nodes[current_node]['level']
-            if (current_level != end_level) and (graph.nodes[current_node]['type'] == 'corridor'):
-                # 走廊越靠近楼梯，额外因子越小（权重越低）
-                stair_dist = graph.stair_proximity.get(current_node, float('inf'))
-                extra_factor = 0.5 + (min(stair_dist, 10) / 10) * 0.5  # 范围0.5-1.0
-            
+            # 情况1：跨楼层且未经过楼梯 → 大幅增加权重（禁止跳步）
+            if need_cross_floor and not current_has_stair:
+                # 若当前节点和邻居不在同一楼层（且未走楼梯），权重×100（几乎不可选）
+                if neighbor_level != start_level:
+                    extra_factor = 100.0  # 惩罚跳层路径
+                # 若在同一楼层但未靠近楼梯，权重×2（引导走向楼梯）
+                elif graph.nodes[current_node]['type'] == 'corridor':
+                    stair_dist = graph.stair_proximity.get(current_node, float('inf'))
+                    extra_factor = 2.0 if stair_dist >= 5 else 1.0  # 远离楼梯的走廊惩罚
+                
+            # 情况2：已经过楼梯（跨楼层后）→ 引导走走廊（靠近终点教室）
+            elif need_cross_floor and current_has_stair:
+                if graph.nodes[neighbor]['type'] == 'corridor':
+                    # 跨楼层后优先走走廊（权重×0.8），避免楼梯直接连教室（已切断）
+                    extra_factor = 0.8
+
+            # 计算新距离（应用权重约束）
             new_distance = distances[current_node] + weight * extra_factor
-            
+
+            # 更新距离和前置节点
             if new_distance < distances[neighbor]:
                 distances[neighbor] = new_distance
                 previous_nodes[neighbor] = current_node
+                has_passed_stair[neighbor] = current_has_stair  # 传递楼梯经过状态
 
     return distances, previous_nodes
 
@@ -315,61 +331,97 @@ def navigate(graph, start_classroom, start_level, end_classroom, end_level):
     if start_node == end_node:
         return [start_node], "✅ 起点和终点相同，无需移动"
 
-    # 使用改进的Dijkstra算法，传入终点信息用于优化
+    # 使用改进的Dijkstra算法
     distances, previous_nodes = dijkstra(graph, start_node, end_node)
     path = construct_path(previous_nodes, end_node)
 
-    # 验证路径是否符合"先到走廊"的基本要求
-    if len(path) >= 2:
-        first_step_node = path[1]
-        if graph.nodes[first_step_node]['type'] != 'corridor':
-            return force_corridor_first_path(graph, start_node, end_node)
-    
-    if path:
-        total_distance = distances[end_node]
-        return path, f"✅ 路径规划成功！总距离：{total_distance:.2f} 单位"
-    else:
-        return None, "❌ 无有效路径"
+    # 校验路径是否符合标准流程：教室→走廊→楼梯→走廊→教室
+    def is_valid_path(path):
+        if len(path) < 2:
+            return False
+        
+        # 提取路径中各节点的类型
+        path_types = [graph.nodes[node]['type'] for node in path]
+        start_type = path_types[0]
+        end_type = path_types[-1]
+        has_corridor_before_stair = False  # 楼梯前是否有走廊
+        has_corridor_after_stair = False   # 楼梯后是否有走廊
+        stair_count = 0  # 跨楼层至少1个楼梯（同楼层无需楼梯）
 
-# 强制"先到走廊"的路径计算
-def force_corridor_first_path(graph, start_node, end_node):
-    non_corridor_neighbors = [
-        neighbor for neighbor in graph.nodes[start_node]['neighbors']
-        if graph.nodes[neighbor]['type'] != 'corridor'
-    ]
+        # 遍历路径检查节点顺序
+        for i in range(len(path_types)):
+            if path_types[i] == 'stair':
+                stair_count += 1
+                # 楼梯前必须有走廊（i≥1且前一个是走廊）
+                if i >= 1 and path_types[i-1] == 'corridor':
+                    has_corridor_before_stair = True
+                # 楼梯后必须有走廊（i<len-1且后一个是走廊）
+                if i < len(path_types)-1 and path_types[i+1] == 'corridor':
+                    has_corridor_after_stair = True
+        
+        # 同楼层场景（无需楼梯）：流程为“教室→走廊→教室”
+        if start_level == end_level:
+            return (start_type == 'classroom' and end_type == 'classroom' 
+                    and 'corridor' in path_types 
+                    and stair_count == 0)
+        
+        # 跨楼层场景：流程为“教室→走廊→楼梯→走廊→教室”
+        else:
+            return (start_type == 'classroom' and end_type == 'classroom'
+                    and has_corridor_before_stair and has_corridor_after_stair
+                    and stair_count >= 1)  # 至少1个楼梯（跨楼层）
 
-    temp_graph = Graph()
-    for node_id, node_info in graph.nodes.items():
-        temp_graph.add_node(
-            node_id=node_id,
-            node_type=node_info['type'],
-            name=node_info['name'],
-            level=node_info['level'],
-            coordinates=node_info['coordinates']
-        )
-    
-    for node1 in graph.nodes:
-        for node2, weight in graph.nodes[node1]['neighbors'].items():
-            if node1 == start_node and node2 in non_corridor_neighbors:
-                continue
-            temp_graph.add_edge(node1, node2, weight)
+    # 若路径不合法，尝试重新规划
+    if not is_valid_path(path):
+        # 创建临时图，简化连接以强制标准路径
+        temp_graph = Graph()
+        # 复制所有节点
+        for node_id, node_info in graph.nodes.items():
+            temp_graph.add_node(
+                node_id=node_id,
+                node_type=node_info['type'],
+                name=node_info['name'],
+                level=node_info['level'],
+                coordinates=node_info['coordinates'],
+                stair_distance=graph.stair_proximity.get(node_id)
+            )
+        
+        # 重新添加边，严格限制连接规则
+        for node1 in graph.nodes:
+            for node2, weight in graph.nodes[node1]['neighbors'].items():
+                type1 = graph.nodes[node1]['type']
+                type2 = graph.nodes[node2]['type']
+                
+                # 只允许：教室-走廊、走廊-走廊、走廊-楼梯、楼梯-楼梯 之间的连接
+                valid_connection = (
+                    (type1 == 'classroom' and type2 == 'corridor') or
+                    (type1 == 'corridor' and type2 == 'classroom') or
+                    (type1 == 'corridor' and type2 == 'corridor') or
+                    (type1 == 'corridor' and type2 == 'stair') or
+                    (type1 == 'stair' and type2 == 'corridor') or
+                    (type1 == 'stair' and type2 == 'stair')
+                )
+                
+                if valid_connection:
+                    temp_graph.add_edge(node1, node2, weight)
+        
+        # 重新规划路径
+        distances, previous_nodes = dijkstra(temp_graph, start_node, end_node)
+        path = construct_path(previous_nodes, end_node)
+        
+        # 二次校验
+        if not is_valid_path(path):
+            return None, "❌ 路径不符合标准流程（教室→走廊→楼梯→走廊→教室），请检查地图数据"
 
-    distances, previous_nodes = dijkstra(temp_graph, start_node, end_node)
-    path = construct_path(previous_nodes, end_node)
+    total_distance = distances[end_node]
+    return path, f"✅ 最优路径规划成功！总距离：{total_distance:.2f} 单位"
 
-    if path and len(path) >= 2 and temp_graph.nodes[path[1]]['type'] == 'corridor':
-        total_distance = distances[end_node]
-        return path, f"✅ 强制先到走廊！总距离：{total_distance:.2f} 单位"
-    else:
-        return None, "❌ 无法找到符合要求的路径"
-
-# 在3D图上绘制路径（突出显示临近走廊和楼梯附近走廊）
+# 在3D图上绘制路径（突出显示标准流程节点）
 def plot_path(ax, graph, path):
     x_coords = []
     y_coords = []
     z_coords = []
-    node_types = []
-    node_details = []  # 存储节点详细信息（是否是临近走廊/楼梯附近走廊）
+    path_types = [graph.nodes[node]['type'] for node in path]  # 节点类型列表
 
     for node_id in path:
         node = graph.nodes[node_id]
@@ -377,42 +429,35 @@ def plot_path(ax, graph, path):
         x_coords.append(coords[0])
         y_coords.append(coords[1])
         z_coords.append(coords[2])
-        node_types.append(node['type'])
-        
-        # 标记特殊走廊节点
-        detail = ""
-        if node['type'] == 'corridor':
-            if len(node_details) == 0:  # 第一个走廊节点是临近教室的走廊
-                detail = "near_classroom"
-            elif any(t == 'stair' for t in node_types):  # 楼梯之后的走廊
-                detail = "after_stair"
-            elif graph.stair_proximity.get(node_id, float('inf')) < 5:  # 楼梯附近的走廊
-                detail = "near_stair"
-        node_details.append(detail)
 
-    # 绘制路径主线
-    ax.plot(
-        x_coords, y_coords, z_coords,
-        color='red', linewidth=3, linestyle='-', marker='o', markersize=6
-    )
+    # 绘制路径主线（红色实线，突出显示）
+    ax.plot(x_coords, y_coords, z_coords, color='red', linewidth=4, linestyle='-', marker='o', markersize=8)
 
-    # 标记特殊节点
-    for i, (x, y, z, node_type, detail) in enumerate(zip(x_coords, y_coords, z_coords, node_types, node_details)):
-        if i == 0:  # 起点
-            ax.scatter(x, y, z, color='green', s=300, marker='*', label='Start')
-        elif i == len(path) - 1:  # 终点
-            ax.scatter(x, y, z, color='purple', s=300, marker='*', label='End')
-        elif node_type == 'stair':  # 楼梯
-            ax.scatter(x, y, z, color='red', s=200, marker='^', label='Stair')
-        elif node_type == 'corridor':  # 走廊（根据类型使用不同颜色）
-            if detail == "near_classroom":
-                ax.scatter(x, y, z, color='cyan', s=150, marker='o', label='Near Classroom')
-            elif detail == "near_stair":
-                ax.scatter(x, y, z, color='orange', s=150, marker='o', label='Near Stair')
-            else:
-                ax.scatter(x, y, z, color='blue', s=100, marker='o', label='Corridor')
+    # 标记标准流程节点（按顺序高亮）
+    for i, (x, y, z, node, node_type) in enumerate(zip(x_coords, y_coords, z_coords, path, path_types)):
+        if i == 0:  # 起点教室
+            ax.scatter(x, y, z, color='darkgreen', s=500, marker='*', label='Start (Classroom)')
+            ax.text(x, y, z+0.2, '起点教室', color='darkgreen', fontsize=10, fontweight='bold')
+        elif i == len(path) - 1:  # 终点教室
+            ax.scatter(x, y, z, color='darkpurple', s=500, marker='*', label='End (Classroom)')
+            ax.text(x, y, z+0.2, '终点教室', color='darkpurple', fontsize=10, fontweight='bold')
+        elif node_type == 'stair':  # 楼梯（跨楼层关键节点）
+            ax.scatter(x, y, z, color='darkred', s=400, marker='^', label='Stair (Cross Floor)')
+            ax.text(x, y, z+0.2, '楼梯', color='darkred', fontsize=10, fontweight='bold')
+        elif node_type == 'corridor':  # 走廊（区分“起点后”和“终点前”）
+            if i == 1:  # 起点教室后的第一个走廊（第一步）
+                ax.scatter(x, y, z, color='cyan', s=300, marker='s', label='Corridor (After Start)')
+                ax.text(x, y, z+0.2, '起点后走廊', color='cyan', fontsize=9, fontweight='bold')
+            elif i == len(path) - 2:  # 终点教室前的最后一个走廊（倒数第二步）
+                ax.scatter(x, y, z, color='orange', s=300, marker='s', label='Corridor (Before End)')
+                ax.text(x, y, z+0.2, '终点前走廊', color='orange', fontsize=9, fontweight='bold')
+            else:  # 中间走廊
+                ax.scatter(x, y, z, color='blue', s=200, marker='o', label='Corridor (Middle)')
 
-    ax.legend()
+    # 调整图例（避免重复）
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys(), loc='upper left', fontsize=8)
 
 # 获取所有楼层和教室信息
 def get_classroom_info(school_data):
@@ -430,7 +475,7 @@ def get_classroom_info(school_data):
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
     st.title("🏫 校园导航系统")
-    st.subheader("3D地图与优化路径规划（优先经过临近走廊和楼梯附近走廊）")
+    st.subheader("3D地图与标准化路径规划（教室→走廊→楼梯→走廊→教室）")
 
     try:
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -439,6 +484,9 @@ def main():
         st.success("✅ 校园数据加载成功！")
     except FileNotFoundError:
         st.error("❌ 错误：未找到'school_data_detailed.json'文件，请检查文件路径。")
+        return
+    except Exception as e:
+        st.error(f"❌ 数据加载错误：{str(e)}")
         return
 
     col1, col2 = st.columns([1, 2])
@@ -475,14 +523,17 @@ def main():
                     if node.startswith("corridor_"):
                         # 识别特殊走廊节点
                         if i == 2:  # 起点后的第一个走廊
-                            st.write(f"{i}. 临近教室的走廊")
-                        elif any("stair" in path[j] for j in range(i)) and "stair" not in node:
-                            st.write(f"{i}. 楼梯附近的走廊")
+                            st.write(f"{i}. 起点后走廊")
+                        elif i == len(path) - 2:  # 终点前的最后一个走廊
+                            st.write(f"{i}. 终点前走廊")
                         else:
-                            st.write(f"{i}. 走廊")
+                            st.write(f"{i}. 中间走廊")
                     else:
                         room, floor = node.split('@')
-                        st.write(f"{i}. {room}（楼层：{floor}）")
+                        if "stair" in room.lower():
+                            st.write(f"{i}. {room}（楼层：{floor}）")
+                        else:
+                            st.write(f"{i}. {room}（楼层：{floor}）")
                 
                 fig, ax = plot_3d_map(school_data)
                 plot_path(ax, nav_graph, path)
@@ -494,4 +545,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
