@@ -9,7 +9,7 @@ plt.switch_backend('Agg')  # 解决Streamlit matplotlib渲染问题
 
 # 定义安全的颜色常量（使用Matplotlib确认支持的颜色）
 COLORS = {
-    'floor': {-2: 'blue', 2: 'green', 5: 'orange', 10: 'red'},
+    'floor': {-2: 'blue', 2: 'green', 5: 'orange', 10: 'purple'},
     'corridor_node': 'cyan',
     'corridor_label': 'navy',
     'stair': 'red',
@@ -444,5 +444,6 @@ def main():
 # -------------------------- 4. 运行主函数 --------------------------
 if __name__ == "__main__":
     main()
+
 
 
