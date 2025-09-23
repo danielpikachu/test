@@ -69,7 +69,7 @@ def plot_3d_map(school_data):
             
             # 标记走廊节点
             for p_idx, (px, py, pz) in enumerate(points):
-                ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=100, marker='s', alpha=0.8)
+                ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=30, marker='s', alpha=0.8)
                 ax.text(px, py, pz, f'C{corr_idx}-{p_idx}', color=COLORS['corridor_label'], fontsize=8)
 
         # 绘制楼梯
@@ -444,3 +444,4 @@ def main():
 # -------------------------- 4. 运行主函数 --------------------------
 if __name__ == "__main__":
     main()
+
