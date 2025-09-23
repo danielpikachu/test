@@ -4,21 +4,21 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
 
-# -------------------------- 1. 基础配置：解决Streamlit matplotlib渲染问题 --------------------------
-plt.switch_backend('Agg')
+# -------------------------- 1. 基础配置 --------------------------
+plt.switch_backend('Agg')  # 解决Streamlit matplotlib渲染问题
 
-# -------------------------- 2. 核心功能：数据读取、3D绘图、路径计算 --------------------------
+# -------------------------- 2. 核心功能实现 --------------------------
 # 读取JSON数据
 def load_school_data_detailed(filename):
     with open(filename, 'r') as f:
         return json.load(f)
 
-# 绘制3D地图（包含走廊节点标记）
+# 绘制3D地图
 def plot_3d_map(school_data):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
 
-    # 为不同楼层使用不同颜色
+    # 不同楼层颜色映射
     floor_colors = {-2: 'blue', 2: 'green', 5: 'orange', 10: 'red'}  
 
     # 处理每个楼层
@@ -27,7 +27,7 @@ def plot_3d_map(school_data):
         color = floor_colors.get(z, 'gray')
         level_name = level['name']
 
-        # 1. 绘制楼层平面边框
+        # 绘制楼层平面边框
         fp = level['floorPlane']
         plane_vertices = [
             [fp['minX'], fp['minY'], z],
@@ -41,7 +41,7 @@ def plot_3d_map(school_data):
         z_plane = [p[2] for p in plane_vertices]
         ax.plot(x_plane, y_plane, z_plane, color=color, linewidth=2, label=level_name)
 
-        # 2. 绘制走廊及走廊节点
+        # 绘制走廊及走廊节点
         for corr_idx, corridor in enumerate(level['corridors']):
             points = corridor['points']
             x = [p[0] for p in points]
@@ -51,18 +51,18 @@ def plot_3d_map(school_data):
             # 绘制走廊线条
             ax.plot(x, y, z_coords, color=color, linewidth=5, alpha=0.7)
             
-            # 标记走廊节点
+            # 标记走廊节点（用于验证路径是否沿走廊）
             for p_idx, (px, py, pz) in enumerate(points):
                 ax.scatter(px, py, pz, color='cyan', s=100, marker='s', alpha=0.8)
                 ax.text(px, py, pz, f'C{p_idx}', color='darkblue', fontsize=8)
 
-        # 3. 绘制楼梯
+        # 绘制楼梯
         for stair in level['stairs']:
             x, y, _ = stair['coordinates']
             ax.scatter(x, y, z, color='red', s=200, marker='^', label='Stairs' if z == -2 else "")
             ax.text(x, y, z, stair['name'], color='darkred', fontweight='bold')
 
-        # 4. 绘制教室
+        # 绘制教室
         for classroom in level['classrooms']:
             x, y, _ = classroom['coordinates']
             width, depth = classroom['size']
@@ -111,7 +111,7 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
 
-# 构建导航图（核心：走廊作为必经之路）
+# 构建导航图（核心优化：走廊作为必经之路）
 def build_navigation_graph(school_data):
     graph = Graph()
 
@@ -322,7 +322,7 @@ def get_classroom_info(school_data):
 
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
-    # 1. 页面标题和数据加载
+    # 页面标题和数据加载
     st.title("🏫 School Campus Navigation System")
     st.subheader("3D Map & Corridor-Based Path Finder")
 
@@ -336,7 +336,7 @@ def main():
         st.error("❌ Error: 'school_data_detailed.json' not found. Please check the file path.")
         return
 
-    # 2. 布局：左右分栏
+    # 布局：左右分栏
     col1, col2 = st.columns([1, 2])
 
     with col1:
@@ -362,7 +362,7 @@ def main():
         # 右侧：显示3D地图和导航结果
         st.markdown("### 🗺️ 3D Campus Map")
         
-        # 初始显示空的3D地图
+        # 初始显示3D地图
         if 'fig' not in st.session_state:
             fig, ax = plot_3d_map(school_data)
             st.session_state['fig'] = fig
