@@ -4,134 +4,57 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
 
-# 移除了scipy依赖，使用纯numpy实现最近邻搜索
-
 # -------------------------- 1. 基础配置：解决Streamlit matplotlib渲染问题 --------------------------
+# Streamlit 不支持 matplotlib 交互后端，必须切换为非交互后端
 plt.switch_backend('Agg')
 
-# -------------------------- 2. 核心功能：数据处理与路径规划 --------------------------
+# -------------------------- 2. 原有核心功能：数据读取、3D绘图、路径计算（无修改） --------------------------
 # 读取JSON数据
 def load_school_data_detailed(filename):
     with open(filename, 'r') as f:
         return json.load(f)
 
-# 新增：纯numpy实现最近邻搜索（替代scipy的KDTree）
-def find_nearest_point(target, points):
-    """找到points中与target最近的点"""
-    if not points:
-        return None
-        
-    target = np.array(target)
-    points = np.array(points)
-    distances = np.sqrt(np.sum((points - target)** 2, axis=1))
-    nearest_idx = np.argmin(distances)
-    return points[nearest_idx].tolist()
-
-# 提取单个楼层的所有走廊点、线段和交叉点
-def get_floor_corridor_data(level_data):
-    """
-    提取楼层的走廊点、交叉点
-    返回：
-        all_corridor_points: 该楼层所有走廊的点（去重）
-        corridor_segments: 该楼层所有走廊的线段（用于计算交叉点）
-        intersection_points: 该楼层走廊的交叉点
-    """
-    all_corridor_points = []
-    corridor_segments = []  # 存储所有走廊的线段（(p1, p2)）
-    
-    # 1. 提取所有走廊点和线段
-    for corridor in level_data['corridors']:
-        points = corridor['points']
-        # 去重添加走廊点（避免重复计算）
-        for p in points:
-            if p not in all_corridor_points:
-                all_corridor_points.append(p)
-        # 提取走廊的线段（连续两点组成一段）
-        for i in range(len(points) - 1):
-            p1 = np.array(points[i])
-            p2 = np.array(points[i + 1])
-            corridor_segments.append((p1, p2))
-    
-    # 2. 计算走廊交叉点（两线段不共线且相交时）
-    intersection_points = []
-    def ccw(A, B, C):
-        """判断三点是否逆时针排列（用于线段相交判断）"""
-        return (B[0]-A[0])*(C[1]-A[1]) - (B[1]-A[1])*(C[0]-A[0])
-    
-    def segments_intersect(p1, p2, p3, p4):
-        """判断两线段是否相交，返回交点（无交点返回None）"""
-        # 线段1: p1-p2，线段2: p3-p4
-        A, B, C, D = p1, p2, p3, p4
-        # 快速排斥实验
-        if (max(A[0], B[0]) < min(C[0], D[0]) or
-            max(C[0], D[0]) < min(A[0], B[0]) or
-            max(A[1], B[1]) < min(C[1], D[1]) or
-            max(C[1], D[1]) < min(A[1], B[1])):
-            return None
-        # 跨立实验
-        ccw1 = ccw(A, B, C)
-        ccw2 = ccw(A, B, D)
-        ccw3 = ccw(C, D, A)
-        ccw4 = ccw(C, D, B)
-        # 两线段不共线且相交
-        if (ccw1 * ccw2 < 0) and (ccw3 * ccw4 < 0):
-            # 计算交点（参数方程法）
-            t = ((A[0]-C[0])*(C[1]-D[1]) - (A[1]-C[1])*(C[0]-D[0])) / \
-                ((A[0]-B[0])*(C[1]-D[1]) - (A[1]-B[1])*(C[0]-D[0]))
-            intersection = A + t * (B - A)
-            return intersection.tolist()
-        return None
-    
-    # 遍历所有线段对，计算交叉点（去重）
-    for i in range(len(corridor_segments)):
-        p1, p2 = corridor_segments[i]
-        for j in range(i + 1, len(corridor_segments)):
-            p3, p4 = corridor_segments[j]
-            intersect = segments_intersect(p1, p2, p3, p4)
-            if intersect and intersect not in intersection_points:
-                # 确保交叉点Z坐标与楼层一致
-                intersect[2] = level_data['z']
-                intersection_points.append(intersect)
-    
-    return all_corridor_points, corridor_segments, intersection_points
-
-# 绘制3D地图（包含走廊点和交叉点）
+# 绘制3D地图（返回fig用于Streamlit显示）
 def plot_3d_map(school_data):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
 
     # 为不同楼层使用不同颜色
-    floor_colors = {-2: 'blue', 2: 'green', 5: 'orange', 10: 'red'}  
+    floor_colors = {0: 'blue', 2: 'green', 5: 'orange'}  
 
     # 处理每个楼层
     for level in school_data['buildingA']['levels']:
         z = level['z']
         color = floor_colors.get(z, 'gray')
-        level_name = level['name']
-        
-        # 获取当前楼层的走廊点、线段、交叉点
-        all_corridor_points, _, intersection_points = get_floor_corridor_data(level)
-        
-        if not all_corridor_points:
+
+        # 收集当前楼层所有走廊的坐标点（用于计算平面范围）
+        all_corridor_points = []
+        for corridor in level['corridors']:
+            all_corridor_points.extend(corridor['points'])
+        if not all_corridor_points:  # 避免无走廊时报错
             continue  
 
-        # 计算平面的X/Y轴范围
-        xs = [p[0] for p in all_corridor_points]
-        ys = [p[1] for p in all_corridor_points]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
+        # 计算平面的X/Y轴范围（取走廊坐标的最大/最小值）
+        xs = [p[0] for p in all_corridor_points]  # 所有走廊点的X坐标
+        ys = [p[1] for p in all_corridor_points]  # 所有走廊点的Y坐标
+        min_x, max_x = min(xs), max(xs)  # 平面X轴范围
+        min_y, max_y = min(ys), max(ys)  # 平面Y轴范围
 
-        # 构造平面的4个顶点
+        # 构造平面的4个顶点（闭合矩形，确保3D中显示为完整平面边框）
         plane_vertices = [
-            [min_x, min_y, z], [max_x, min_y, z], 
-            [max_x, max_y, z], [min_x, max_y, z], [min_x, min_y, z]
+            [min_x, min_y, z],   # 左下角
+            [max_x, min_y, z],   # 右下角
+            [max_x, max_y, z],   # 右上角
+            [min_x, max_y, z],   # 左上角
+            [min_x, min_y, z]    # 回到起点，闭合图形
         ]
+        # 提取顶点的X/Y/Z坐标，用于绘图
         x_plane = [p[0] for p in plane_vertices]
         y_plane = [p[1] for p in plane_vertices]
         z_plane = [p[2] for p in plane_vertices]
 
-        # 绘制楼层平面边框
-        ax.plot(x_plane, y_plane, z_plane, color=color, linewidth=2, label=level_name)
+        # 绘制楼层平面边框（与楼层颜色一致，添加楼层标签）
+        ax.plot(x_plane, y_plane, z_plane, color=color, linewidth=2, label=level['name'])
 
         # 绘制走廊
         for corridor in level['corridors']:
@@ -140,35 +63,24 @@ def plot_3d_map(school_data):
             y = [p[1] for p in points]
             z_coords = [p[2] for p in points]
             ax.plot(x, y, z_coords, color=color, linewidth=5)
-        
-        # 绘制走廊点（灰色小圆点）
-        corridor_x = [p[0] for p in all_corridor_points]
-        corridor_y = [p[1] for p in all_corridor_points]
-        corridor_z = [p[2] for p in all_corridor_points]
-        ax.scatter(corridor_x, corridor_y, corridor_z, color='gray', s=30, label='Corridor Point' if z == -2 else "")
-        
-        # 绘制走廊交叉点（黄色大圆点，标注"Cross"）
-        if intersection_points:
-            cross_x = [p[0] for p in intersection_points]
-            cross_y = [p[1] for p in intersection_points]
-            cross_z = [p[2] for p in intersection_points]
-            ax.scatter(cross_x, cross_y, cross_z, color='yellow', s=200, marker='D', label='Cross Point' if z == -2 else "")
-            # 标注交叉点
-            for p in intersection_points:
-                ax.text(p[0], p[1], p[2], 'Cross', color='black', fontweight='bold')
 
         # 绘制楼梯
         for stair in level['stairs']:
             x, y, _ = stair['coordinates']
-            ax.scatter(x, y, z, color='red', s=200, marker='^', label='Stairs' if z == -2 else "")
-            ax.text(x, y, z, stair['name'], color='white', fontweight='bold')
+            ax.scatter(x, y, z, color='red', s=200, marker='^', label='Stairs' if z == 0 else "")
 
-        # 绘制教室
+        # 绘制教室（用立方体表示）
         for classroom in level['classrooms']:
             x, y, _ = classroom['coordinates']
             width, depth = classroom['size']
+
+            # 绘制教室标签
             ax.text(x, y, z, classroom['name'], color='black', fontweight='bold')
+
+            # 绘制教室位置点
             ax.scatter(x, y, z, color=color, s=50)
+
+            # 绘制教室边界（简化为矩形）
             ax.plot([x, x + width, x + width, x, x],
                     [y, y, y + depth, y + depth, y],
                     [z, z, z, z, z],
@@ -178,108 +90,10 @@ def plot_3d_map(school_data):
     ax.set_xlabel('X Position')
     ax.set_ylabel('Y Position')
     ax.set_zlabel('Floor')
-    ax.set_title('School 3D Map with Navigation (Full Path)')
+    ax.set_title('School 3D Map with Navigation')
     ax.legend()
 
     return fig, ax
-
-# 获取指定楼层的走廊信息（用于路径补全）
-def get_level_corridor_info(school_data, level_name):
-    """根据楼层名，返回该楼层的：教室→最近走廊点映射、走廊点、交叉点、楼梯坐标"""
-    for level in school_data['buildingA']['levels']:
-        if level['name'] == level_name:
-            z = level['z']
-            # 获取走廊点和交叉点
-            all_corridor_points, _, intersection_points = get_floor_corridor_data(level)
-            # 构建教室→最近走廊点的映射（使用自定义的最近邻搜索）
-            classroom_nearest_corridor = {}
-            for classroom in level['classrooms']:
-                cls_coords = classroom['coordinates']
-                # 查找最近的走廊点
-                nearest_corridor = find_nearest_point(cls_coords, all_corridor_points)
-                if nearest_corridor:
-                    classroom_nearest_corridor[classroom['name']] = nearest_corridor
-            # 获取楼梯坐标
-            stair_coords = level['stairs'][0]['coordinates'] if level['stairs'] else None
-            return {
-                'classroom_nearest_corridor': classroom_nearest_corridor,
-                'all_corridor_points': all_corridor_points,
-                'intersection_points': intersection_points,
-                'stair_coords': stair_coords,
-                'z': z
-            }
-    return None  # 未找到楼层
-
-# 计算两点之间的"走廊路径"（补全走廊点和交叉点）
-def compute_corridor_path(points_list, corridor_points, intersection_points):
-    """
-    计算两点之间经过走廊点和交叉点的路径
-    points_list: 原始路径节点（如[教室坐标, 楼梯坐标]）
-    corridor_points: 该楼层所有走廊点
-    intersection_points: 该楼层所有交叉点
-    返回：补全后的走廊路径点列表
-    """
-    if len(points_list) < 2:
-        return points_list
-    
-    full_corridor_path = []
-    
-    # 遍历原始路径的相邻节点对，补全走廊路径
-    for i in range(len(points_list) - 1):
-        start = np.array(points_list[i])
-        end = np.array(points_list[i + 1])
-        
-        # 步骤1：找到起点到终点之间的所有走廊点（在两点连线上或附近）
-        # 计算两点连线的参数方程：start + t*(end - start)，t∈[0,1]
-        t_list = []
-        candidate_points = []
-        for p in corridor_points:
-            p_np = np.array(p)
-            # 判断点是否在两点连线的附近（距离<0.5单位）
-            dist_to_line = np.linalg.norm(np.cross(end - start, start - p_np)) / np.linalg.norm(end - start)
-            if dist_to_line < 0.5:
-                # 计算t值（判断点是否在两点之间）
-                t = np.dot(p_np - start, end - start) / (np.linalg.norm(end - start) ** 2)
-                if 0 <= t <= 1:
-                    t_list.append(t)
-                    candidate_points.append(p)
-        
-        # 步骤2：按t值排序（从起点到终点的顺序）
-        if candidate_points:
-            sorted_indices = np.argsort(t_list)
-            sorted_corridor_points = [candidate_points[idx] for idx in sorted_indices]
-        else:
-            # 无走廊点时，用起点→最近走廊点→终点（避免路径断连）
-            nearest_start = find_nearest_point(start, corridor_points)
-            nearest_end = find_nearest_point(end, corridor_points)
-            if nearest_start and nearest_end:
-                sorted_corridor_points = [nearest_start, nearest_end]
-            else:
-                sorted_corridor_points = [start.tolist(), end.tolist()]
-        
-        # 步骤3：插入交叉点（如果交叉点在当前路径段上）
-        if intersection_points:
-            for cross in intersection_points:
-                cross_np = np.array(cross)
-                # 判断交叉点是否在当前路径段的走廊点之间
-                dist_to_line = np.linalg.norm(np.cross(end - start, start - cross_np)) / np.linalg.norm(end - start)
-                if dist_to_line < 0.5:
-                    t = np.dot(cross_np - start, end - start) / (np.linalg.norm(end - start) ** 2)
-                    if 0 <= t <= 1 and cross not in sorted_corridor_points:
-                        # 插入到正确位置
-                        sorted_corridor_points.append(cross)
-                        # 重新按t值排序
-                        t_cross = [np.dot(np.array(p) - start, end - start) / (np.linalg.norm(end - start) ** 2) 
-                                   for p in sorted_corridor_points]
-                        sorted_indices = np.argsort(t_cross)
-                        sorted_corridor_points = [sorted_corridor_points[idx] for idx in sorted_indices]
-        
-        # 步骤4：添加到完整路径（避免重复节点）
-        for p in sorted_corridor_points:
-            if not full_corridor_path or (np.array(p) != np.array(full_corridor_path[-1])).any():
-                full_corridor_path.append(p)
-    
-    return full_corridor_path
 
 # 自定义图数据结构
 class Graph:
@@ -308,36 +122,38 @@ def euclidean_distance(coords1, coords2):
 def build_navigation_graph(school_data):
     graph = Graph()
 
-    # 添加所有位置节点（教室、楼梯）
+    # 添加所有位置节点
     for level in school_data['buildingA']['levels']:
         z = level['z']
-        level_name = level['name']
 
         # 添加教室
         for classroom in level['classrooms']:
-            node_id = f"classroom_{classroom['name']}@{level_name}"
+            node_id = f"{classroom['name']}@{level['name']}"
             graph.add_node(node_id,
                            'classroom',
                            classroom['name'],
-                           level_name,
+                           level['name'],
                            classroom['coordinates'])
 
         # 添加楼梯
         for stair in level['stairs']:
-            node_id = f"stair_{stair['name']}@{level_name}"
+            node_id = f"{stair['name']}@{level['name']}"
             graph.add_node(node_id,
                           'stair',
                            stair['name'],
-                           level_name,
+                           level['name'],
                            stair['coordinates'])
 
     # 添加连接关系
-    # 1. 同一楼层内的连接（教室-楼梯，基于欧氏距离）
+    # 1. 同一楼层内的连接（基于走廊）
     for level in school_data['buildingA']['levels']:
         level_name = level['name']
+        z = level['z']
+
         # 获取该楼层所有节点
-        level_nodes = [n for n in graph.nodes.keys() if graph.nodes[n]['level'] == level_name]
-        # 所有节点两两连接（确保连通性）
+        level_nodes = list(graph.nodes.keys())
+        level_nodes = [n for n in level_nodes if graph.nodes[n]['level'] == level_name]
+
         for i in range(len(level_nodes)):
             for j in range(i + 1, len(level_nodes)):
                 coords1 = graph.nodes[level_nodes[i]]['coordinates']
@@ -350,11 +166,11 @@ def build_navigation_graph(school_data):
         from_stair, from_level = connection['from']
         to_stair, to_level = connection['to']
 
-        from_node = f"stair_{from_stair}@{from_level}"
-        to_node = f"stair_{to_stair}@{to_level}"
+        from_node = f"{from_stair}@{from_level}"
+        to_node = f"{to_stair}@{to_level}"
 
         if from_node in graph.nodes and to_node in graph.nodes:
-            graph.add_edge(from_node, to_node, 1.0)  # 楼梯连接权重设为1
+            graph.add_edge(from_node, to_node, 1.0)
 
     return graph
 
@@ -380,7 +196,7 @@ def dijkstra(graph, start_node):
 
     return distances, previous_nodes
 
-# 生成最短路径（原始路径：教室→楼梯→...→教室）
+# 生成最短路径
 def construct_path(previous_nodes, end_node):
     path = []
     current_node = end_node
@@ -389,87 +205,41 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path
 
-# 导航函数（核心修改：补全走廊路径和交叉点）
-def navigate(school_data, graph, start_classroom, start_level, end_classroom, end_level):
-    start_node = f"classroom_{start_classroom}@{start_level}"
-    end_node = f"classroom_{end_classroom}@{end_level}"
+# 导航函数
+def navigate(graph, start_classroom, start_level, end_classroom, end_level):
+    start_node = f"{start_classroom}@{start_level}"
+    end_node = f"{end_classroom}@{end_level}"
 
     if start_node not in graph.nodes or end_node not in graph.nodes:
         return None, "Invalid classroom or level"
 
-    # 1. 计算原始路径（教室→楼梯→...→教室）
     distances, previous_nodes = dijkstra(graph, start_node)
-    raw_path = construct_path(previous_nodes, end_node)
-    if not raw_path:
+    path = construct_path(previous_nodes, end_node)
+
+    if path:
+        total_distance = distances[end_node]
+        return path, f"Total distance: {total_distance:.2f} units"
+    else:
         return None, "No path exists between these classrooms"
 
-    # 2. 解析原始路径，提取关键节点（教室和楼梯的坐标）
-    key_points = []  # 存储关键节点坐标
-    key_levels = []  # 存储对应楼层
-    for node in raw_path:
-        node_type, rest = node.split('_', 1)
-        name, level = rest.split('@')
-        key_points.append(graph.nodes[node]['coordinates'])
-        key_levels.append(level)
+# 在3D图上绘制路径
+def plot_path(ax, graph, path):
+    x = []
+    y = []
+    z = []
 
-    # 3. 按楼层补全路径（添加走廊点和交叉点）
-    full_path = []
-    i = 0
-    while i < len(key_levels):
-        current_level = key_levels[i]
-        # 找到当前楼层的所有连续节点
-        j = i
-        while j < len(key_levels) and key_levels[j] == current_level:
-            j += 1
-        
-        # 获取当前楼层的走廊信息
-        level_info = get_level_corridor_info(school_data, current_level)
-        if not level_info:
-            i = j
-            continue
-        
-        # 提取当前楼层的关键节点
-        current_level_key_points = key_points[i:j]
-        
-        # 补全当前楼层的走廊路径（包含走廊点和交叉点）
-        corridor_path = compute_corridor_path(
-            current_level_key_points,
-            level_info['all_corridor_points'],
-            level_info['intersection_points']
-        )
-        
-        # 添加到完整路径
-        full_path.extend(corridor_path)
-        
-        i = j
+    for node in path:
+        coords = graph.nodes[node]['coordinates']
+        x.append(coords[0])
+        y.append(coords[1])
+        z.append(coords[2])
 
-    # 4. 计算总距离
-    total_distance = 0
-    for i in range(len(full_path) - 1):
-        total_distance += euclidean_distance(full_path[i], full_path[i+1])
-
-    return full_path, f"Total distance: {total_distance:.2f} units"
-
-# 在3D图上绘制完整路径
-def plot_path(ax, path):
-    if not path:
-        return
-        
-    x = [p[0] for p in path]
-    y = [p[1] for p in path]
-    z = [p[2] for p in path]
-
-    # 绘制完整路径
+    # 绘制路径
     ax.plot(x, y, z, color='red', linewidth=3, linestyle='-', marker='o')
 
     # 标记起点和终点
     ax.scatter(x[0], y[0], z[0], color='green', s=300, marker='*', label='Start')
     ax.scatter(x[-1], y[-1], z[-1], color='purple', s=300, marker='*', label='End')
-    
-    # 标记路径中的关键节点（交叉点）
-    for i, point in enumerate(path):
-        if i > 0 and i < len(path) - 1:  # 跳过起点和终点
-            ax.text(point[0], point[1], point[2], f'P{i}', color='darkred', fontsize=8)
 
 # 获取所有楼层和教室信息（适配Streamlit下拉框）
 def get_classroom_info(school_data):
@@ -484,13 +254,13 @@ def get_classroom_info(school_data):
         
     return levels, classrooms_by_level
 
-# -------------------------- 3. Streamlit界面逻辑 --------------------------
+# -------------------------- 3. Streamlit界面逻辑（替换原Tkinter界面） --------------------------
 def main():
     # 1. 页面标题和数据加载
     st.title("🏫 School Campus Navigation System")
-    st.subheader("3D Map & Full Path Finder")
+    st.subheader("3D Map & Shortest Path Finder")
 
-    # 加载JSON数据
+    # 加载JSON数据（注意：确保 school_data_detailed.json 和代码在同一目录）
     try:
         school_data = load_school_data_detailed('school_data_detailed.json')
         nav_graph = build_navigation_graph(school_data)
@@ -500,27 +270,27 @@ def main():
         st.error("❌ Error: 'school_data_detailed.json' not found. Please check the file path.")
         return  # 数据加载失败，终止程序
 
-    # 2. 布局：左右分栏
-    col1, col2 = st.columns([1, 2])
+    # 2. 布局：左右分栏（左侧选择器，右侧结果显示）
+    col1, col2 = st.columns([1, 2])  # 左侧占1份，右侧占2份
 
     with col1:
-        # 左侧：起点和终点选择
+        # 左侧：起点和终点选择（下拉框）
         st.markdown("### 📍 Select Locations")
         
-        # 起点选择
+        # 起点选择（楼层→教室联动）
         st.markdown("#### Start Point")
         start_level = st.selectbox("Floor", levels, key="start_level")
         start_classrooms = classrooms_by_level[start_level]
         start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-        # 终点选择
+        # 终点选择（楼层→教室联动）
         st.markdown("#### End Point")
         end_level = st.selectbox("Floor", levels, key="end_level")
         end_classrooms = classrooms_by_level[end_level]
         end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-        # 导航按钮
-        nav_button = st.button("🔍 Find Full Path", use_container_width=True)
+        # 导航按钮（点击触发路径计算）
+        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
 
     with col2:
         # 右侧：显示3D地图和导航结果
@@ -529,32 +299,33 @@ def main():
         # 初始显示空的3D地图
         if 'fig' not in st.session_state:
             fig, ax = plot_3d_map(school_data)
-            st.session_state['fig'] = fig
+            st.session_state['fig'] = fig  # 用session_state保存图，避免重复绘制
         
         # 点击导航按钮后，计算路径并更新地图
         if nav_button:
             # 调用导航函数
-            path, message = navigate(school_data, nav_graph, start_classroom, start_level, end_classroom, end_level)
+            path, message = navigate(nav_graph, start_classroom, start_level, end_classroom, end_level)
             
             # 显示导航结果
             if path:
                 st.success(f"📊 Navigation Result: {message}")
                 # 显示路径详情
                 st.markdown("#### 🛤️ Path Details")
-                for i, point in enumerate(path[:10] + (["..."] if len(path) > 10 else []) + path[-10:]):
-                    if isinstance(point, list):
-                        st.write(f"{i+1}. Coordinates: ({point[0]:.1f}, {point[1]:.1f}, {point[2]:.1f})")
+                for i, node in enumerate(path, 1):
+                    room, floor = node.split('@')
+                    st.write(f"{i}. {room} (Floor: {floor})")
                 
                 # 重新绘制带路径的3D图
                 fig, ax = plot_3d_map(school_data)
-                plot_path(ax, path)
-                st.session_state['fig'] = fig
+                plot_path(ax, nav_graph, path)
+                st.session_state['fig'] = fig  # 更新保存的图
             else:
                 st.error(f"❌ {message}")
         
-        # 显示3D图
+        # 显示3D图（Streamlit用st.pyplot()渲染matplotlib图）
         st.pyplot(st.session_state['fig'])
 
 # -------------------------- 4. 运行主函数 --------------------------
 if __name__ == "__main__":
     main()
+
