@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
-from scipy.spatial import KDTree  # 用于快速查找最近点
+
+# 移除了scipy依赖，使用纯numpy实现最近邻搜索
 
 # -------------------------- 1. 基础配置：解决Streamlit matplotlib渲染问题 --------------------------
 plt.switch_backend('Agg')
@@ -13,6 +14,18 @@ plt.switch_backend('Agg')
 def load_school_data_detailed(filename):
     with open(filename, 'r') as f:
         return json.load(f)
+
+# 新增：纯numpy实现最近邻搜索（替代scipy的KDTree）
+def find_nearest_point(target, points):
+    """找到points中与target最近的点"""
+    if not points:
+        return None
+        
+    target = np.array(target)
+    points = np.array(points)
+    distances = np.sqrt(np.sum((points - target)** 2, axis=1))
+    nearest_idx = np.argmin(distances)
+    return points[nearest_idx].tolist()
 
 # 提取单个楼层的所有走廊点、线段和交叉点
 def get_floor_corridor_data(level_data):
@@ -178,15 +191,14 @@ def get_level_corridor_info(school_data, level_name):
             z = level['z']
             # 获取走廊点和交叉点
             all_corridor_points, _, intersection_points = get_floor_corridor_data(level)
-            # 构建教室→最近走廊点的映射（用KDTree加速最近邻查找）
-            corridor_kdtree = KDTree(all_corridor_points)
+            # 构建教室→最近走廊点的映射（使用自定义的最近邻搜索）
             classroom_nearest_corridor = {}
             for classroom in level['classrooms']:
-                cls_coords = np.array(classroom['coordinates'])
+                cls_coords = classroom['coordinates']
                 # 查找最近的走廊点
-                dist, idx = corridor_kdtree.query(cls_coords)
-                nearest_corridor = all_corridor_points[idx]
-                classroom_nearest_corridor[classroom['name']] = nearest_corridor
+                nearest_corridor = find_nearest_point(cls_coords, all_corridor_points)
+                if nearest_corridor:
+                    classroom_nearest_corridor[classroom['name']] = nearest_corridor
             # 获取楼梯坐标
             stair_coords = level['stairs'][0]['coordinates'] if level['stairs'] else None
             return {
@@ -211,8 +223,6 @@ def compute_corridor_path(points_list, corridor_points, intersection_points):
         return points_list
     
     full_corridor_path = []
-    corridor_kdtree = KDTree(corridor_points)
-    cross_kdtree = KDTree(intersection_points) if intersection_points else None
     
     # 遍历原始路径的相邻节点对，补全走廊路径
     for i in range(len(points_list) - 1):
@@ -240,12 +250,15 @@ def compute_corridor_path(points_list, corridor_points, intersection_points):
             sorted_corridor_points = [candidate_points[idx] for idx in sorted_indices]
         else:
             # 无走廊点时，用起点→最近走廊点→终点（避免路径断连）
-            dist_start, idx_start = corridor_kdtree.query(start)
-            dist_end, idx_end = corridor_kdtree.query(end)
-            sorted_corridor_points = [corridor_points[idx_start], corridor_points[idx_end]]
+            nearest_start = find_nearest_point(start, corridor_points)
+            nearest_end = find_nearest_point(end, corridor_points)
+            if nearest_start and nearest_end:
+                sorted_corridor_points = [nearest_start, nearest_end]
+            else:
+                sorted_corridor_points = [start.tolist(), end.tolist()]
         
         # 步骤3：插入交叉点（如果交叉点在当前路径段上）
-        if cross_kdtree and intersection_points:
+        if intersection_points:
             for cross in intersection_points:
                 cross_np = np.array(cross)
                 # 判断交叉点是否在当前路径段的走廊点之间
