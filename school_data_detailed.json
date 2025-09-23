@@ -134,7 +134,7 @@
           }
         ],
         "stairs": [
-          {"name": "Stairs1", "coordinates": [30, 35, 5]}
+          {"name": "Stairs1", "coordinates": [30, 30, 5]}
         ]
       },
       {
@@ -189,7 +189,7 @@
           }
         ],
         "stairs": [
-          {"name": "Stairs1", "coordinates": [30, 35, 10]}
+          {"name": "Stairs1", "coordinates": [30, 30, 10]}
         ]
       }
     ],
