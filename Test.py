@@ -38,7 +38,7 @@ def load_school_data_detailed(filename):
 # 绘制3D地图（3D图放大两倍）
 def plot_3d_map(school_data):
     # 图尺寸从(14,12)放大到(28,24)，整体占比扩大两倍
-    fig = plt.figure(figsize=(28, 24))
+    fig = plt.figure(figsize=(35, 30))
     ax = fig.add_subplot(111, projection='3d')
 
     # 放大坐标轴刻度标签
@@ -582,4 +582,5 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
