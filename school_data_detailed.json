@@ -257,9 +257,9 @@
         "z": 7,
         "floorPlane": {
           "minX": 50,
-          "maxX": 90,
-          "minY": 30,
-          "maxY": 75
+          "maxX": 95,
+          "minY": 23,
+          "maxY": 73
         },
         "classrooms": [
           {"name": "C311", "coordinates": [55, 60, 7], "size": [5, 8]},
