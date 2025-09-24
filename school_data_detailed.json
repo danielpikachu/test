@@ -6,7 +6,7 @@
         "z": -2,
         "floorPlane": {
           "minX": 0,
-          "maxX": 30,
+          "maxX": 40,
           "minY": 0,
           "maxY": 50
         },
@@ -46,8 +46,8 @@
         "name": "level2",
         "z": 2,
         "floorPlane": {
-          "minX": 10,
-          "maxX": 35,
+          "minX": 5,
+          "maxX": 40,
           "minY": 18,
           "maxY": 60
         },
@@ -93,10 +93,10 @@
         "name": "level3",
         "z": 5,
         "floorPlane": {
-          "minX": 10,
+          "minX": 5,
           "maxX": 40,
           "minY": 30,
-          "maxY": 60
+          "maxY": 75
         },
         "classrooms": [
           {"name": "A303", "coordinates": [10, 60, 5], "size": [10, 8]},
