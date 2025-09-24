@@ -504,8 +504,8 @@ def get_classroom_info(school_data):
 
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
-    st.title("🏫 校园导航系统")
-    st.subheader("3D地图与跨楼路径规划")
+    st.subheader("🏫 校园导航系统")
+    st.markdown("3D地图与跨楼路径规划")
 
     # 加载JSON数据
     try:
@@ -524,10 +524,10 @@ def main():
     col1, col2 = st.columns([1, 3])
 
     with col1:
-        st.markdown("## 📍 选择位置")
+        st.markdown("### 📍 选择位置")
         
         # 起点选择
-        st.markdown("### 起点")
+        st.markdown("#### 起点")
         start_building = st.selectbox("建筑", building_names, key="start_building")
         start_levels = levels_by_building.get(start_building, [])
         start_level = st.selectbox("楼层", start_levels, key="start_level")
@@ -535,7 +535,7 @@ def main():
         start_classroom = st.selectbox("教室", start_classrooms, key="start_classroom")
 
         # 终点选择
-        st.markdown("### 终点")
+        st.markdown("#### 终点")
         end_building = st.selectbox("建筑", building_names, key="end_building")
         end_levels = levels_by_building.get(end_building, [])
         end_level = st.selectbox("楼层", end_levels, key="end_level")
@@ -546,7 +546,7 @@ def main():
         nav_button = st.button("🔍 查找最短路径", use_container_width=True)
 
     with col2:
-        st.markdown("### 🗺️ 3D校园地图")
+        st.markdown("#### 🗺️ 3D校园地图")
         
         if 'fig' not in st.session_state:
             fig, ax = plot_3d_map(school_data)
@@ -563,7 +563,7 @@ def main():
                 if path:
                     st.success(f"📊 导航结果: {message}")
                     # 路径详情单行显示
-                    st.markdown("#### 🛤️ 路径详情")
+                    st.markdown("##### 🛤️ 路径详情")
                     st.info(simplified_path)  # 使用info框突出显示单行路径
                     
                     fig, ax = plot_3d_map(school_data)
@@ -582,6 +582,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
