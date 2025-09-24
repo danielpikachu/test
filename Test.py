@@ -504,15 +504,16 @@ def get_classroom_info(school_data):
 
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
-     st.markdown("""
+     # 新增：调整左右边距（此行是新增的第1行）
+    st.markdown("""
         <style>
             .block-container {
-                padding-left: 2rem;    /* 左侧边距减小（默认是5rem），可根据需求调整 */
-                padding-right: 2rem;   /* 右侧边距减小（默认是5rem），可根据需求调整 */
-                max-width: 100%;       /* 取消页面最大宽度限制，让内容撑满屏幕 */
+                padding-left: 1rem;    /* 左侧边距减小 */
+                padding-right: 1rem;   /* 右侧边距减小 */
+                max-width: 100%;       /* 取消最大宽度限制 */
             }
         </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)  # 新增代码结束
     st.subheader("🏫 校园导航系统")
     st.markdown("3D地图与跨楼路径规划")
 
@@ -591,6 +592,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
