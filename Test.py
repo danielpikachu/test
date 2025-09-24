@@ -524,10 +524,10 @@ def main():
     col1, col2 = st.columns([1, 3])
 
     with col1:
-        st.markdown("### 📍 选择位置")
+        st.markdown("## 📍 选择位置")
         
         # 起点选择
-        st.markdown("#### 起点")
+        st.markdown("### 起点")
         start_building = st.selectbox("建筑", building_names, key="start_building")
         start_levels = levels_by_building.get(start_building, [])
         start_level = st.selectbox("楼层", start_levels, key="start_level")
@@ -535,7 +535,7 @@ def main():
         start_classroom = st.selectbox("教室", start_classrooms, key="start_classroom")
 
         # 终点选择
-        st.markdown("#### 终点")
+        st.markdown("### 终点")
         end_building = st.selectbox("建筑", building_names, key="end_building")
         end_levels = levels_by_building.get(end_building, [])
         end_level = st.selectbox("楼层", end_levels, key="end_level")
@@ -582,5 +582,6 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
