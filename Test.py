@@ -37,19 +37,23 @@ def load_school_data_detailed(filename):
 
 # 绘制3D地图（3D图放大两倍）
 def plot_3d_map(school_data):
-    # 核心：获取Streamlit容器宽度，动态计算图尺寸（避免溢出）
-    container_width = st.container().width  # 获取当前容器宽度（自适应屏幕）
-    max_fig_width = 12  # 限制地图最大宽度（单位：英寸，可微调）
-    max_fig_height = 10  # 限制地图最大高度（单位：英寸，可微调）
+    # 修正：移除容器宽度获取，改用预设最大尺寸（兼容所有Streamlit版本）
+    max_fig_width = 15  # 最大宽度（英寸），可根据需要调整
+    max_fig_height = 12  # 最大高度（英寸），可根据需要调整
     
-    # 动态计算图尺寸：宽度不超过容器80%，高度按宽高比1.2:1适配（避免拉伸）
-    fig_width = min(container_width / 100 * 0.8, max_fig_width)  # 容器80%宽度，换算为英寸
-    fig_height = fig_width * 0.8  # 宽高比1.2:1（更紧凑，可按需调整为0.9）
-    fig_height = min(fig_height, max_fig_height)  # 限制最大高度
+    # 固定宽高比为1.2:1（宽度=高度×1.2），避免地图变形
+    fig_width = max_fig_width
+    fig_height = max_fig_width * 0.8  # 宽高比1.2:1（更紧凑）
     
-    # 初始化图（动态尺寸，自适应屏幕）
+    # 确保高度不超过最大限制
+    if fig_height > max_fig_height:
+        fig_height = max_fig_height
+        fig_width = fig_height * 1.2  # 按比例调整宽度
+    
+    # 初始化图（使用计算后的尺寸）
     fig = plt.figure(figsize=(fig_width, fig_height))
     ax = fig.add_subplot(111, projection='3d')
+
 
     # 放大坐标轴刻度标签
     ax.tick_params(axis='x', labelsize=14)
@@ -602,6 +606,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
