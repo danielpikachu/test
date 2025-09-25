@@ -531,7 +531,7 @@ def main():
         return
 
     # 布局调整：左侧互动界面占比1/3，右侧地图占比2/3（接近1:2）
-    col1, col2 = st.columns([1, 3])
+    col1, col2 = st.columns([1, 4])
 
     with col1:
         st.markdown("### 📍 选择位置")
@@ -592,6 +592,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
