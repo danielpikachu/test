@@ -37,21 +37,8 @@ def load_school_data_detailed(filename):
 
 # 绘制3D地图（3D图放大两倍）
 def plot_3d_map(school_data):
-    # 修正：移除容器宽度获取，改用预设最大尺寸（兼容所有Streamlit版本）
-    max_fig_width = 15  # 最大宽度（英寸），可根据需要调整
-    max_fig_height = 12  # 最大高度（英寸），可根据需要调整
-    
-    # 固定宽高比为1.2:1（宽度=高度×1.2），避免地图变形
-    fig_width = max_fig_width
-    fig_height = max_fig_width * 0.8  # 宽高比1.2:1（更紧凑）
-    
-    # 确保高度不超过最大限制
-    if fig_height > max_fig_height:
-        fig_height = max_fig_height
-        fig_width = fig_height * 1.2  # 按比例调整宽度
-    
-    # 初始化图（使用计算后的尺寸）
-    fig = plt.figure(figsize=(fig_width, fig_height))
+      # 图尺寸从(14,12)放大到(28,24)，整体占比扩大两倍
+    fig = plt.figure(figsize=(35, 30))  # 固定大尺寸，导致小屏幕溢出
     ax = fig.add_subplot(111, projection='3d')
 
 
@@ -606,6 +593,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
