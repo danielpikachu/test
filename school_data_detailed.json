@@ -60,6 +60,7 @@
         "corridors": [
         
           {
+            "name": "main1Corridor",
             "points": [
               [22, 20, -3],   
               [27, 20, -3],  
@@ -70,7 +71,7 @@
             ]
           },
            {
-                    "name": "connectToBuildingC", 
+                    "name": "connect1ToBuildingC", 
                     "points": [
                       [47, 20, -3], 
                       [50, 20, -3],  
@@ -248,7 +249,8 @@
       {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-       {"from": ["connectToBuildingC", "level1"], "to": ["", "level1"]} 
+       {"from": ["main1Corridor", "level1"], "to": ["connect1ToBuildingC", "level1"]},
+       
     ]
   },
   "buildingC": {
