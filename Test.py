@@ -548,7 +548,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    st.subheader("🏫 Campus Navigation System")
+    st.subheader("🏫 SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning")
 
     # Load JSON data
@@ -569,7 +569,7 @@ def main():
     col1, col2 = st.columns([1, 3])
 
     with col1:
-        st.markdown("### 📍 Select Locations")
+        st.markdown("#### 📍 Select Locations")
         
         # Start point selection
         st.markdown("#### Start Point")
@@ -627,3 +627,4 @@ def main():
 if __name__ == "__main__":
     main()
     
+
