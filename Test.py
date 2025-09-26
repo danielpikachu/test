@@ -566,7 +566,7 @@ def main():
         return
 
     # Layout adjustment: 1/3 for left interactive interface, 2/3 for right map
-    col1, col2 = st.columns([1, 3])
+    col1, col2 = st.columns([1, 4])
 
     with col1:
         st.markdown("#### 📍 Select Locations")
@@ -627,4 +627,5 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
