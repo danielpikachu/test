@@ -71,7 +71,7 @@
             ]
           },
            {
-                    "name": "connect1ToBuildingC", 
+                    "name": "connectToBuildingC", 
                     "points": [
                       [47, 20, -3], 
                       [50, 20, -3],  
@@ -249,7 +249,7 @@
       {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-       {"from": ["main1Corridor", "level1"], "to": ["connect1ToBuildingC", "level1"]},
+       {"from": ["main1Corridor", "level1"], "to": ["connectToBuildingC", "level1"]},
        
     ]
   },
