@@ -14,7 +14,13 @@ COLORS = {
     'corridor_line': {'A': 'cyan', 'C': 'salmon'},
     'corridor_node': 'navy',
     'corridor_label': 'darkblue',
-    'stair': 'red',
+    'stair': {
+        'Stairs1': '#FF5733',   # 橙红
+        'Stairs2': '#33FF57',   # 绿
+        'Stairs3': '#3357FF',   # 蓝
+        'Stairs4': '#FF33F5',   # 粉紫
+        'Stairs5': '#F5FF33',   # 黄},
+       
     'stair_label': 'darkred',
     'classroom_label': 'black',
     'path': 'darkred',
@@ -591,6 +597,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
