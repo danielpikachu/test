@@ -249,7 +249,7 @@
       {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
+       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
        
     ]
   },
