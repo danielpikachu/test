@@ -35,9 +35,9 @@ def load_school_data_detailed(filename):
         st.error(f"加载数据文件失败: {str(e)}")
         return None
 
-# 绘制3D地图（优化版）
-def plot_3d_map(school_data, display_mode="多楼层（完整）", target_building=None, target_level=None, 
-                elev_angle=30, azim_angle=45, x_range=None, y_range=None):
+# 绘制3D地图（3D图放大两倍）
+def plot_3d_map(school_data):
+    # 图尺寸从(14,12)放大到(28,24)，整体占比扩大两倍
     fig = plt.figure(figsize=(35, 30))
     ax = fig.add_subplot(111, projection='3d')
 
@@ -57,16 +57,10 @@ def plot_3d_map(school_data, display_mode="多楼层（完整）", target_buildi
         for level in building_data['levels']:
             z = level['z']
             level_name = level['name']
-            
-            # 单楼层模式：只显示选中的建筑和楼层
-            if display_mode == "单楼层（清晰）":
-                if building_name != target_building or level_name != target_level:
-                    continue  # 跳过非目标楼层
-            
             floor_border_color = COLORS['floor_z'].get(z, 'gray')
             building_fill_color = COLORS['building'][building_name]
 
-            # 绘制楼层平面（降低透明度，减少遮挡）
+            # 绘制楼层平面（加粗边框）
             fp = level['floorPlane']
             plane_vertices = [
                 [fp['minX'], fp['minY'], z],
@@ -79,12 +73,13 @@ def plot_3d_map(school_data, display_mode="多楼层（完整）", target_buildi
             y_plane = [p[1] for p in plane_vertices]
             z_plane = [p[2] for p in plane_vertices]
             
+            # 边框线宽从2调整为4
             ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, 
                     label=f"{building_name}楼-{level_name}" if f"{building_name}楼-{level_name}" not in ax.get_legend_handles_labels()[1] else "")
             ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
-                            color=building_fill_color, alpha=0.1)  # 降低透明度
+                            color=building_fill_color, alpha=0.3)
 
-            # 绘制走廊
+            # 绘制走廊（加粗线条）
             for corr_idx, corridor in enumerate(level['corridors']):
                 points = corridor['points']
                 x = [p[0] for p in points]
@@ -93,23 +88,22 @@ def plot_3d_map(school_data, display_mode="多楼层（完整）", target_buildi
                 
                 if 'name' in corridor and ('connectToBuilding' in corridor['name']):
                     corr_line_color = COLORS['connect_corridor']
-                    corr_line_width = 12
+                    corr_line_width = 12  # 跨楼走廊线宽放大
                 else:
                     corr_line_color = COLORS['corridor_line'][building_name]
-                    corr_line_width = 8
+                    corr_line_width = 8  # 普通走廊线宽放大
                     corr_label = None
                 
                 ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, 
                         alpha=0.8, label=corr_label if (corr_label and corr_label not in ax.get_legend_handles_labels()[1]) else "")
                 
-                # 走廊节点 - 只显示跨楼走廊的节点标签
+                # 走廊节点尺寸放大
                 for p_idx, (px, py, pz) in enumerate(points):
                     ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
-                    if 'name' in corridor and ('connectToBuilding' in corridor['name']):
-                        ax.text(px, py, pz, f'{building_name}楼-{corridor["name"]}-P{p_idx}', 
-                                color=COLORS['corridor_label'], fontsize=12)
+                    ax.text(px, py, pz, f'{building_name}C{corr_idx}-P{p_idx}', 
+                            color=COLORS['corridor_label'], fontsize=12)
 
-            # 绘制楼梯
+            # 绘制楼梯（尺寸放大）
             for stair in level['stairs']:
                 x, y, _ = stair['coordinates']
                 stair_label = f"{building_name}楼-{stair['name']}"
@@ -119,40 +113,26 @@ def plot_3d_map(school_data, display_mode="多楼层（完整）", target_buildi
                     ax.scatter(x, y, z, color=COLORS['stair'], s=600, marker='^')
                 ax.text(x, y, z, stair['name'], color=COLORS['stair_label'], fontweight='bold', fontsize=14)
 
-            # 绘制教室（优化文字位置，避免重叠）
+            # 绘制教室（尺寸放大）
             for classroom in level['classrooms']:
                 x, y, _ = classroom['coordinates']
                 width, depth = classroom['size']
                 class_name = classroom['name']
 
-                # 文字位置偏移到教室右上角，避免重叠
-                text_x = x + width / 2
-                text_y = y + depth / 2
-                ax.text(text_x, text_y, z, class_name, color=COLORS['classroom_label'], 
-                        fontweight='bold', fontsize=12, ha='center')
-                
+                ax.text(x, y, z, class_name, color=COLORS['classroom_label'], fontweight='bold', fontsize=14)
                 ax.scatter(x, y, z, color=building_fill_color, s=160, edgecolors=floor_border_color)
                 ax.plot([x, x + width, x + width, x, x],
                         [y, y, y + depth, y + depth, y],
                         [z, z, z, z, z],
                         color=floor_border_color, linestyle='--', alpha=0.6, linewidth=2)
 
-    # 设置视角
-    ax.view_init(elev=elev_angle, azim=azim_angle)
-    
-    # 应用局部放大范围
-    if x_range:
-        ax.set_xlim(x_range[0], x_range[1])
-    if y_range:
-        ax.set_ylim(y_range[0], y_range[1])
-
-    # 坐标轴标签和标题
+    # 放大坐标轴标签和标题
     ax.set_xlabel('X 坐标', fontsize=18, fontweight='bold')
     ax.set_ylabel('Y 坐标', fontsize=18, fontweight='bold')
     ax.set_zlabel('楼层高度 (Z值)', fontsize=18, fontweight='bold')
     ax.set_title('校园3D导航地图（支持A/C楼跨楼导航）', fontsize=24, fontweight='bold', pad=20)
     
-    # 图例
+    # 放大图例
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16, frameon=True)
     ax.grid(True, alpha=0.3, linewidth=2)
 
@@ -458,7 +438,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
     except Exception as e:
         return None, f"导航错误: {str(e)}", None
 
-# 在3D图上绘制路径
+# 在3D图上绘制路径（放大路径显示）
 def plot_path(ax, graph, path):
     try:
         x = []
@@ -480,7 +460,7 @@ def plot_path(ax, graph, path):
             else:
                 labels.append("")
 
-        # 路径线宽放大
+        # 路径线宽从3放大到6
         ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
         # 起点终点标记放大
         ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='起点', edgecolors='black')
@@ -500,7 +480,6 @@ def get_classroom_info(school_data):
         
         classrooms_by_building = {}
         levels_by_building = {}
-        floor_data = {}  # 存储每个楼层的平面数据，用于局部放大
         
         for building_id in buildings:
             building_name = building_id.replace('building', '')
@@ -508,36 +487,33 @@ def get_classroom_info(school_data):
             
             levels = []
             classrooms_by_level = {}
-            floor_data[building_name] = {}
             
             for level in building_data['levels']:
                 level_name = level['name']
                 levels.append(level_name)
                 classrooms = [classroom['name'] for classroom in level['classrooms']]
                 classrooms_by_level[level_name] = classrooms
-                floor_data[building_name][level_name] = level['floorPlane']
             
             levels_by_building[building_name] = levels
             classrooms_by_building[building_name] = classrooms_by_level
             
-        return building_names, levels_by_building, classrooms_by_building, floor_data
+        return building_names, levels_by_building, classrooms_by_building
     except Exception as e:
         st.error(f"获取教室信息失败: {str(e)}")
-        return [], {}, {}, {}
+        return [], {}, {}
 
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
-    # 调整左右边距
+     # 新增：调整左右边距（此行是新增的第1行）
     st.markdown("""
         <style>
             .block-container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-                max-width: 100%;
+                padding-left: 1rem;    /* 左侧边距减小 */
+                padding-right: 1rem;   /* 右侧边距减小 */
+                max-width: 100%;       /* 取消最大宽度限制 */
             }
         </style>
-    """, unsafe_allow_html=True)
-    
+    """, unsafe_allow_html=True)  # 新增代码结束
     st.subheader("🏫 校园导航系统")
     st.markdown("3D地图与跨楼路径规划")
 
@@ -548,13 +524,13 @@ def main():
             return
             
         nav_graph = build_navigation_graph(school_data)
-        building_names, levels_by_building, classrooms_by_building, floor_data = get_classroom_info(school_data)
+        building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
         st.success("✅ 校园数据加载成功！")
     except Exception as e:
         st.error(f"初始化错误: {str(e)}")
         return
 
-    # 布局调整：左侧互动界面占比1/3，右侧地图占比2/3
+    # 布局调整：左侧互动界面占比1/3，右侧地图占比2/3（接近1:2）
     col1, col2 = st.columns([1, 3])
 
     with col1:
@@ -579,67 +555,13 @@ def main():
         # 导航按钮
         nav_button = st.button("🔍 查找最短路径", use_container_width=True)
 
-        # 地图显示设置
-        st.markdown("### 🗺️ 地图显示设置")
-        display_mode = st.radio("显示模式", ["单楼层（清晰）", "多楼层（完整）"], key="display_mode")
-        
-        # 单楼层模式的建筑和楼层选择
-        target_display_building = None
-        target_display_level = None
-        x_range = None
-        y_range = None
-        
-        if display_mode == "单楼层（清晰）":
-            target_display_building = st.selectbox("选择显示的建筑", building_names, key="display_building")
-            target_display_levels = levels_by_building.get(target_display_building, [])
-            target_display_level = st.selectbox("选择显示的楼层", target_display_levels, key="display_level")
-            
-            # 局部放大设置
-            if target_display_building and target_display_level and target_display_level in floor_data.get(target_display_building, {}):
-                fp = floor_data[target_display_building][target_display_level]
-                st.markdown("#### 🔍 局部放大")
-                x_range = st.slider("X轴范围", float(fp['minX']), float(fp['maxX']), 
-                                   (float(fp['minX']), float(fp['maxX'])), key="x_range")
-                y_range = st.slider("Y轴范围", float(fp['minY']), float(fp['maxY']), 
-                                   (float(fp['minY']), float(fp['maxY'])), key="y_range")
-
-        # 视角调整
-        st.markdown("#### 🔄 视角调整")
-        elev_angle = st.slider("仰角（0°=俯视，90°=正视）", 0, 90, 30, key="elev")
-        azim_angle = st.slider("方位角（水平旋转）", 0, 360, 45, key="azim")
-
     with col2:
         st.markdown("#### 🗺️ 3D校园地图")
         
-        # 初始化或更新地图
-        if 'fig' not in st.session_state or nav_button or st.session_state.get('display_mode_changed', False):
-            if display_mode == "单楼层（清晰）" and target_display_building and target_display_level:
-                fig, ax = plot_3d_map(
-                    school_data,
-                    display_mode=display_mode,
-                    target_building=target_display_building,
-                    target_level=target_display_level,
-                    elev_angle=elev_angle,
-                    azim_angle=azim_angle,
-                    x_range=x_range,
-                    y_range=y_range
-                )
-            else:
-                fig, ax = plot_3d_map(
-                    school_data,
-                    display_mode=display_mode,
-                    elev_angle=elev_angle,
-                    azim_angle=azim_angle
-                )
+        if 'fig' not in st.session_state:
+            fig, ax = plot_3d_map(school_data)
             st.session_state['fig'] = fig
-            st.session_state['display_mode_changed'] = False
-
-        # 监听显示模式变化
-        if st.session_state.get('display_mode') != st.session_state.get('last_display_mode'):
-            st.session_state['display_mode_changed'] = True
-            st.session_state['last_display_mode'] = st.session_state['display_mode']
-
-        # 处理导航请求
+        
         if nav_button:
             try:
                 path, message, simplified_path = navigate(
@@ -650,28 +572,11 @@ def main():
                 
                 if path:
                     st.success(f"📊 导航结果: {message}")
+                    # 路径详情单行显示
                     st.markdown("##### 🛤️ 路径详情")
-                    st.info(simplified_path)
+                    st.info(simplified_path)  # 使用info框突出显示单行路径
                     
-                    # 绘制带路径的地图
-                    if display_mode == "单楼层（清晰）" and target_display_building and target_display_level:
-                        fig, ax = plot_3d_map(
-                            school_data,
-                            display_mode=display_mode,
-                            target_building=target_display_building,
-                            target_level=target_display_level,
-                            elev_angle=elev_angle,
-                            azim_angle=azim_angle,
-                            x_range=x_range,
-                            y_range=y_range
-                        )
-                    else:
-                        fig, ax = plot_3d_map(
-                            school_data,
-                            display_mode=display_mode,
-                            elev_angle=elev_angle,
-                            azim_angle=azim_angle
-                        )
+                    fig, ax = plot_3d_map(school_data)
                     plot_path(ax, nav_graph, path)
                     st.session_state['fig'] = fig
                 else:
@@ -679,7 +584,6 @@ def main():
             except Exception as e:
                 st.error(f"导航过程出错: {str(e)}")
         
-        # 显示地图
         try:
             st.pyplot(st.session_state['fig'])
         except Exception as e:
@@ -687,3 +591,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+
+
+
+
+
