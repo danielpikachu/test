@@ -314,20 +314,20 @@
           "maxY": 70
         },
         "classrooms": [
-          {"name": "THEPLAZA", "coordinates": [51, 60, -3], "size": [5, 8]},
-        {"name": "ENTRANCE", "coordinates": [51, 20, -3], "size": [5, 8]}
+          {"name": "THEPLAZA", "coordinates": [53, 60, -3], "size": [5, 8]},
+        {"name": "ENTRANCE", "coordinates": [53, 20, -3], "size": [5, 8]}
         
         ],
         "corridors": [
           {
             "points": [
-              [51, 20, -3],  
-              [51, 25, -3], 
-              [51, 35, -3],   
-              [51, 40, -3],   
-              [51, 45, -3],   
-              [51, 50, -3],   
-              [51, 55, -3]    
+              [53, 20, -3],  
+              [53, 25, -3], 
+              [53, 35, -3],   
+              [53, 40, -3],   
+              [53, 45, -3],   
+              [53, 50, -3],   
+              [53, 55, -3]    
             ]
           }
         
@@ -335,9 +335,9 @@
         ],
         "stairs": [
           {"name": "Stairs2", "coordinates": [83, 26, -3]},
-          {"name": "Stairs3", "coordinates": [53, 60, -3]},  
+          {"name": "Stairs3", "coordinates": [55, 60, -3]},  
           {"name": "Stairs4", "coordinates": [83, 60, -3]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, -3]}   
+          {"name": "Stairs5", "coordinates": [55, 26, -3]}   
         ]
       },
       
