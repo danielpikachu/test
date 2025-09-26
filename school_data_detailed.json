@@ -357,69 +357,7 @@
           {"name": "Stairs5", "coordinates": [53, 26, -3]}   
         ]
       },
-      {
-        "name": "level2",
-        "z": 4,
-        "floorPlane": {
-          "minX": 50,
-          "maxX": 95,
-          "minY": 23,
-          "maxY": 73
-        },
-        "classrooms": [
-          {"name": "C201", "coordinates": [55, 30, 4], "size": [5, 8]},
-          {"name": "C202", "coordinates": [60, 30, 4], "size": [5, 8]},
-          {"name": "C203", "coordinates": [65, 30, 4], "size": [5, 8]},
-          {"name": "C204", "coordinates": [70, 30, 4], "size": [5, 8]},
-          {"name": "C205", "coordinates": [75, 30, 4], "size": [5, 8]},
-          {"name": "C206", "coordinates": [80, 30, 4], "size": [5, 8]},
-          {"name": "C207", "coordinates": [85, 30, 4], "size": [5, 8]},
-          {"name": "C208", "coordinates": [85, 40, 4], "size": [5, 8]},
-          {"name": "C209", "coordinates": [85, 50, 4], "size": [5, 8]},
-          {"name": "C210", "coordinates": [75, 50, 4], "size": [5, 8]},
-          {"name": "C211", "coordinates": [65, 50, 4], "size": [5, 8]},
-          {"name": "C212", "coordinates": [55, 50, 4], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [55, 35, 4],  
-              [60, 35, 4], 
-              [65, 35, 4],   
-              [70, 35, 4],   
-              [75, 35, 4],   
-              [80, 35, 4],   
-              [85, 35, 4]    
-            ]
-          },
-          {
-            "points": [
-              [80, 35, 4],  
-              [80, 40, 4], 
-              [80, 45, 4],  
-              [80, 50, 4],   
-              [80, 55, 4],   
-              [80, 60, 4]
-            ]
-          },
-          {
-            "points": [
-              [55, 55, 4],  
-              [60, 55, 4], 
-              [65, 55, 4],  
-              [70, 55, 4],   
-              [75, 55, 4],   
-              [80, 55, 4]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, 4]},
-          {"name": "Stairs3", "coordinates": [53, 60, 4]},  
-          {"name": "Stairs4", "coordinates": [83, 60, 4]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, 4]}   
-        ]
-      },
+   
       {
         "name": "level3",
         "z": 7,
