@@ -100,8 +100,7 @@ def plot_3d_map(school_data):
                 # 走廊节点尺寸放大
                 for p_idx, (px, py, pz) in enumerate(points):
                     ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
-                    ax.text(px, py, pz, f'{building_name}C{corr_idx}-P{p_idx}', 
-                            color=COLORS['corridor_label'], fontsize=12)
+                   
 
             # 绘制楼梯（尺寸放大）
             for stair in level['stairs']:
@@ -592,6 +591,7 @@ def main():
 if __name__ == "__main__":
     main()
     
+
 
 
 
