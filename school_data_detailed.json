@@ -244,7 +244,7 @@
     "levels": [
       {
         "name": "lowerLevel",
-        "z": -6,
+        "z": -9,
         "floorPlane": {
           "minX": 50,
           "maxX": 95,
@@ -252,56 +252,56 @@
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C009", "coordinates": [51, 60, -6], "size": [5, 8]},
-          {"name": "C011", "coordinates": [55, 60, -6], "size": [5, 8]},
-          {"name": "C013", "coordinates": [60, 60, -6], "size": [5, 8]},
-          {"name": "C015", "coordinates": [70, 60, -6], "size": [5, 8]},
-          {"name": "C017", "coordinates": [75, 60, -6], "size": [5, 8]},
-          {"name": "C019AB", "coordinates": [85, 60, -6], "size": [5, 8]},
-          {"name": "C021", "coordinates": [85, 48, -6], "size": [5, 10]},
-          {"name": "C025", "coordinates": [85, 34, -6], "size": [5, 10]},
-          {"name": "C020", "coordinates": [75, 48, -6], "size": [5, 10]},
-          {"name": "C024", "coordinates": [75, 34, -6], "size": [5, 8]},
-          {"name": "C007", "coordinates": [51, 48, -6], "size": [5, 8]},
-          {"name": "C005", "coordinates": [51, 42, -6], "size": [5, 8]},
-          {"name": "C003", "coordinates": [51, 34, -6], "size": [5, 8]},
-          {"name": "C001", "coordinates": [51, 26, -6], "size": [5, 8]},
-          {"name": "C006", "coordinates": [55, 42, -6], "size": [5, 8]},
-          {"name": "C004", "coordinates": [55, 34, -6], "size": [5, 8]},
-          {"name": "C002", "coordinates": [55, 26, -6], "size": [5, 8]},
-          {"name": "C012", "coordinates": [60, 48, -6], "size": [5, 8]},
-          {"name": "C016", "coordinates": [75, 48, -6], "size": [5, 8]}
+          {"name": "C009", "coordinates": [51, 60, -9], "size": [5, 8]},
+          {"name": "C011", "coordinates": [55, 60, -9], "size": [5, 8]},
+          {"name": "C013", "coordinates": [60, 60, -9], "size": [5, 8]},
+          {"name": "C015", "coordinates": [70, 60, -9], "size": [5, 8]},
+          {"name": "C017", "coordinates": [75, 60, -9], "size": [5, 8]},
+          {"name": "C019AB", "coordinates": [85, 60, -9], "size": [5, 8]},
+          {"name": "C021", "coordinates": [85, 48, -9], "size": [5, 10]},
+          {"name": "C025", "coordinates": [85, 34, -9], "size": [5, 10]},
+          {"name": "C020", "coordinates": [75, 48, -9], "size": [5, 10]},
+          {"name": "C024", "coordinates": [75, 34, -9], "size": [5, 8]},
+          {"name": "C007", "coordinates": [51, 48, -9], "size": [5, 8]},
+          {"name": "C005", "coordinates": [51, 42, -9], "size": [5, 8]},
+          {"name": "C003", "coordinates": [51, 34, -9], "size": [5, 8]},
+          {"name": "C001", "coordinates": [51, 26, -9], "size": [5, 8]},
+          {"name": "C006", "coordinates": [55, 42, -9], "size": [5, 8]},
+          {"name": "C004", "coordinates": [55, 34, -9], "size": [5, 8]},
+          {"name": "C002", "coordinates": [55, 26, -9], "size": [5, 8]},
+          {"name": "C012", "coordinates": [60, 48, -9], "size": [5, 8]},
+          {"name": "C016", "coordinates": [75, 48, -9], "size": [5, 8]}
         ],
         "corridors": [
           {
             "points": [
-             [51, 55, -6],  
-             [55, 55, -6], 
-              [60, 55, -6],   
-              [65, 55, -6],   
-              [70, 55, -6],   
-              [75, 55, -6],   
-              [80, 55, -6],   
-              [85, 55, -6]    
+             [51, 55, -9],  
+             [55, 55, -9], 
+              [60, 55, -9],   
+              [65, 55, -9],   
+              [70, 55, -9],   
+              [75, 55, -9],   
+              [80, 55, -9],   
+              [85, 55, -9]    
             ]
           },
           {
             "points": [
-              [82, 60, -6],  
-              [82, 55, -6], 
-              [82, 50, -6],  
-              [82, 45, -6],   
-              [82, 40, -6],   
-              [82, 35, -6],  
-              [82, 30, -6] 
+              [82, 60, -9],  
+              [82, 55, -9], 
+              [82, 50, -9],  
+              [82, 45, -9],   
+              [82, 40, -9],   
+              [82, 35, -9],  
+              [82, 30, -9] 
             ]
           }
         ],
         "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, -6]},
-          {"name": "Stairs3", "coordinates": [53, 60, -6]},  
-          {"name": "Stairs4", "coordinates": [83, 60, -6]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, -6]}   
+          {"name": "Stairs2", "coordinates": [83, 26, -9]},
+          {"name": "Stairs3", "coordinates": [53, 60, -9]},  
+          {"name": "Stairs4", "coordinates": [83, 60, -9]}, 
+          {"name": "Stairs5", "coordinates": [53, 26, -9]}   
         ]
       },
       {
