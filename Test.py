@@ -14,14 +14,20 @@ COLORS = {
     'corridor_line': {'A': 'cyan', 'C': 'salmon'},
     'corridor_node': 'navy',
     'corridor_label': 'darkblue',
+    # 为不同楼梯定义不同颜色
     'stair': {
-        'Stairs1': '#FF5733',   # 橙红
-        'Stairs2': '#33FF57',   # 绿
-        'Stairs3': '#3357FF',   # 蓝
-        'Stairs4': '#FF33F5',   # 粉紫
-        'Stairs5': '#F5FF33',   # 黄},
-       
-    'stair_label': 'darkred',
+        'Stairs1': '#FF5733',   # 橙红色
+        'Stairs2': '#33FF57',   # 绿色
+        'Stairs3': '#3357FF',   # 蓝色
+        'Stairs4': '#FF33F5',   # 粉紫色
+        'Stairs5': '#F5FF33',   # 黄色
+        'Stairs6': '#33FFF5',   # 青色
+        'Stairs7': '#FF9933',   # 橙色
+        'Stairs8': '#9933FF',   # 紫色
+        'Stairs9': '#F533FF',   # 紫红色
+        'Stairs10': '#33FF99'   # 青绿色
+    },
+    'stair_label': 'darkred',  # 楼梯标签颜色
     'classroom_label': 'black',
     'path': 'darkred',
     'start_marker': 'limegreen',
@@ -41,9 +47,9 @@ def load_school_data_detailed(filename):
         st.error(f"加载数据文件失败: {str(e)}")
         return None
 
-# 绘制3D地图（3D图放大两倍）
+# 绘制3D地图
 def plot_3d_map(school_data):
-    # 图尺寸从(14,12)放大到(28,24)，整体占比扩大两倍
+    # 图尺寸放大
     fig = plt.figure(figsize=(35, 30))
     ax = fig.add_subplot(111, projection='3d')
 
@@ -79,7 +85,6 @@ def plot_3d_map(school_data):
             y_plane = [p[1] for p in plane_vertices]
             z_plane = [p[2] for p in plane_vertices]
             
-            # 边框线宽从2调整为4
             ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, 
                     label=f"{building_name}楼-{level_name}" if f"{building_name}楼-{level_name}" not in ax.get_legend_handles_labels()[1] else "")
             ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
@@ -103,20 +108,27 @@ def plot_3d_map(school_data):
                 ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, 
                         alpha=0.8, label=corr_label if (corr_label and corr_label not in ax.get_legend_handles_labels()[1]) else "")
                 
-                # 走廊节点尺寸放大
+                # 走廊节点（无标签）
                 for p_idx, (px, py, pz) in enumerate(points):
                     ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
-                   
 
-            # 绘制楼梯（尺寸放大）
+            # 绘制楼梯（不同楼梯用不同颜色）
             for stair in level['stairs']:
+                stair_name = stair['name']
                 x, y, _ = stair['coordinates']
-                stair_label = f"{building_name}楼-{stair['name']}"
+                stair_label = f"{building_name}楼-{stair_name}"
+                
+                # 根据楼梯名称获取对应的颜色，若无匹配则使用默认红色
+                stair_color = COLORS['stair'].get(stair_name, 'red')
+                
+                # 绘制楼梯
                 if stair_label not in ax.get_legend_handles_labels()[1]:
-                    ax.scatter(x, y, z, color=COLORS['stair'], s=600, marker='^', label=stair_label)
+                    ax.scatter(x, y, z, color=stair_color, s=600, marker='^', label=stair_label)
                 else:
-                    ax.scatter(x, y, z, color=COLORS['stair'], s=600, marker='^')
-                ax.text(x, y, z, stair['name'], color=COLORS['stair_label'], fontweight='bold', fontsize=14)
+                    ax.scatter(x, y, z, color=stair_color, s=600, marker='^')
+                
+                # 绘制楼梯标签
+                ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
 
             # 绘制教室（尺寸放大）
             for classroom in level['classrooms']:
@@ -443,7 +455,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
     except Exception as e:
         return None, f"导航错误: {str(e)}", None
 
-# 在3D图上绘制路径（放大路径显示）
+# 在3D图上绘制路径
 def plot_path(ax, graph, path):
     try:
         x = []
@@ -465,7 +477,7 @@ def plot_path(ax, graph, path):
             else:
                 labels.append("")
 
-        # 路径线宽从3放大到6
+        # 路径线宽放大
         ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
         # 起点终点标记放大
         ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='起点', edgecolors='black')
@@ -509,7 +521,7 @@ def get_classroom_info(school_data):
 
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
-     # 新增：调整左右边距（此行是新增的第1行）
+    # 调整左右边距
     st.markdown("""
         <style>
             .block-container {
@@ -518,7 +530,8 @@ def main():
                 max-width: 100%;       /* 取消最大宽度限制 */
             }
         </style>
-    """, unsafe_allow_html=True)  # 新增代码结束
+    """, unsafe_allow_html=True)
+    
     st.subheader("🏫 校园导航系统")
     st.markdown("3D地图与跨楼路径规划")
 
@@ -535,7 +548,7 @@ def main():
         st.error(f"初始化错误: {str(e)}")
         return
 
-    # 布局调整：左侧互动界面占比1/3，右侧地图占比2/3（接近1:2）
+    # 布局调整：左侧互动界面占比1/3，右侧地图占比2/3
     col1, col2 = st.columns([1, 3])
 
     with col1:
@@ -597,10 +610,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-
-
-
-
-
-
-
