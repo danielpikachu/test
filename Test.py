@@ -199,11 +199,11 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)** 2 for a, b in zip(coords1, coords2)))
 
-# 构建导航图
+# 构建导航图（修复了跨楼连接和内部连接问题）
 def build_navigation_graph(school_data):
     graph = Graph()
 
-    # 第一步：添加所有建筑的节点
+    # 第一步：添加所有建筑的节点（教室、楼梯、走廊）
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
@@ -213,7 +213,7 @@ def build_navigation_graph(school_data):
         for level in building_data['levels']:
             level_name = level['name']
 
-            # 添加教室节点
+            # 1. 添加教室节点
             for classroom in level['classrooms']:
                 class_name = classroom['name']
                 graph.add_node(
@@ -224,7 +224,7 @@ def build_navigation_graph(school_data):
                     coordinates=classroom['coordinates']
                 )
 
-            # 添加楼梯节点
+            # 2. 添加楼梯节点
             for stair in level['stairs']:
                 graph.add_node(
                     building_id=building_id,
@@ -234,7 +234,7 @@ def build_navigation_graph(school_data):
                     coordinates=stair['coordinates']
                 )
 
-            # 添加走廊节点
+            # 3. 添加走廊节点（包含跨楼走廊）
             for corr_idx, corridor in enumerate(level['corridors']):
                 corr_name = corridor.get('name', f'corr{corr_idx}')
                 for p_idx, point in enumerate(corridor['points']):
@@ -293,7 +293,7 @@ def build_navigation_graph(school_data):
                     if distance < 3.0:
                         graph.add_edge(node1_id, node2_id, distance)
 
-            # 3. 教室 → 最近的走廊节点连接
+            # 3. 教室 → 最近的走廊节点连接（增强逻辑确保所有教室都能连接）
             class_nodes = [
                 node_id for node_id, node_info in graph.nodes.items()
                 if node_info['building'] == building_name 
@@ -314,6 +314,9 @@ def build_navigation_graph(school_data):
                 
                 if nearest_corr_node_id:
                     graph.add_edge(class_node_id, nearest_corr_node_id, min_dist)
+                else:
+                    # 对孤立教室添加警告
+                    st.warning(f"警告: {building_name}楼{level_name}的{class_nodes[class_node_id]['name']}未找到可用走廊连接")
 
             # 4. 楼梯 → 最近的走廊节点连接
             stair_nodes = [
@@ -356,26 +359,39 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # 6. 跨建筑连接
+    # 6. 跨建筑连接（修复level1跨楼连接）
     a_building_id = 'buildingA'
     c_building_id = 'buildingC'
-    connect_level = 'level3'
     
-    # A楼连接C楼的走廊节点
-    a_corr_name = 'connectToBuildingC-p2'
-    a_connect_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr_name, connect_level))
+    # 修复level1跨楼连接
+    connect_level1 = 'level1'
+    a_corr1_name = 'connectToBuildingC-p3'  # 正确节点索引
+    a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
+    c_corr1_name = 'connectToBuildingA-p0'
+    c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
     
-    # C楼连接A楼的走廊节点
-    c_corr_name = 'connectToBuildingA-p0'
-    c_connect_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr_name, connect_level))
-    
-    if a_connect_node_id and c_connect_node_id:
-        coords_a = graph.nodes[a_connect_node_id]['coordinates']
-        coords_c = graph.nodes[c_connect_node_id]['coordinates']
+    if a_connect1_node_id and c_connect1_node_id:
+        coords_a = graph.nodes[a_connect1_node_id]['coordinates']
+        coords_c = graph.nodes[c_connect1_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_c)
-        graph.add_edge(a_connect_node_id, c_connect_node_id, distance)
+        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
-        st.warning("跨楼走廊连接节点未找到，可能影响跨楼导航")
+        st.warning("level1跨楼走廊连接节点未找到")
+    
+    # level3跨楼连接保持不变
+    connect_level3 = 'level3'
+    a_corr3_name = 'connectToBuildingC-p2'
+    a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
+    c_corr3_name = 'connectToBuildingA-p0'
+    c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
+    
+    if a_connect3_node_id and c_connect3_node_id:
+        coords_a = graph.nodes[a_connect3_node_id]['coordinates']
+        coords_c = graph.nodes[c_connect3_node_id]['coordinates']
+        distance = euclidean_distance(coords_a, coords_c)
+        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+    else:
+        st.warning("level3跨楼走廊连接节点未找到")
 
     return graph
 
@@ -537,6 +553,7 @@ def main():
 
     # 加载JSON数据
     try:
+        # 注意：请确保JSON文件与脚本在同一目录或提供正确路径
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
             return
@@ -609,4 +626,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
