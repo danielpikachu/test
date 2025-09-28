@@ -71,6 +71,7 @@ def plot_3d_map(school_data, display_options=None):
     start_level = display_options['start_level']
     end_level = display_options['end_level']
     path_stairs = display_options['path_stairs']
+    path = display_options.get('path', [])  # 获取路径数据用于绘制
 
     # 遍历所有建筑物
     for building_id in school_data.keys():
@@ -174,6 +175,38 @@ def plot_3d_map(school_data, display_options=None):
                     
                     # 绘制楼梯标签
                     ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
+
+    # 如果有路径且不是显示全部，绘制路径
+    if path and not show_all:
+        try:
+            x = []
+            y = []
+            z = []
+            labels = []
+
+            for node_id in path:
+                coords = graph.nodes[node_id]['coordinates']
+                x.append(coords[0])
+                y.append(coords[1])
+                z.append(coords[2])
+                
+                node_type = graph.nodes[node_id]['type']
+                if node_type == 'classroom':
+                    labels.append(graph.nodes[node_id]['name'])
+                elif node_type == 'stair':
+                    labels.append(graph.nodes[node_id]['name'])
+                else:
+                    labels.append("")
+
+            # 放大路径线宽
+            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
+            # 放大起点和终点标记
+            ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='起点', edgecolors='black')
+            ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='终点', edgecolors='black')
+            ax.text(x[0], y[0], z[0], f"起点\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
+            ax.text(x[-1], y[-1], z[-1], f"终点\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
+        except:
+            pass
 
     # 放大轴标签和标题
     ax.set_xlabel('X坐标', fontsize=18, fontweight='bold')
@@ -502,12 +535,13 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     simplified_path.append(f"Building {node_building}{node_name}({node_level})")
             
             full_path_str = " → ".join(simplified_path)
-            # 返回显示选项
+            # 返回显示选项，包含路径信息
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
                 'path_stairs': path_stairs,
-                'show_all': False
+                'show_all': False,
+                'path': path
             }
             return path, f"总距离: {total_distance:.2f} 单位", full_path_str, display_options
         else:
@@ -595,6 +629,18 @@ def main():
     st.subheader("🏫 校园导航系统")
     st.markdown("3D地图 & 楼宇间路径规划")
 
+    # 初始化会话状态变量
+    if 'display_options' not in st.session_state:
+        st.session_state['display_options'] = {
+            'start_level': None,
+            'end_level': None,
+            'path_stairs': set(),
+            'show_all': True,
+            'path': []
+        }
+    if 'current_path' not in st.session_state:
+        st.session_state['current_path'] = None
+
     # 加载JSON数据
     try:
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -632,15 +678,18 @@ def main():
 
         # 导航按钮
         nav_button = st.button("🔍 查找最短路径", use_container_width=True)
+        
+        # 添加显示全部楼层的复选框控件
+        show_all_floors = st.checkbox(
+            "🌐 显示全部楼层", 
+            value=st.session_state['display_options']['show_all'],
+            help="勾选后将显示所有楼层，取消勾选则只显示相关楼层和路径"
+        )
 
     with col2:
         st.markdown("#### 🗺️ 3D校园地图")
         
-        # 初始化地图时显示所有楼层
-        if 'fig' not in st.session_state:
-            fig, ax = plot_3d_map(school_data)
-            st.session_state['fig'] = fig
-        
+        # 处理导航按钮点击
         if nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
@@ -654,17 +703,33 @@ def main():
                     st.markdown("##### 🛤️ 路径详情")
                     st.info(simplified_path)
                     
-                    # 使用显示选项绘制地图
-                    fig, ax = plot_3d_map(school_data, display_options)
-                    plot_path(ax, nav_graph, path)
-                    st.session_state['fig'] = fig
+                    # 保存路径和显示选项到会话状态
+                    st.session_state['current_path'] = path
+                    st.session_state['display_options'] = display_options
+                    # 尊重用户的显示全部楼层选择
+                    st.session_state['display_options']['show_all'] = show_all_floors
                 else:
                     st.error(f"❌ {message}")
             except Exception as e:
                 st.error(f"导航过程错误: {str(e)}")
         
+        # 处理显示全部楼层复选框状态变化
+        if show_all_floors != st.session_state['display_options']['show_all']:
+            st.session_state['display_options']['show_all'] = show_all_floors
+        
+        # 绘制地图
         try:
-            st.pyplot(st.session_state['fig'])
+            # 如果有路径规划结果，使用保存的显示选项
+            if st.session_state['current_path'] is not None:
+                fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+                # 如果不是显示全部楼层，绘制路径
+                if not st.session_state['display_options']['show_all']:
+                    plot_path(ax, nav_graph, st.session_state['current_path'])
+            else:
+                # 初始状态显示全部楼层
+                fig, ax = plot_3d_map(school_data)
+            
+            st.pyplot(fig)
         except Exception as e:
             st.error(f"显示地图失败: {str(e)}")
 
