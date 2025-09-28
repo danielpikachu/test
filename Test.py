@@ -613,6 +613,20 @@ def get_classroom_info(school_data):
         st.error(f"获取教室信息失败: {str(e)}")
         return [], {}, {}
 
+# 重置应用状态到初始状态
+def reset_app_state():
+    st.session_state['display_options'] = {
+        'start_level': None,
+        'end_level': None,
+        'path_stairs': set(),
+        'show_all': True,
+        'path': []
+    }
+    st.session_state['current_path'] = None
+    # 清除路径结果显示
+    if 'path_result' in st.session_state:
+        del st.session_state['path_result']
+
 # -------------------------- 3. Streamlit界面逻辑 --------------------------
 def main():
     # 调整边距
@@ -676,15 +690,20 @@ def main():
         end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
         end_classroom = st.selectbox("教室", end_classrooms, key="end_classroom")
 
-        # 导航按钮
+        # 导航按钮和重置按钮
         nav_button = st.button("🔍 查找最短路径", use_container_width=True)
         
-        # 添加显示全部楼层的复选框控件
-        show_all_floors = st.checkbox(
-            "🌐 显示全部楼层", 
-            value=st.session_state['display_options']['show_all'],
-            help="勾选后将显示所有楼层，取消勾选则只显示相关楼层和路径"
+        # 添加重置视图按钮
+        reset_button = st.button(
+            "🔄 重置视图", 
+            use_container_width=True,
+            help="点击恢复到初始状态，显示所有楼层并清除路径"
         )
+        
+        # 处理重置按钮点击
+        if reset_button:
+            reset_app_state()
+            st.experimental_rerun()  # 重新运行应用以刷新界面
 
     with col2:
         st.markdown("#### 🗺️ 3D校园地图")
@@ -706,25 +725,18 @@ def main():
                     # 保存路径和显示选项到会话状态
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
-                    # 尊重用户的显示全部楼层选择
-                    st.session_state['display_options']['show_all'] = show_all_floors
                 else:
                     st.error(f"❌ {message}")
             except Exception as e:
                 st.error(f"导航过程错误: {str(e)}")
-        
-        # 处理显示全部楼层复选框状态变化
-        if show_all_floors != st.session_state['display_options']['show_all']:
-            st.session_state['display_options']['show_all'] = show_all_floors
         
         # 绘制地图
         try:
             # 如果有路径规划结果，使用保存的显示选项
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-                # 如果不是显示全部楼层，绘制路径
-                if not st.session_state['display_options']['show_all']:
-                    plot_path(ax, nav_graph, st.session_state['current_path'])
+                # 绘制路径
+                plot_path(ax, nav_graph, st.session_state['current_path'])
             else:
                 # 初始状态显示全部楼层
                 fig, ax = plot_3d_map(school_data)
