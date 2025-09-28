@@ -11,9 +11,11 @@
           "maxY": 50
         },
         "classrooms": [
-          {"name": "A005", "coordinates": [5, 20, -6], "size": [5, 8]},
-          {"name": "A008", "coordinates": [10, 30, -6], "size": [5, 8]},
-          {"name": "A010", "coordinates": [20, 30, -6], "size": [5, 8]}
+          {"name": "A005", "coordinates": [25, 30, -6], "size": [5, 8]},
+          {"name": "A008", "coordinates": [25, 50, -6], "size": [10, 8]},
+          
+          {"name": "A010", "coordinates": [15, 50, -6], "size": [5, 8]},
+          {"name": "PRACTICE", "coordinates": [20, 50, -6], "size": [5, 8]}
         ],
         "corridors": [
           {
