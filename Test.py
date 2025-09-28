@@ -18,6 +18,7 @@ COLORS = {
     'stair': {
         'Stairs1': '#FF5733',   # 橙红
         'Stairs2': '#33FF57',   # 绿
+        'Stairs3': '#3357FF',   # 
         'Stairs3': '#3357FF',   # 蓝
         'Stairs4': '#FF33F5',   # 粉紫
         'Stairs5': '#F5FF33',   # 黄
@@ -74,8 +75,8 @@ def plot_3d_map(school_data, display_options=None):
     path_stairs = display_options['path_stairs']
     path = display_options.get('path', [])  # 获取路径数据用于绘制
 
-    # 存储每栋楼的最高楼层信息，用于放置楼宇标签
-    building_heights = {}
+    # 存储每栋楼的标识位置信息（最大Y值处）
+    building_label_positions = {}
 
     # 遍历所有建筑物
     for building_id in school_data.keys():
@@ -84,10 +85,10 @@ def plot_3d_map(school_data, display_options=None):
         building_name = building_id.replace('building', '')
         building_data = school_data[building_id]
         
-        # 记录建筑物的最高楼层
+        # 记录建筑物的最高楼层和最大Y值
         max_z = -float('inf')
-        center_x = 0
-        center_y = 0
+        max_y = -float('inf')
+        corresponding_x = 0  # 最大Y值对应的X坐标
         level_count = 0
         
         # 处理建筑物的每个楼层
@@ -99,10 +100,14 @@ def plot_3d_map(school_data, display_options=None):
             if z > max_z:
                 max_z = z
                 
-            # 计算建筑物中心位置（基于楼层平面）
+            # 获取楼层平面信息
             fp = level['floorPlane']
-            center_x += (fp['minX'] + fp['maxX']) / 2
-            center_y += (fp['minY'] + fp['maxY']) / 2
+            # 更新最大Y值及其对应的X坐标
+            if fp['maxY'] > max_y:
+                max_y = fp['maxY']
+                # 取最大Y处的中间X坐标
+                corresponding_x = (fp['minX'] + fp['maxX']) / 2
+                
             level_count += 1
             
             # 判断是否需要显示当前楼层
@@ -195,27 +200,17 @@ def plot_3d_map(school_data, display_options=None):
                     # 绘制楼梯标签
                     ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
         
-        # 计算建筑物中心位置
+        # 存储楼宇标识位置：最大Y值旁边，最高楼层高度
         if level_count > 0:
-            center_x /= level_count
-            center_y /= level_count
-            building_heights[building_name] = (center_x, center_y, max_z)
+            # 将标签放在最大Y值外侧一点，避免与楼体重叠
+            label_y = max_y + 2.0  # 稍微超出最大Y值
+            building_label_positions[building_name] = (corresponding_x, label_y, max_z)
 
-    # 在每栋楼的顶部添加楼宇标识
-    for building_name, (x, y, z) in building_heights.items():
-        # 在楼顶上方一点显示标识，使其更醒目
-        label_z = z + 1.0  # 稍微高于楼顶
+    # 在每栋楼的最大Y值旁边添加楼宇标识
+    for building_name, (x, y, z) in building_label_positions.items():
+        # 在最高楼层高度上方一点显示标识
+        label_z = z + 1.0
         # 使用较大的字体和粗体显示楼宇名称
-        ax.text(
-            x, y, label_z, 
-            f"{building_name}楼", 
-            color=COLORS['building_label'][building_name], 
-            fontweight='bold', 
-            fontsize=30,
-            ha='center',  # 水平居中
-            va='center'   # 垂直居中
-        )
-        # 可以添加一个背景框使文字更清晰
         bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor=COLORS['building'][building_name], alpha=0.7)
         ax.text(
             x, y, label_z, 
@@ -223,8 +218,8 @@ def plot_3d_map(school_data, display_options=None):
             color=COLORS['building_label'][building_name], 
             fontweight='bold', 
             fontsize=30,
-            ha='center', 
-            va='center',
+            ha='center',  # 水平居中
+            va='center',  # 垂直居中
             bbox=bbox_props
         )
 
