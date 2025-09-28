@@ -34,7 +34,8 @@ COLORS = {
     'start_label': 'green',
     'end_marker': 'magenta',
     'end_label': 'purple',
-    'connect_corridor': 'gold'
+    'connect_corridor': 'gold',
+    'building_label': {'A': 'darkblue', 'C': 'darkred'}  # 楼宇标签颜色
 }
 
 # -------------------------- 2. 核心功能实现 --------------------------
@@ -73,6 +74,9 @@ def plot_3d_map(school_data, display_options=None):
     path_stairs = display_options['path_stairs']
     path = display_options.get('path', [])  # 获取路径数据用于绘制
 
+    # 存储每栋楼的最高楼层信息，用于放置楼宇标签
+    building_heights = {}
+
     # 遍历所有建筑物
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
@@ -80,10 +84,26 @@ def plot_3d_map(school_data, display_options=None):
         building_name = building_id.replace('building', '')
         building_data = school_data[building_id]
         
+        # 记录建筑物的最高楼层
+        max_z = -float('inf')
+        center_x = 0
+        center_y = 0
+        level_count = 0
+        
         # 处理建筑物的每个楼层
         for level in building_data['levels']:
             level_name = level['name']
             z = level['z']
+            
+            # 更新最高楼层
+            if z > max_z:
+                max_z = z
+                
+            # 计算建筑物中心位置（基于楼层平面）
+            fp = level['floorPlane']
+            center_x += (fp['minX'] + fp['maxX']) / 2
+            center_y += (fp['minY'] + fp['maxY']) / 2
+            level_count += 1
             
             # 判断是否需要显示当前楼层
             show_level = show_all
@@ -96,7 +116,6 @@ def plot_3d_map(school_data, display_options=None):
 
             # 绘制楼层平面（仅在需要显示的楼层）
             if show_level:
-                fp = level['floorPlane']
                 plane_vertices = [
                     [fp['minX'], fp['minY'], z],
                     [fp['maxX'], fp['minY'], z],
@@ -175,6 +194,39 @@ def plot_3d_map(school_data, display_options=None):
                     
                     # 绘制楼梯标签
                     ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
+        
+        # 计算建筑物中心位置
+        if level_count > 0:
+            center_x /= level_count
+            center_y /= level_count
+            building_heights[building_name] = (center_x, center_y, max_z)
+
+    # 在每栋楼的顶部添加楼宇标识
+    for building_name, (x, y, z) in building_heights.items():
+        # 在楼顶上方一点显示标识，使其更醒目
+        label_z = z + 1.0  # 稍微高于楼顶
+        # 使用较大的字体和粗体显示楼宇名称
+        ax.text(
+            x, y, label_z, 
+            f"{building_name}楼", 
+            color=COLORS['building_label'][building_name], 
+            fontweight='bold', 
+            fontsize=30,
+            ha='center',  # 水平居中
+            va='center'   # 垂直居中
+        )
+        # 可以添加一个背景框使文字更清晰
+        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor=COLORS['building'][building_name], alpha=0.7)
+        ax.text(
+            x, y, label_z, 
+            f"{building_name}楼", 
+            color=COLORS['building_label'][building_name], 
+            fontweight='bold', 
+            fontsize=30,
+            ha='center', 
+            va='center',
+            bbox=bbox_props
+        )
 
     # 如果有路径且不是显示全部，绘制路径
     if path and not show_all:
