@@ -703,7 +703,7 @@ def main():
         # 处理重置按钮点击
         if reset_button:
             reset_app_state()
-            st.experimental_rerun()  # 重新运行应用以刷新界面
+            st.rerun()  # 重新运行应用以刷新界面
 
     with col2:
         st.markdown("#### 🗺️ 3D校园地图")
@@ -747,3 +747,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
