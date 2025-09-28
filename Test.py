@@ -520,6 +520,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             # 收集路径中经过的楼梯
             path_stairs = set()
+            # 跟踪上一个节点的建筑物，用于检测连廊
+            prev_building = None
             
             for node_id in path:
                 node_type = graph.nodes[node_id]['type']
@@ -530,9 +532,31 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 # 记录路径中经过的楼梯
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    
-                if node_type in ['classroom', 'stair']:
                     simplified_path.append(f"Building {node_building}{node_name}({node_level})")
+                
+                # 处理教室节点
+                elif node_type == 'classroom':
+                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
+                
+                # 处理走廊节点，检测是否是连廊且建筑物发生变化
+                elif node_type == 'corridor':
+                    # 检查是否是连接两栋楼的连廊
+                    if 'connectToBuilding' in node_name:
+                        # 确定连廊连接的建筑物
+                        if 'connectToBuildingA' in node_name:
+                            connected_building = 'A'
+                        elif 'connectToBuildingC' in node_name:
+                            connected_building = 'C'
+                        else:
+                            connected_building = '其他'
+                            
+                        # 只有当建筑物发生变化时才添加连廊信息
+                        if prev_building and prev_building != node_building:
+                            simplified_path.append(f"通过连廊从Building {prev_building}到Building {node_building}({node_level})")
+                
+                # 更新上一个节点的建筑物
+                if node_type in ['classroom', 'stair', 'corridor']:
+                    prev_building = node_building
             
             full_path_str = " → ".join(simplified_path)
             # 返回显示选项，包含路径信息
@@ -661,7 +685,9 @@ def main():
         if school_data is None:
             return
             
-        nav_graph = build_navigation_graph(school_data)
+        # 全局变量graph，供plot_3d_map使用
+        global graph
+        graph = build_navigation_graph(school_data)
         building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
         st.success("✅ 校园数据加载成功!")
     except Exception as e:
@@ -712,7 +738,7 @@ def main():
         if nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
-                    nav_graph, 
+                    graph, 
                     start_building, start_classroom, start_level,
                     end_building, end_classroom, end_level
                 )
@@ -736,7 +762,7 @@ def main():
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
                 # 绘制路径
-                plot_path(ax, nav_graph, st.session_state['current_path'])
+                plot_path(ax, graph, st.session_state['current_path'])
             else:
                 # 初始状态显示全部楼层
                 fig, ax = plot_3d_map(school_data)
@@ -747,4 +773,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
