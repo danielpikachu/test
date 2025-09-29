@@ -48,7 +48,7 @@ def load_school_data_detailed(filename):
         st.error(f"加载数据文件失败: {str(e)}")
         return None
 
-# 绘制3D地图 - 支持A/B/C三栋楼显示
+# 绘制3D地图 - 路径规划时隐藏B楼
 def plot_3d_map(school_data, display_options=None):
     # 放大图形尺寸
     fig = plt.figure(figsize=(35, 30))
@@ -66,14 +66,18 @@ def plot_3d_map(school_data, display_options=None):
             'end_level': None,
             'path_stairs': set(),
             'show_all': True,
-            'path': []
+            'path': [],
+            'start_building': None,  # 新增起点楼宇信息
+            'end_building': None     # 新增终点楼宇信息
         }
     
     show_all = display_options['show_all']
     start_level = display_options['start_level']
     end_level = display_options['end_level']
     path_stairs = display_options['path_stairs']
-    path = display_options.get('path', [])  # 获取路径数据用于绘制
+    path = display_options.get('path', [])
+    start_building = display_options.get('start_building')
+    end_building = display_options.get('end_building')
 
     # 存储每栋楼的标识位置信息
     building_label_positions = {}
@@ -83,6 +87,13 @@ def plot_3d_map(school_data, display_options=None):
         if not building_id.startswith('building'):
             continue
         building_name = building_id.replace('building', '')
+        
+        # 路径规划状态下且是B楼则跳过绘制
+        if not show_all and building_name == 'B':
+            # 检查起点或终点是否在B楼，是的话需要显示
+            if start_building != 'B' and end_building != 'B':
+                continue
+        
         building_data = school_data[building_id]
         
         # 记录建筑物的最高楼层和最大Y值（适配B楼负Y坐标）
@@ -223,6 +234,10 @@ def plot_3d_map(school_data, display_options=None):
 
     # 添加楼宇标识
     for building_name, (x, y, z) in building_label_positions.items():
+        # 路径规划状态下且是B楼则不显示标签
+        if not show_all and building_name == 'B' and start_building != 'B' and end_building != 'B':
+            continue
+            
         label_z = z + 1.0
         bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
                         facecolor=COLORS['building'].get(building_name, 'lightgray'), alpha=0.7)
@@ -623,13 +638,15 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     prev_building = node_building
             
             full_path_str = " → ".join(simplified_path)
-            # 返回显示选项
+            # 返回显示选项，包含起点和终点楼宇信息用于控制B楼显示
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
                 'path_stairs': path_stairs,
                 'show_all': False,
-                'path': path
+                'path': path,
+                'start_building': start_building,
+                'end_building': end_building
             }
             return path, f"总距离: {total_distance:.2f} 单位", full_path_str, display_options
         else:
@@ -708,7 +725,9 @@ def reset_app_state():
         'end_level': None,
         'path_stairs': set(),
         'show_all': True,
-        'path': []
+        'path': [],
+        'start_building': None,
+        'end_building': None
     }
     st.session_state['current_path'] = None
     # 清除路径结果显示
@@ -738,7 +757,9 @@ def main():
             'end_level': None,
             'path_stairs': set(),
             'show_all': True,
-            'path': []
+            'path': [],
+            'start_building': None,
+            'end_building': None
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
@@ -828,7 +849,7 @@ def main():
                 # 绘制路径
                 plot_path(ax, graph, st.session_state['current_path'])
             else:
-                # 初始状态显示全部楼层
+                # 初始状态显示全部楼层（包括B楼）
                 fig, ax = plot_3d_map(school_data)
             
             st.pyplot(fig)
