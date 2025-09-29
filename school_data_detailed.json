@@ -160,7 +160,7 @@
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
     ]
   },
-  "building2": {  // 将B楼标识改为数字2
+  "building2": {
     "levels": [
       {
         "name": "lowerLevel",
@@ -179,7 +179,7 @@
             "points": [[10, -65, -9], [20, -65, -9], [30, -65, -9]]
           }
         ],
-        "stairs": [{"name": "Stairs2", "coordinates": [35, -60, -9]}]  // 楼梯名称也改为数字标识
+        "stairs": [{"name": "Stairs2", "coordinates": [35, -60, -9]}]
       },
       {
         "name": "level1",
