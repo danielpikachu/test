@@ -254,18 +254,51 @@
     "levels": [
       {
         "name": "lowerLevel",
-        "z": -6,
+        "z": -9,
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -110,
-          "maxY": -60
+          "minY": -80,
+          "maxY": -30
         },
         "classrooms": [
-          {"name": "B001餐厅", "coordinates": [20, -85, -6], "size": [18, 12]}
+          {"name": "B001", "coordinates": [10, -70, -9], "size": [5, 8]},
+          {"name": "B002", "coordinates": [15, -70, -9], "size": [5, 8]},
+          {"name": "B003", "coordinates": [20, -70, -9], "size": [5, 8]},
+          {"name": "B004", "coordinates": [25, -70, -9], "size": [5, 8]},
+          {"name": "B005", "coordinates": [30, -70, -9], "size": [5, 8]},
+          {"name": "B006", "coordinates": [10, -55, -9], "size": [5, 8]},
+          {"name": "B007", "coordinates": [15, -55, -9], "size": [5, 8]},
+          {"name": "B008", "coordinates": [20, -55, -9], "size": [5, 8]},
+          {"name": "B009", "coordinates": [25, -55, -9], "size": [5, 8]},
+          {"name": "B010", "coordinates": [30, -55, -9], "size": [5, 8]}
         ],
-        "corridors": [],
-        "stairs": []
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [10, -65, -9],
+              [15, -65, -9],
+              [20, -65, -9],
+              [25, -65, -9],
+              [30, -65, -9],
+              [35, -65, -9]
+            ]
+          },
+          {
+            "points": [
+              [22, -70, -9],
+              [22, -65, -9],
+              [22, -60, -9],
+              [22, -55, -9],
+              [22, -50, -9]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [35, -60, -9]},
+          {"name": "StairsB2", "coordinates": [5, -60, -9]}
+        ]
       },
       {
         "name": "level1",
@@ -273,14 +306,47 @@
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -110,
-          "maxY": -60
+          "minY": -80,
+          "maxY": -30
         },
         "classrooms": [
-          {"name": "B101餐厅", "coordinates": [20, -85, -3], "size": [18, 12]}
+          {"name": "B101", "coordinates": [10, -70, -3], "size": [5, 8]},
+          {"name": "B102", "coordinates": [15, -70, -3], "size": [5, 8]},
+          {"name": "B103", "coordinates": [20, -70, -3], "size": [5, 8]},
+          {"name": "B104", "coordinates": [25, -70, -3], "size": [5, 8]},
+          {"name": "B105", "coordinates": [30, -70, -3], "size": [5, 8]},
+          {"name": "B106", "coordinates": [10, -55, -3], "size": [5, 8]},
+          {"name": "B107", "coordinates": [15, -55, -3], "size": [5, 8]},
+          {"name": "B108", "coordinates": [20, -55, -3], "size": [5, 8]},
+          {"name": "B109", "coordinates": [25, -55, -3], "size": [5, 8]},
+          {"name": "B110", "coordinates": [30, -55, -3], "size": [5, 8]}
         ],
-        "corridors": [],
-        "stairs": []
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [10, -65, -3],
+              [15, -65, -3],
+              [20, -65, -3],
+              [25, -65, -3],
+              [30, -65, -3],
+              [35, -65, -3]
+            ]
+          },
+          {
+            "points": [
+              [22, -70, -3],
+              [22, -65, -3],
+              [22, -60, -3],
+              [22, -55, -3],
+              [22, -50, -3]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [35, -60, -3]},
+          {"name": "StairsB2", "coordinates": [5, -60, -3]}
+        ]
       },
       {
         "name": "level3",
@@ -288,17 +354,55 @@
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -110,
-          "maxY": -60
+          "minY": -80,
+          "maxY": -30
         },
         "classrooms": [
-          {"name": "B301剧院", "coordinates": [15, -85, 7], "size": [25, 15]}
+          {"name": "B301", "coordinates": [10, -70, 7], "size": [5, 8]},
+          {"name": "B302", "coordinates": [15, -70, 7], "size": [5, 8]},
+          {"name": "B303", "coordinates": [20, -70, 7], "size": [5, 8]},
+          {"name": "B304", "coordinates": [25, -70, 7], "size": [5, 8]},
+          {"name": "B305", "coordinates": [30, -70, 7], "size": [5, 8]},
+          {"name": "B306", "coordinates": [10, -55, 7], "size": [5, 8]},
+          {"name": "B307", "coordinates": [15, -55, 7], "size": [5, 8]},
+          {"name": "B308", "coordinates": [20, -55, 7], "size": [5, 8]},
+          {"name": "B309", "coordinates": [25, -55, 7], "size": [5, 8]},
+          {"name": "B310", "coordinates": [30, -55, 7], "size": [5, 8]}
         ],
-        "corridors": [],
-        "stairs": []
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [10, -65, 7],
+              [15, -65, 7],
+              [20, -65, 7],
+              [25, -65, 7],
+              [30, -65, 7],
+              [35, -65, 7]
+            ]
+          },
+          {
+            "points": [
+              [22, -70, 7],
+              [22, -65, 7],
+              [22, -60, 7],
+              [22, -55, 7],
+              [22, -50, 7]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [35, -60, 7]},
+          {"name": "StairsB2", "coordinates": [5, -60, 7]}
+        ]
       }
     ],
-    "connections": []
+    "connections": [
+      {"from": ["StairsB1", "lowerLevel"], "to": ["StairsB1", "level1"]},
+      {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
+      {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
+      {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]}
+    ]
   },
   "buildingC": {
     "levels": [
@@ -335,8 +439,8 @@
         "corridors": [
           {
             "points": [
-             [51, 55, -9],  
-             [55, 55, -9], 
+              [51, 55, -9],  
+              [55, 55, -9], 
               [60, 55, -9],   
               [65, 55, -9],   
               [70, 55, -9],   
@@ -482,4 +586,3 @@
     ]
   }
 }
-    
