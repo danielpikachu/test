@@ -160,7 +160,7 @@
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
     ]
   },
-  "buildingb": {  // 已将B改为小写b
+  "buildingb": {
     "levels": [
       {
         "name": "lowerLevel",
