@@ -7,26 +7,25 @@ import streamlit as st
 # -------------------------- 1. 基本配置 --------------------------
 plt.switch_backend('Agg')  # 解决Streamlit matplotlib渲染问题
 
-# 定义颜色常量
+# 定义颜色常量：适配A/B/C三栋楼
 COLORS = {
-    'building': {'A': 'lightblue', 'C': 'lightcoral'},
-    'floor_z': {-6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},
-    'corridor_line': {'A': 'cyan', 'C': 'salmon'},
+    'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral'},  # 建筑填充色
+    'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},  # 楼层边框色
+    'corridor_line': {'A': 'cyan', 'B': 'forestgreen', 'C': 'salmon'},  # 走廊线条色
     'corridor_node': 'navy',
     'corridor_label': 'darkblue',
-    # 不同楼梯使用不同颜色
+    # 楼梯颜色配置（包含B楼楼梯）
     'stair': {
-        'Stairs1': '#FF5733',   # 橙红
-        'Stairs2': '#33FF57',   # 绿
-        'Stairs3': '#3357FF',   # 
-        'Stairs3': '#3357FF',   # 蓝
-        'Stairs4': '#FF33F5',   # 粉紫
-        'Stairs5': '#F5FF33',   # 黄
-        'Stairs6': '#33FFF5',   # 青
-        'Stairs7': '#FF9933',   # 橙
-        'Stairs8': '#9933FF',   # 紫
-        'Stairs9': '#F533FF',   # 品红
-        'Stairs10': '#33FF99'   # 青绿
+        'Stairs1': '#FF5733',   # A楼 - 橙红
+        'Stairs2': '#33FF57',   # C楼 - 绿
+        'Stairs3': '#3357FF',   # C楼 - 蓝
+        'Stairs4': '#FF33F5',   # C楼 - 粉紫
+        'Stairs5': '#F5FF33',   # C楼 - 黄
+        'StairsB1': '#33FFF5',  # B楼 - 青
+        'StairsB2': '#FF9933',  # B楼 - 橙
+        'Stairs6': '#9933FF',   # 预留 - 紫
+        'Stairs7': '#F533FF',   # 预留 - 品红
+        'Stairs8': '#33FF99'    # 预留 - 青绿
     },
     'stair_label': 'darkred',  # 楼梯标签颜色
     'classroom_label': 'black',
@@ -36,7 +35,7 @@ COLORS = {
     'end_marker': 'magenta',
     'end_label': 'purple',
     'connect_corridor': 'gold',
-    'building_label': {'A': 'darkblue', 'C': 'darkred'}  # 楼宇标签颜色
+    'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred'}  # 楼宇标签颜色
 }
 
 # -------------------------- 2. 核心功能实现 --------------------------
@@ -49,7 +48,7 @@ def load_school_data_detailed(filename):
         st.error(f"加载数据文件失败: {str(e)}")
         return None
 
-# 绘制3D地图 - 添加参数控制显示的内容
+# 绘制3D地图 - 支持A/B/C三栋楼显示
 def plot_3d_map(school_data, display_options=None):
     # 放大图形尺寸
     fig = plt.figure(figsize=(35, 30))
@@ -66,7 +65,8 @@ def plot_3d_map(school_data, display_options=None):
             'start_level': None,
             'end_level': None,
             'path_stairs': set(),
-            'show_all': True
+            'show_all': True,
+            'path': []
         }
     
     show_all = display_options['show_all']
@@ -75,17 +75,17 @@ def plot_3d_map(school_data, display_options=None):
     path_stairs = display_options['path_stairs']
     path = display_options.get('path', [])  # 获取路径数据用于绘制
 
-    # 存储每栋楼的标识位置信息（最大Y值处）
+    # 存储每栋楼的标识位置信息
     building_label_positions = {}
 
-    # 遍历所有建筑物
+    # 遍历所有建筑物（包括A/B/C）
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
         building_name = building_id.replace('building', '')
         building_data = school_data[building_id]
         
-        # 记录建筑物的最高楼层和最大Y值
+        # 记录建筑物的最高楼层和最大Y值（适配B楼负Y坐标）
         max_z = -float('inf')
         max_y = -float('inf')
         corresponding_x = 0  # 最大Y值对应的X坐标
@@ -100,12 +100,12 @@ def plot_3d_map(school_data, display_options=None):
             if z > max_z:
                 max_z = z
                 
-            # 获取楼层平面信息
+            # 获取楼层平面信息（适配B楼负Y坐标）
             fp = level['floorPlane']
-            # 更新最大Y值及其对应的X坐标
-            if fp['maxY'] > max_y:
-                max_y = fp['maxY']
-                # 取最大Y处的中间X坐标
+            current_max_y = fp['maxY']
+            # B楼Y为负，maxY是最接近0的值（最大负数值）
+            if current_max_y > max_y:
+                max_y = current_max_y
                 corresponding_x = (fp['minX'] + fp['maxX']) / 2
                 
             level_count += 1
@@ -113,11 +113,12 @@ def plot_3d_map(school_data, display_options=None):
             # 判断是否需要显示当前楼层
             show_level = show_all
             if not show_all:
-                # 只显示起点楼层和终点楼层
+                # 只显示起点楼层、终点楼层
                 show_level = (level_name == start_level) or (level_name == end_level)
             
+            # 适配各楼楼层颜色
             floor_border_color = COLORS['floor_z'].get(z, 'gray')
-            building_fill_color = COLORS['building'][building_name]
+            building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
             # 绘制楼层平面（仅在需要显示的楼层）
             if show_level:
@@ -132,34 +133,45 @@ def plot_3d_map(school_data, display_options=None):
                 y_plane = [p[1] for p in plane_vertices]
                 z_plane = [p[2] for p in plane_vertices]
                 
-                ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, 
-                        label=f"Building {building_name}-{level_name}" if f"Building {building_name}-{level_name}" not in ax.get_legend_handles_labels()[1] else "")
+                # 避免重复添加图例
+                legend_label = f"Building {building_name}-{level_name}"
+                if legend_label not in ax.get_legend_handles_labels()[1]:
+                    ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, label=legend_label)
+                else:
+                    ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4)
                 ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
                                 color=building_fill_color, alpha=0.3)
 
-                # 绘制走廊（仅在需要显示的楼层）
+                # 绘制走廊（B楼无连廊）
                 for corr_idx, corridor in enumerate(level['corridors']):
                     points = corridor['points']
                     x = [p[0] for p in points]
                     y = [p[1] for p in points]
                     z_coords = [p[2] for p in points]
                     
+                    # 连廊判断（仅A/C有）
                     if 'name' in corridor and ('connectToBuilding' in corridor['name']):
                         corr_line_color = COLORS['connect_corridor']
                         corr_line_width = 12  # 放大楼宇间走廊线宽
+                        corr_label = f"Connect Corridor ({building_name}-{level_name})"
                     else:
-                        corr_line_color = COLORS['corridor_line'][building_name]
+                        # 适配各楼走廊颜色
+                        corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
                         corr_line_width = 8  # 放大普通走廊线宽
                         corr_label = None
                     
-                    ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, 
-                            alpha=0.8, label=corr_label if (corr_label and corr_label not in ax.get_legend_handles_labels()[1]) else "")
+                    # 避免重复添加图例
+                    if corr_label and corr_label not in ax.get_legend_handles_labels()[1]:
+                        ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, 
+                                alpha=0.8, label=corr_label)
+                    else:
+                        ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, alpha=0.8)
                     
-                    # 走廊节点（无标签）
-                    for p_idx, (px, py, pz) in enumerate(points):
+                    # 走廊节点
+                    for px, py, pz in points:
                         ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
 
-                # 绘制教室（仅在需要显示的楼层）
+                # 绘制教室
                 for classroom in level['classrooms']:
                     x, y, _ = classroom['coordinates']
                     width, depth = classroom['size']
@@ -167,12 +179,13 @@ def plot_3d_map(school_data, display_options=None):
 
                     ax.text(x, y, z, class_name, color=COLORS['classroom_label'], fontweight='bold', fontsize=14)
                     ax.scatter(x, y, z, color=building_fill_color, s=160, edgecolors=floor_border_color)
+                    # 教室边框
                     ax.plot([x, x + width, x + width, x, x],
                             [y, y, y + depth, y + depth, y],
                             [z, z, z, z, z],
                             color=floor_border_color, linestyle='--', alpha=0.6, linewidth=2)
 
-            # 绘制楼梯（总是显示路径中经过的楼梯，无论是否在起点/终点楼层）
+            # 绘制楼梯（适配B楼楼梯）
             for stair in level['stairs']:
                 stair_name = stair['name']
                 # 检查是否是路径中经过的楼梯
@@ -182,14 +195,14 @@ def plot_3d_map(school_data, display_options=None):
                     x, y, _ = stair['coordinates']
                     stair_label = f"Building {building_name}-{stair_name}"
                     
-                    # 根据楼梯名称获取颜色，无匹配则默认红色
+                    # 适配各楼楼梯颜色
                     stair_color = COLORS['stair'].get(stair_name, 'red')
                     
                     # 为路径中的楼梯使用更醒目的样式
                     marker_size = 800 if is_path_stair else 600
                     marker_edge_width = 3 if is_path_stair else 1
                     
-                    # 绘制楼梯
+                    # 避免重复添加图例
                     if stair_label not in ax.get_legend_handles_labels()[1]:
                         ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^', 
                                   label=stair_label, edgecolors='black', linewidths=marker_edge_width)
@@ -197,33 +210,34 @@ def plot_3d_map(school_data, display_options=None):
                         ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^',
                                   edgecolors='black', linewidths=marker_edge_width)
                     
-                    # 绘制楼梯标签
+                    # 楼梯标签
                     ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
         
-        # 存储楼宇标识位置：最大Y值旁边，最高楼层高度
+        # 存储楼宇标识位置（适配B楼负Y坐标）
         if level_count > 0:
-            # 将标签放在最大Y值外侧一点，避免与楼体重叠
-            label_y = max_y + 2.0  # 稍微超出最大Y值
+            if building_name == 'B':
+                label_y = max_y - 2.0  # B楼标签放在Y外侧（更负的位置）
+            else:
+                label_y = max_y + 2.0  # 其他楼标签放在Y外侧
             building_label_positions[building_name] = (corresponding_x, label_y, max_z)
 
-    # 在每栋楼的最大Y值旁边添加楼宇标识
+    # 添加楼宇标识
     for building_name, (x, y, z) in building_label_positions.items():
-        # 在最高楼层高度上方一点显示标识
         label_z = z + 1.0
-        # 使用较大的字体和粗体显示楼宇名称
-        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor=COLORS['building'][building_name], alpha=0.7)
+        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
+                        facecolor=COLORS['building'].get(building_name, 'lightgray'), alpha=0.7)
         ax.text(
             x, y, label_z, 
             f"{building_name}楼", 
-            color=COLORS['building_label'][building_name], 
+            color=COLORS['building_label'].get(building_name, 'black'), 
             fontweight='bold', 
             fontsize=30,
-            ha='center',  # 水平居中
-            va='center',  # 垂直居中
+            ha='center', 
+            va='center', 
             bbox=bbox_props
         )
 
-    # 如果有路径且不是显示全部，绘制路径
+    # 绘制路径（当有路径且不显示全部时）
     if path and not show_all:
         try:
             x = []
@@ -245,23 +259,26 @@ def plot_3d_map(school_data, display_options=None):
                 else:
                     labels.append("")
 
-            # 放大路径线宽
-            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
-            # 放大起点和终点标记
+            # 路径线条
+            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='导航路径')
+            # 起点标记
             ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='起点', edgecolors='black')
+            # 终点标记
             ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='终点', edgecolors='black')
+            # 起点标签
             ax.text(x[0], y[0], z[0], f"起点\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
+            # 终点标签
             ax.text(x[-1], y[-1], z[-1], f"终点\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
-        except:
-            pass
+        except Exception as e:
+            st.warning(f"路径绘制警告: {str(e)}")
 
-    # 放大轴标签和标题
+    # 轴标签和标题
     ax.set_xlabel('X坐标', fontsize=18, fontweight='bold')
     ax.set_ylabel('Y坐标', fontsize=18, fontweight='bold')
     ax.set_zlabel('楼层高度 (Z值)', fontsize=18, fontweight='bold')
-    ax.set_title('校园3D导航地图 (支持A/C楼宇间导航)', fontsize=24, fontweight='bold', pad=20)
+    ax.set_title('校园3D导航地图 (支持A/B/C楼宇导航)', fontsize=24, fontweight='bold', pad=20)
     
-    # 放大图例
+    # 图例
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16, frameon=True)
     ax.grid(True, alpha=0.3, linewidth=2)
 
@@ -309,9 +326,9 @@ class Graph:
 
 # 计算欧氏距离
 def euclidean_distance(coords1, coords2):
-    return np.sqrt(sum((a - b)** 2 for a, b in zip(coords1, coords2)))
+    return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
 
-# 构建导航图（固定楼宇间和内部连接）
+# 构建导航图（支持B楼）
 def build_navigation_graph(school_data):
     graph = Graph()
 
@@ -336,7 +353,7 @@ def build_navigation_graph(school_data):
                     coordinates=classroom['coordinates']
                 )
 
-            # 2. 添加楼梯节点
+            # 2. 添加楼梯节点（包括B楼楼梯）
             for stair in level['stairs']:
                 graph.add_node(
                     building_id=building_id,
@@ -346,7 +363,7 @@ def build_navigation_graph(school_data):
                     coordinates=stair['coordinates']
                 )
 
-            # 3. 添加走廊节点（包括楼宇间走廊）
+            # 3. 添加走廊节点
             for corr_idx, corridor in enumerate(level['corridors']):
                 corr_name = corridor.get('name', f'corr{corr_idx}')
                 for p_idx, point in enumerate(corridor['points']):
@@ -402,7 +419,7 @@ def build_navigation_graph(school_data):
                     coords2 = graph.nodes[node2_id]['coordinates']
                     distance = euclidean_distance(coords1, coords2)
                     
-                    if distance < 3.0:
+                    if distance < 3.0:  # 距离较近的走廊节点认为是连通的
                         graph.add_edge(node1_id, node2_id, distance)
 
             # 3. 连接教室到最近的走廊节点
@@ -429,7 +446,7 @@ def build_navigation_graph(school_data):
                 else:
                     st.warning(f"警告: 建筑物 {building_name}{level_name} 中的教室 {graph.nodes[class_node_id]['name']} 没有走廊连接")
 
-            # 4. 连接楼梯到最近的走廊节点
+            # 4. 连接楼梯到最近的走廊节点（包括B楼楼梯）
             stair_nodes = [
                 node_id for node_id, node_info in graph.nodes.items()
                 if node_info['building'] == building_name 
@@ -451,7 +468,7 @@ def build_navigation_graph(school_data):
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
-        # 5. 连接同一建筑物内不同楼层的节点
+        # 5. 连接同一建筑物内不同楼层的节点（包括B楼）
         for connection in building_data['connections']:
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
@@ -468,9 +485,9 @@ def build_navigation_graph(school_data):
             to_node_id = graph.node_id_map.get((building_id, to_obj_type, to_obj_name, to_level))
             
             if from_node_id and to_node_id:
-                graph.add_edge(from_node_id, to_node_id, 5.0)
+                graph.add_edge(from_node_id, to_node_id, 5.0)  # 楼梯连接权重固定为5
 
-    # 6. 连接不同建筑物之间的节点
+    # 6. 连接不同建筑物之间的节点（A-C有连廊，B独立）
     a_building_id = 'buildingA'
     c_building_id = 'buildingC'
     
@@ -537,7 +554,7 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
-# 导航功能
+# 导航功能（支持B楼）
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     try:
         # 使用多重映射查找节点
@@ -567,7 +584,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             # 收集路径中经过的楼梯
             path_stairs = set()
-            # 跟踪上一个节点的建筑物，用于检测连廊
+            # 跟踪上一个节点的建筑物
             prev_building = None
             
             for node_id in path:
@@ -576,7 +593,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 node_level = graph.nodes[node_id]['level']
                 node_building = graph.nodes[node_id]['building']
                 
-                # 记录路径中经过的楼梯
+                # 记录路径中经过的楼梯（包括B楼）
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
                     simplified_path.append(f"Building {node_building}{node_name}({node_level})")
@@ -585,7 +602,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 elif node_type == 'classroom':
                     simplified_path.append(f"Building {node_building}{node_name}({node_level})")
                 
-                # 处理走廊节点，检测是否是连廊且建筑物发生变化
+                # 处理走廊节点，检测是否是连廊
                 elif node_type == 'corridor':
                     # 检查是否是连接两栋楼的连廊
                     if 'connectToBuilding' in node_name:
@@ -606,7 +623,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     prev_building = node_building
             
             full_path_str = " → ".join(simplified_path)
-            # 返回显示选项，包含路径信息
+            # 返回显示选项
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
@@ -642,9 +659,9 @@ def plot_path(ax, graph, path):
             else:
                 labels.append("")
 
-        # 放大路径线宽
+        # 路径线条
         ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
-        # 放大起点和终点标记
+        # 起点和终点标记
         ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='起点', edgecolors='black')
         ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='终点', edgecolors='black')
         ax.text(x[0], y[0], z[0], f"起点\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
@@ -654,7 +671,7 @@ def plot_path(ax, graph, path):
     except Exception as e:
         st.error(f"绘制路径失败: {str(e)}")
 
-# 获取所有建筑物、楼层和教室信息
+# 获取所有建筑物、楼层和教室信息（支持B楼）
 def get_classroom_info(school_data):
     try:
         buildings = [b for b in school_data.keys() if b.startswith('building')]
@@ -712,7 +729,7 @@ def main():
     """, unsafe_allow_html=True)
     
     st.subheader("🏫 校园导航系统")
-    st.markdown("3D地图 & 楼宇间路径规划")
+    st.markdown("3D地图 & 楼宇间路径规划 (支持A/B/C楼)")
 
     # 初始化会话状态变量
     if 'display_options' not in st.session_state:
@@ -747,7 +764,7 @@ def main():
     with col1:
         st.markdown("#### 📍 选择位置")
         
-        # 起点选择
+        # 起点选择（支持B楼）
         st.markdown("#### 起点")
         start_building = st.selectbox("建筑物", building_names, key="start_building")
         start_levels = levels_by_building.get(start_building, [])
@@ -755,7 +772,7 @@ def main():
         start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
         start_classroom = st.selectbox("教室", start_classrooms, key="start_classroom")
 
-        # 终点选择
+        # 终点选择（支持B楼）
         st.markdown("#### 终点")
         end_building = st.selectbox("建筑物", building_names, key="end_building")
         end_levels = levels_by_building.get(end_building, [])
