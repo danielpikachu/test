@@ -160,7 +160,7 @@
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
     ]
   },
-  "buildingb": {
+  "building2": {  // 将B楼标识改为数字2
     "levels": [
       {
         "name": "lowerLevel",
@@ -179,7 +179,7 @@
             "points": [[10, -65, -9], [20, -65, -9], [30, -65, -9]]
           }
         ],
-        "stairs": [{"name": "StairsB1", "coordinates": [35, -60, -9]}]
+        "stairs": [{"name": "Stairs2", "coordinates": [35, -60, -9]}]  // 楼梯名称也改为数字标识
       },
       {
         "name": "level1",
@@ -198,7 +198,7 @@
             "points": [[10, -65, -3], [20, -65, -3], [30, -65, -3]]
           }
         ],
-        "stairs": [{"name": "StairsB1", "coordinates": [35, -60, -3]}]
+        "stairs": [{"name": "Stairs2", "coordinates": [35, -60, -3]}]
       },
       {
         "name": "level3",
@@ -217,12 +217,12 @@
             "points": [[10, -70, 7], [20, -70, 7], [30, -70, 7]]
           }
         ],
-        "stairs": [{"name": "StairsB1", "coordinates": [35, -60, 7]}]
+        "stairs": [{"name": "Stairs2", "coordinates": [35, -60, 7]}]
       }
     ],
     "connections": [
-      {"from": ["StairsB1", "lowerLevel"], "to": ["StairsB1", "level1"]},
-      {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]}
+      {"from": ["Stairs2", "lowerLevel"], "to": ["Stairs2", "level1"]},
+      {"from": ["Stairs2", "level1"], "to": ["Stairs2", "level3"]}
     ]
   },
   "buildingC": {
