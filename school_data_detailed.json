@@ -13,7 +13,6 @@
         "classrooms": [
           {"name": "A005", "coordinates": [25, 30, -6], "size": [5, 8]},
           {"name": "A008", "coordinates": [25, 50, -6], "size": [10, 8]},
-          
           {"name": "A010", "coordinates": [15, 50, -6], "size": [5, 8]},
           {"name": "PRACTICE", "coordinates": [20, 50, -6], "size": [5, 8]}
         ],
@@ -26,19 +25,29 @@
               [22, 30, -6],  
               [22, 35, -6],  
               [22, 40, -6],
-               [22, 45, -6],
-               [22, 50, -6]
+              [22, 45, -6],
+              [22, 50, -6]
             ]
           },
           {
             "points": [
-           
               [10, 45, -6],  
               [15, 45, -6],   
               [20, 45, -6],   
               [25, 45, -6],   
               [30, 45, -6],   
               [35, 45, -6]   
+            ]
+          },
+          {
+            "name": "connectToBuildingB", 
+            "points": [
+              [22, 15, -6],
+              [22, 5, -6],
+              [22, -5, -6],
+              [22, -15, -6],
+              [22, -25, -6],
+              [22, -35, -6]
             ]
           }
         ],
@@ -56,13 +65,11 @@
           "maxY": 55
         },
         "classrooms": [
-       
           {"name": "CAFE", "coordinates": [10, 30, -3], "size": [10, 8]},
           {"name": "WELCOMECENTER", "coordinates": [22, 40, -3], "size": [10, 8]},
           {"name": "ENTRANCE", "coordinates": [22, 18, -3], "size": [5, 8]}
         ],
         "corridors": [
-        
           {
             "name": "mainCorridor",
             "points": [
@@ -71,21 +78,29 @@
               [32, 20, -3],   
               [37, 20, -3],  
               [42, 20, -3]  
-                
             ]
           },
-           {
-                    "name": "connectToBuildingC", 
-                    "points": [
-                      [42, 20, -3], 
-                       [47, 20, -3], 
-                      [50, 20, -3],  
-                      [53, 20, -3]
-                    
-                    ]
-                  }
-                ],
-        
+          {
+            "name": "connectToBuildingC", 
+            "points": [
+              [42, 20, -3], 
+              [47, 20, -3], 
+              [50, 20, -3],  
+              [53, 20, -3]
+            ]
+          },
+          {
+            "name": "connectToBuildingB", 
+            "points": [
+              [22, 20, -3],
+              [22, 10, -3],
+              [22, 0, -3],
+              [22, -10, -3],
+              [22, -20, -3],
+              [22, -30, -3]
+            ]
+          }
+        ],
         "stairs": [
           {"name": "Stairs1", "coordinates": [40, 20, -3]}
         ]
@@ -158,7 +173,7 @@
         ],
         "corridors": [
           {
-             "name": "mainCorridor",
+            "name": "mainCorridor",
             "points": [
               [10, 55, 7],  
               [15, 55, 7],   
@@ -186,6 +201,17 @@
               [40, 55, 7],  
               [45, 55, 7],  
               [50, 55, 7]
+            ]
+          },
+          {
+            "name": "connectToBuildingB", 
+            "points": [
+              [25, 30, 7],
+              [25, 20, 7],
+              [25, 10, 7],
+              [25, 0, 7],
+              [25, -10, 7],
+              [25, -20, 7]
             ]
           }
         ],
@@ -254,8 +280,123 @@
       {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
-       
+      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
+      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingB", "level1"]},
+      {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingB", "level3"]},
+      {"from": ["mainCorridor", "lowerLevel"], "to": ["connectToBuildingB", "lowerLevel"]}
+    ]
+  },
+  "buildingB": {
+    "levels": [
+      {
+        "name": "lowerLevel",
+        "z": -6,
+        "floorPlane": {
+          "minX": 15,
+          "maxX": 35,
+          "minY": -45,
+          "maxY": -25
+        },
+        "classrooms": [
+          {"name": "B0_CAFETERIA", "coordinates": [25, -35, -6], "size": [15, 10]}
+        ],
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [22, -35, -6],
+              [22, -30, -6],
+              [22, -25, -6]
+            ]
+          },
+          {
+            "name": "connectToBuildingA",
+            "points": [
+              [22, -35, -6],
+              [22, -40, -6],
+              [22, -45, -6]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [28, -35, -6]}
+        ]
+      },
+      {
+        "name": "level1",
+        "z": -3,
+        "floorPlane": {
+          "minX": 15,
+          "maxX": 35,
+          "minY": -40,
+          "maxY": -20
+        },
+        "classrooms": [
+          {"name": "B1_CAFETERIA", "coordinates": [25, -30, -3], "size": [15, 10]}
+        ],
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [22, -30, -3],
+              [22, -25, -3],
+              [22, -20, -3]
+            ]
+          },
+          {
+            "name": "connectToBuildingA",
+            "points": [
+              [22, -30, -3],
+              [22, -35, -3],
+              [22, -40, -3]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [28, -30, -3]}
+        ]
+      },
+      {
+        "name": "level3",
+        "z": 7,
+        "floorPlane": {
+          "minX": 15,
+          "maxX": 40,
+          "minY": -30,
+          "maxY": -10
+        },
+        "classrooms": [
+          {"name": "B3_THEATER", "coordinates": [25, -20, 7], "size": [20, 15]}
+        ],
+        "corridors": [
+          {
+            "name": "mainCorridor",
+            "points": [
+              [25, -20, 7],
+              [25, -25, 7],
+              [25, -30, 7]
+            ]
+          },
+          {
+            "name": "connectToBuildingA",
+            "points": [
+              [25, -25, 7],
+              [25, -30, 7],
+              [25, -35, 7]
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "StairsB1", "coordinates": [32, -20, 7]}
+        ]
+      }
+    ],
+    "connections": [
+      {"from": ["StairsB1", "lowerLevel"], "to": ["StairsB1", "level1"]},
+      {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
+      {"from": ["mainCorridor", "lowerLevel"], "to": ["connectToBuildingA", "lowerLevel"]},
+      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingA", "level1"]},
+      {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingA", "level3"]}
     ]
   },
   "buildingC": {
@@ -333,8 +474,7 @@
         },
         "classrooms": [
           {"name": "THEPLAZA", "coordinates": [53, 60, -3], "size": [5, 8]},
-        {"name": "ENTRANCE", "coordinates": [53, 20, -3], "size": [5, 8]}
-        
+          {"name": "ENTRANCE", "coordinates": [53, 20, -3], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -348,15 +488,13 @@
               [53, 55, -3]    
             ]
           },
-           {
+          {
             "name": "connectToBuildingA",
             "points": [
               [50, 20, -3],  
               [53, 20, -3]   
             ]
           }
-        
-         
         ],
         "stairs": [
           {"name": "Stairs2", "coordinates": [83, 26, -3]},
@@ -365,7 +503,6 @@
           {"name": "Stairs5", "coordinates": [55, 26, -3]}   
         ]
       },
-      
       {
         "name": "level3",
         "z": 7,
