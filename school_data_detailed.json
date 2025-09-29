@@ -263,14 +263,7 @@
         },
         "classrooms": [
           {"name": "B001", "coordinates": [10, -70, -9], "size": [5, 8]},
-          {"name": "B002", "coordinates": [15, -70, -9], "size": [5, 8]},
-          {"name": "B003", "coordinates": [20, -70, -9], "size": [5, 8]},
-          {"name": "B004", "coordinates": [25, -70, -9], "size": [5, 8]},
-          {"name": "B005", "coordinates": [30, -70, -9], "size": [5, 8]},
-          {"name": "B006", "coordinates": [10, -55, -9], "size": [5, 8]},
-          {"name": "B007", "coordinates": [15, -55, -9], "size": [5, 8]},
-          {"name": "B008", "coordinates": [20, -55, -9], "size": [5, 8]},
-          {"name": "B009", "coordinates": [25, -55, -9], "size": [5, 8]},
+          
           {"name": "B010", "coordinates": [30, -55, -9], "size": [5, 8]}
         ],
         "corridors": [
@@ -311,14 +304,7 @@
         },
         "classrooms": [
           {"name": "B101", "coordinates": [10, -70, -3], "size": [5, 8]},
-          {"name": "B102", "coordinates": [15, -70, -3], "size": [5, 8]},
-          {"name": "B103", "coordinates": [20, -70, -3], "size": [5, 8]},
-          {"name": "B104", "coordinates": [25, -70, -3], "size": [5, 8]},
-          {"name": "B105", "coordinates": [30, -70, -3], "size": [5, 8]},
-          {"name": "B106", "coordinates": [10, -55, -3], "size": [5, 8]},
-          {"name": "B107", "coordinates": [15, -55, -3], "size": [5, 8]},
-          {"name": "B108", "coordinates": [20, -55, -3], "size": [5, 8]},
-          {"name": "B109", "coordinates": [25, -55, -3], "size": [5, 8]},
+         
           {"name": "B110", "coordinates": [30, -55, -3], "size": [5, 8]}
         ],
         "corridors": [
@@ -350,7 +336,7 @@
       },
       {
         "name": "level3",
-        "z": 7,
+        "z": 2,
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
@@ -358,29 +344,13 @@
           "maxY": -30
         },
         "classrooms": [
-          {"name": "B301", "coordinates": [10, -70, 7], "size": [5, 8]},
-          {"name": "B302", "coordinates": [15, -70, 7], "size": [5, 8]},
-          {"name": "B303", "coordinates": [20, -70, 7], "size": [5, 8]},
-          {"name": "B304", "coordinates": [25, -70, 7], "size": [5, 8]},
-          {"name": "B305", "coordinates": [30, -70, 7], "size": [5, 8]},
-          {"name": "B306", "coordinates": [10, -55, 7], "size": [5, 8]},
-          {"name": "B307", "coordinates": [15, -55, 7], "size": [5, 8]},
-          {"name": "B308", "coordinates": [20, -55, 7], "size": [5, 8]},
-          {"name": "B309", "coordinates": [25, -55, 7], "size": [5, 8]},
-          {"name": "B310", "coordinates": [30, -55, 7], "size": [5, 8]}
+          {"name": "B301", "coordinates": [10, -70, 2], "size": [5, 8]},
+         
+         
+          {"name": "B310", "coordinates": [30, -55, 2], "size": [5, 8]}
         ],
         "corridors": [
-          {
-            "name": "mainCorridor",
-            "points": [
-              [10, -65, 7],
-              [15, -65, 7],
-              [20, -65, 7],
-              [25, -65, 7],
-              [30, -65, 7],
-              [35, -65, 7]
-            ]
-          },
+         
           {
             "points": [
               [22, -70, 7],
@@ -392,8 +362,8 @@
           }
         ],
         "stairs": [
-          {"name": "StairsB1", "coordinates": [35, -60, 7]},
-          {"name": "StairsB2", "coordinates": [5, -60, 7]}
+          {"name": "StairsB1", "coordinates": [35, -60, 2]},
+          {"name": "StairsB2", "coordinates": [5, -60, 2]}
         ]
       }
     ],
