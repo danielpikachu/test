@@ -97,10 +97,10 @@
           {"name": "A206", "coordinates": [25, 50, 2], "size": [5, 8]},
           {"name": "A207", "coordinates": [20, 50, 2], "size": [5, 8]},
           {"name": "A208", "coordinates": [15, 50, 2], "size": [5, 8]},
-          {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
           {"name": "A201", "coordinates": [20, 30, 2], "size": [5, 8]},
           {"name": "A203", "coordinates": [25, 30, 2], "size": [5, 8]},
           {"name": "A204", "coordinates": [30, 30, 2], "size": [5, 8]},
+          {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
           {"name": "A202", "coordinates": [10, 20, 2], "size": [5, 8]}
         ],
         "corridors": [
@@ -258,11 +258,11 @@
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -100,
-          "maxY": -50
+          "minY": -110,
+          "maxY": -60
         },
         "classrooms": [
-          {"name": "B001餐厅", "coordinates": [20, -75, -6], "size": [15, 10]}
+          {"name": "B001餐厅", "coordinates": [20, -85, -6], "size": [18, 12]}
         ],
         "corridors": [],
         "stairs": []
@@ -273,11 +273,11 @@
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -100,
-          "maxY": -50
+          "minY": -110,
+          "maxY": -60
         },
         "classrooms": [
-          {"name": "B101餐厅", "coordinates": [20, -75, -3], "size": [15, 10]}
+          {"name": "B101餐厅", "coordinates": [20, -85, -3], "size": [18, 12]}
         ],
         "corridors": [],
         "stairs": []
@@ -288,11 +288,11 @@
         "floorPlane": {
           "minX": 0,
           "maxX": 40,
-          "minY": -100,
-          "maxY": -50
+          "minY": -110,
+          "maxY": -60
         },
         "classrooms": [
-          {"name": "B301剧院", "coordinates": [20, -75, 7], "size": [20, 15]}
+          {"name": "B301剧院", "coordinates": [15, -85, 7], "size": [25, 15]}
         ],
         "corridors": [],
         "stairs": []
@@ -482,3 +482,4 @@
     ]
   }
 }
+    
