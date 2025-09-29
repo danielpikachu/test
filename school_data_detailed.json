@@ -270,7 +270,16 @@
             "description": "开阔的地下食堂区域"
           }
         ],
-        "corridors": [],
+        "corridors": [
+          {
+            "name": "virtualCorridor",
+            "type": "虚拟走廊",
+            "description": "用于系统兼容的逻辑连接，实际为开放空间内部通道",
+            "points": [
+              [25, -35, -6]  // 与食堂坐标重合的单点虚拟走廊
+            ]
+          }
+        ],
         "stairs": []
       },
       {
@@ -291,7 +300,16 @@
             "description": "一楼开阔食堂区域"
           }
         ],
-        "corridors": [],
+        "corridors": [
+          {
+            "name": "virtualCorridor",
+            "type": "虚拟走廊",
+            "description": "用于系统兼容的逻辑连接，实际为开放空间内部通道",
+            "points": [
+              [25, -30, -3]  // 与食堂坐标重合的单点虚拟走廊
+            ]
+          }
+        ],
         "stairs": []
       },
       {
@@ -312,7 +330,16 @@
             "description": "三楼大型剧院开放空间"
           }
         ],
-        "corridors": [],
+        "corridors": [
+          {
+            "name": "virtualCorridor",
+            "type": "虚拟走廊",
+            "description": "用于系统兼容的逻辑连接，实际为开放空间内部通道",
+            "points": [
+              [25, -20, 7]  // 与剧院坐标重合的单点虚拟走廊
+            ]
+          }
+        ],
         "stairs": []
       }
     ],
