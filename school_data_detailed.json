@@ -11,10 +11,10 @@
           "maxY": 60
         },
         "classrooms": [
-          {"name": "A005", "coordinates": [25, 30, -6], "size": [5, 8]},
-          {"name": "A008", "coordinates": [25, 50, -6], "size": [10, 8]},
-          {"name": "A010", "coordinates": [15, 50, -6], "size": [5, 8]},
-          {"name": "PRACTICE", "coordinates": [20, 50, -6], "size": [5, 8]}
+          {"name": "A005", "type": "教室", "coordinates": [25, 30, -6], "size": [5, 8]},
+          {"name": "A008", "type": "教室", "coordinates": [25, 50, -6], "size": [10, 8]},
+          {"name": "A010", "type": "教室", "coordinates": [15, 50, -6], "size": [5, 8]},
+          {"name": "PRACTICE", "type": "练习室", "coordinates": [20, 50, -6], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -54,9 +54,9 @@
           "maxY": 55
         },
         "classrooms": [
-          {"name": "CAFE", "coordinates": [10, 30, -3], "size": [10, 8]},
-          {"name": "WELCOMECENTER", "coordinates": [22, 40, -3], "size": [10, 8]},
-          {"name": "ENTRANCE", "coordinates": [22, 18, -3], "size": [5, 8]}
+          {"name": "CAFE", "type": "咖啡厅", "coordinates": [10, 30, -3], "size": [10, 8]},
+          {"name": "WELCOMECENTER", "type": "接待中心", "coordinates": [22, 40, -3], "size": [10, 8]},
+          {"name": "ENTRANCE", "type": "入口", "coordinates": [22, 18, -3], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -93,15 +93,15 @@
           "maxY": 60
         },
         "classrooms": [
-          {"name": "A205", "coordinates": [30, 50, 2], "size": [5, 8]},
-          {"name": "A206", "coordinates": [25, 50, 2], "size": [5, 8]},
-          {"name": "A207", "coordinates": [20, 50, 2], "size": [5, 8]},
-          {"name": "A208", "coordinates": [15, 50, 2], "size": [5, 8]},
-          {"name": "A201", "coordinates": [20, 30, 2], "size": [5, 8]},
-          {"name": "A203", "coordinates": [25, 30, 2], "size": [5, 8]},
-          {"name": "A204", "coordinates": [30, 30, 2], "size": [5, 8]},
-          {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
-          {"name": "A202", "coordinates": [10, 20, 2], "size": [5, 8]}
+          {"name": "A205", "type": "教室", "coordinates": [30, 50, 2], "size": [5, 8]},
+          {"name": "A206", "type": "教室", "coordinates": [25, 50, 2], "size": [5, 8]},
+          {"name": "A207", "type": "教室", "coordinates": [20, 50, 2], "size": [5, 8]},
+          {"name": "A208", "type": "教室", "coordinates": [15, 50, 2], "size": [5, 8]},
+          {"name": "A201", "type": "教室", "coordinates": [20, 30, 2], "size": [5, 8]},
+          {"name": "A203", "type": "教室", "coordinates": [25, 30, 2], "size": [5, 8]},
+          {"name": "A204", "type": "教室", "coordinates": [30, 30, 2], "size": [5, 8]},
+          {"name": "A210", "type": "教室", "coordinates": [15, 30, 2], "size": [5, 8]},
+          {"name": "A202", "type": "教室", "coordinates": [10, 20, 2], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -140,14 +140,14 @@
           "maxY": 75
         },
         "classrooms": [
-          {"name": "A303", "coordinates": [10, 60, 7], "size": [10, 8]},
-          {"name": "A304", "coordinates": [20, 60, 7], "size": [10, 8]},
-          {"name": "A305", "coordinates": [30, 60, 7], "size": [10, 8]},
-          {"name": "A306", "coordinates": [30, 40, 7], "size": [10, 8]},
-          {"name": "A307", "coordinates": [15, 30, 7], "size": [5, 8]},
-          {"name": "A308", "coordinates": [15, 40, 7], "size": [5, 8]},
-          {"name": "A309", "coordinates": [10, 40, 7], "size": [5, 8]},
-          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]}
+          {"name": "A303", "type": "教室", "coordinates": [10, 60, 7], "size": [10, 8]},
+          {"name": "A304", "type": "教室", "coordinates": [20, 60, 7], "size": [10, 8]},
+          {"name": "A305", "type": "教室", "coordinates": [30, 60, 7], "size": [10, 8]},
+          {"name": "A306", "type": "教室", "coordinates": [30, 40, 7], "size": [10, 8]},
+          {"name": "A307", "type": "教室", "coordinates": [15, 30, 7], "size": [5, 8]},
+          {"name": "A308", "type": "教室", "coordinates": [15, 40, 7], "size": [5, 8]},
+          {"name": "A309", "type": "教室", "coordinates": [10, 40, 7], "size": [5, 8]},
+          {"name": "A310", "type": "教室", "coordinates": [10, 30, 7], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -196,19 +196,19 @@
           "maxY": 75
         },
         "classrooms": [
-          {"name": "A403", "coordinates": [10, 60, 12], "size": [5, 8]},
-          {"name": "A404", "coordinates": [15, 60, 12], "size": [5, 8]},
-          {"name": "A405", "coordinates": [20, 60, 12], "size": [5, 8]},
-          {"name": "A406", "coordinates": [25, 60, 12], "size": [5, 8]},
-          {"name": "A407", "coordinates": [30, 60, 12], "size": [5, 8]},
-          {"name": "A408", "coordinates": [35, 60, 12], "size": [5, 8]},
-          {"name": "A414", "coordinates": [15, 40, 12], "size": [5, 8]},
-          {"name": "A413", "coordinates": [20, 40, 12], "size": [5, 8]},
-          {"name": "A412", "coordinates": [25, 40, 12], "size": [5, 8]},
-          {"name": "A410", "coordinates": [30, 40, 12], "size": [5, 8]},
-          {"name": "A409", "coordinates": [35, 40, 12], "size": [5, 8]},
-          {"name": "A415", "coordinates": [12, 30, 12], "size": [5, 8]},
-          {"name": "A411", "coordinates": [17, 30, 12], "size": [8, 8]}
+          {"name": "A403", "type": "教室", "coordinates": [10, 60, 12], "size": [5, 8]},
+          {"name": "A404", "type": "教室", "coordinates": [15, 60, 12], "size": [5, 8]},
+          {"name": "A405", "type": "教室", "coordinates": [20, 60, 12], "size": [5, 8]},
+          {"name": "A406", "type": "教室", "coordinates": [25, 60, 12], "size": [5, 8]},
+          {"name": "A407", "type": "教室", "coordinates": [30, 60, 12], "size": [5, 8]},
+          {"name": "A408", "type": "教室", "coordinates": [35, 60, 12], "size": [5, 8]},
+          {"name": "A414", "type": "教室", "coordinates": [15, 40, 12], "size": [5, 8]},
+          {"name": "A413", "type": "教室", "coordinates": [20, 40, 12], "size": [5, 8]},
+          {"name": "A412", "type": "教室", "coordinates": [25, 40, 12], "size": [5, 8]},
+          {"name": "A410", "type": "教室", "coordinates": [30, 40, 12], "size": [5, 8]},
+          {"name": "A409", "type": "教室", "coordinates": [35, 40, 12], "size": [5, 8]},
+          {"name": "A415", "type": "教室", "coordinates": [12, 30, 12], "size": [5, 8]},
+          {"name": "A411", "type": "教室", "coordinates": [17, 30, 12], "size": [8, 8]}
         ],
         "corridors": [
           {
@@ -261,7 +261,7 @@
           "minY": -45,
           "maxY": -25
         },
-        "openSpaces": [
+        "classrooms": [
           {
             "name": "B0_CAFETERIA",
             "type": "食堂",
@@ -282,7 +282,7 @@
           "minY": -40,
           "maxY": -20
         },
-        "openSpaces": [
+        "classrooms": [
           {
             "name": "B1_CAFETERIA",
             "type": "食堂",
@@ -303,7 +303,7 @@
           "minY": -30,
           "maxY": -10
         },
-        "openSpaces": [
+        "classrooms": [
           {
             "name": "B3_THEATER",
             "type": "剧院",
@@ -330,25 +330,25 @@
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C009", "coordinates": [51, 60, -9], "size": [5, 8]},
-          {"name": "C011", "coordinates": [55, 60, -9], "size": [5, 8]},
-          {"name": "C013", "coordinates": [60, 60, -9], "size": [5, 8]},
-          {"name": "C015", "coordinates": [70, 60, -9], "size": [5, 8]},
-          {"name": "C017", "coordinates": [75, 60, -9], "size": [5, 8]},
-          {"name": "C019AB", "coordinates": [85, 60, -9], "size": [5, 8]},
-          {"name": "C021", "coordinates": [85, 48, -9], "size": [5, 10]},
-          {"name": "C025", "coordinates": [85, 34, -9], "size": [5, 10]},
-          {"name": "C020", "coordinates": [75, 48, -9], "size": [5, 10]},
-          {"name": "C024", "coordinates": [75, 34, -9], "size": [5, 8]},
-          {"name": "C007", "coordinates": [51, 48, -9], "size": [5, 8]},
-          {"name": "C005", "coordinates": [51, 42, -9], "size": [5, 8]},
-          {"name": "C003", "coordinates": [51, 34, -9], "size": [5, 8]},
-          {"name": "C001", "coordinates": [51, 26, -9], "size": [5, 8]},
-          {"name": "C006", "coordinates": [55, 42, -9], "size": [5, 8]},
-          {"name": "C004", "coordinates": [55, 34, -9], "size": [5, 8]},
-          {"name": "C002", "coordinates": [55, 26, -9], "size": [5, 8]},
-          {"name": "C012", "coordinates": [60, 48, -9], "size": [5, 8]},
-          {"name": "C016", "coordinates": [75, 48, -9], "size": [5, 8]}
+          {"name": "C009", "type": "教室", "coordinates": [51, 60, -9], "size": [5, 8]},
+          {"name": "C011", "type": "教室", "coordinates": [55, 60, -9], "size": [5, 8]},
+          {"name": "C013", "type": "教室", "coordinates": [60, 60, -9], "size": [5, 8]},
+          {"name": "C015", "type": "教室", "coordinates": [70, 60, -9], "size": [5, 8]},
+          {"name": "C017", "type": "教室", "coordinates": [75, 60, -9], "size": [5, 8]},
+          {"name": "C019AB", "type": "教室", "coordinates": [85, 60, -9], "size": [5, 8]},
+          {"name": "C021", "type": "教室", "coordinates": [85, 48, -9], "size": [5, 10]},
+          {"name": "C025", "type": "教室", "coordinates": [85, 34, -9], "size": [5, 10]},
+          {"name": "C020", "type": "教室", "coordinates": [75, 48, -9], "size": [5, 10]},
+          {"name": "C024", "type": "教室", "coordinates": [75, 34, -9], "size": [5, 8]},
+          {"name": "C007", "type": "教室", "coordinates": [51, 48, -9], "size": [5, 8]},
+          {"name": "C005", "type": "教室", "coordinates": [51, 42, -9], "size": [5, 8]},
+          {"name": "C003", "type": "教室", "coordinates": [51, 34, -9], "size": [5, 8]},
+          {"name": "C001", "type": "教室", "coordinates": [51, 26, -9], "size": [5, 8]},
+          {"name": "C006", "type": "教室", "coordinates": [55, 42, -9], "size": [5, 8]},
+          {"name": "C004", "type": "教室", "coordinates": [55, 34, -9], "size": [5, 8]},
+          {"name": "C002", "type": "教室", "coordinates": [55, 26, -9], "size": [5, 8]},
+          {"name": "C012", "type": "教室", "coordinates": [60, 48, -9], "size": [5, 8]},
+          {"name": "C016", "type": "教室", "coordinates": [75, 48, -9], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -392,8 +392,8 @@
           "maxY": 70
         },
         "classrooms": [
-          {"name": "THEPLAZA", "coordinates": [53, 60, -3], "size": [5, 8]},
-          {"name": "ENTRANCE", "coordinates": [53, 20, -3], "size": [5, 8]}
+          {"name": "THEPLAZA", "type": "广场", "coordinates": [53, 60, -3], "size": [5, 8]},
+          {"name": "ENTRANCE", "type": "入口", "coordinates": [53, 20, -3], "size": [5, 8]}
         ],
         "corridors": [
           {
@@ -432,18 +432,18 @@
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C311", "coordinates": [55, 60, 7], "size": [5, 8]},
-          {"name": "C313", "coordinates": [60, 60, 7], "size": [5, 8]},
-          {"name": "C315", "coordinates": [70, 60, 7], "size": [5, 8]},
-          {"name": "C317", "coordinates": [75, 60, 7], "size": [5, 8]},
-          {"name": "C319", "coordinates": [85, 60, 7], "size": [5, 8]},
-          {"name": "C322", "coordinates": [75, 42, 7], "size": [5, 8]},
-          {"name": "C324", "coordinates": [75, 34, 7], "size": [5, 8]},
-          {"name": "C326", "coordinates": [75, 26, 7], "size": [5, 8]},
-          {"name": "C321", "coordinates": [85, 48, 7], "size": [5, 8]},
-          {"name": "C323", "coordinates": [85, 42, 7], "size": [5, 8]},
-          {"name": "C325", "coordinates": [85, 34, 7], "size": [5, 8]},
-          {"name": "C327", "coordinates": [85, 26, 7], "size": [5, 8]}
+          {"name": "C311", "type": "教室", "coordinates": [55, 60, 7], "size": [5, 8]},
+          {"name": "C313", "type": "教室", "coordinates": [60, 60, 7], "size": [5, 8]},
+          {"name": "C315", "type": "教室", "coordinates": [70, 60, 7], "size": [5, 8]},
+          {"name": "C317", "type": "教室", "coordinates": [75, 60, 7], "size": [5, 8]},
+          {"name": "C319", "type": "教室", "coordinates": [85, 60, 7], "size": [5, 8]},
+          {"name": "C322", "type": "教室", "coordinates": [75, 42, 7], "size": [5, 8]},
+          {"name": "C324", "type": "教室", "coordinates": [75, 34, 7], "size": [5, 8]},
+          {"name": "C326", "type": "教室", "coordinates": [75, 26, 7], "size": [5, 8]},
+          {"name": "C321", "type": "教室", "coordinates": [85, 48, 7], "size": [5, 8]},
+          {"name": "C323", "type": "教室", "coordinates": [85, 42, 7], "size": [5, 8]},
+          {"name": "C325", "type": "教室", "coordinates": [85, 34, 7], "size": [5, 8]},
+          {"name": "C327", "type": "教室", "coordinates": [85, 26, 7], "size": [5, 8]}
         ],
         "corridors": [
           {
