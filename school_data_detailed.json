@@ -263,10 +263,7 @@
         },
         "classrooms": [
           {"name": "CANTEEN", "coordinates": [15, -30, -6], "size": [20, 20]}
-        
         ]
-        
-       
       },
       {
         "name": "level1",
@@ -279,11 +276,8 @@
         },
         "classrooms": [
           {"name": "CANTEEN", "coordinates": [15, -30, -3], "size": [20, 25]}
-          
         ]
-       
       },
-    
       {
         "name": "level3",
         "z": 7,
@@ -295,9 +289,9 @@
         },
         "classrooms": [
           {"name": "THEATER_MAIN", "coordinates": [20, -35, 7], "size": [25, 30]}
-        
         ]
-
+      }
+    ]
   },
   "buildingC": {
     "levels": [
@@ -481,3 +475,4 @@
     ]
   }
 }
+    
