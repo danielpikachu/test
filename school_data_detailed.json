@@ -250,7 +250,7 @@
           "maxY": 75
         },
         "classrooms": [
-          {"name": "A501", "coordinates": [20, 50, 17], "size": [5, 8]}
+          {"name": "A501", "coordinates": [5, 30, 17], "size": [30, 40]}
         ],
         "corridors": [
           {
