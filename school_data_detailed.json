@@ -246,10 +246,40 @@
       {"from": ["Stairs1", "level1"], "to": ["Stairs1", "level2"]},
       {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
+      {"from": ["Stairs1", "level4"], "to": ["Stairs1", "level5"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
     ]
   },
+  {
+  "name": "level5",
+  "z": 17,
+  "floorPlane": {
+    "minX": 5,
+    "maxX": 45,
+    "minY": 25,
+    "maxY": 75 
+  },
+  "classrooms": [
+    {"name": "US Gym", "coordinates": [20, 50, 17], "size": [5, 8]} 
+  ],
+  "corridors": [
+    {
+      "points": [
+        [10, 55, 17],  
+        [15, 55, 17],  
+        [20, 55, 17],  
+        [25, 55, 17],  
+        [30, 55, 17], 
+        [35, 55, 17], 
+        [40, 55, 17] 
+      ]
+    }
+  ],
+  "stairs": [
+    {"name": "Stairs1", "coordinates": [30, 30, 17]} 
+  ]
+}
   "buildingB": {
     "levels": [
       {
