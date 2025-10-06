@@ -147,7 +147,8 @@
           {"name": "A307", "coordinates": [15, 30, 7], "size": [5, 8]},
           {"name": "A308", "coordinates": [15, 40, 7], "size": [5, 8]},
           {"name": "A309", "coordinates": [10, 40, 7], "size": [5, 8]},
-          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]}
+          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]},
+  
         ],
         "corridors": [
           {
@@ -250,7 +251,7 @@
           "maxY": 75
         },
         "classrooms": [
-          {"name": "A501", "coordinates": [10, 30, 17], "size": [30, 40]}
+          {"name": "US Gym", "coordinates": [10, 30, 17], "size": [30, 40]}
         ],
         "corridors": [
           {
@@ -499,7 +500,8 @@
           {"name": "C321", "coordinates": [85, 48, 7], "size": [5, 8]},
           {"name": "C323", "coordinates": [85, 42, 7], "size": [5, 8]},
           {"name": "C325", "coordinates": [85, 34, 7], "size": [5, 8]},
-          {"name": "C327", "coordinates": [85, 26, 7], "size": [5, 8]}
+          {"name": "C327", "coordinates": [85, 26, 7], "size": [5, 8]},
+          {"name": "Lower School Gym", "coordinates": [53, 48, 7], "size": [7, 22]}
         ],
         "corridors": [
           {
