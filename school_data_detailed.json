@@ -147,7 +147,7 @@
           {"name": "A307", "coordinates": [15, 30, 7], "size": [5, 8]},
           {"name": "A308", "coordinates": [15, 40, 7], "size": [5, 8]},
           {"name": "A309", "coordinates": [10, 40, 7], "size": [5, 8]},
-          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]},
+          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]}
   
         ],
         "corridors": [
