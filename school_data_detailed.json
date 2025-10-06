@@ -501,7 +501,7 @@
           {"name": "C323", "coordinates": [85, 42, 7], "size": [5, 8]},
           {"name": "C325", "coordinates": [85, 34, 7], "size": [5, 8]},
           {"name": "C327", "coordinates": [85, 26, 7], "size": [5, 8]},
-          {"name": "Lower School Gym", "coordinates": [83, 48, 7], "size": [7, 22]}
+          {"name": "Lower School Gym", "coordinates": [53, 26, 7], "size": [7, 22]}
         ],
         "corridors": [
           {
