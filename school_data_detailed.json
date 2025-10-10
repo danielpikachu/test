@@ -381,255 +381,255 @@
         "name": "lowerLevel",
         "z": -9,
         "floorPlane": {
-          "minX": 50,
-          "maxX": 95,
+          "minX": 65,
+          "maxX": 110,
           "minY": 23,
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C009", "coordinates": [51, 60, -9], "size": [5, 8]},
-          {"name": "C011", "coordinates": [55, 60, -9], "size": [5, 8]},
-          {"name": "C013", "coordinates": [60, 60, -9], "size": [5, 8]},
-          {"name": "C015", "coordinates": [70, 60, -9], "size": [5, 8]},
-          {"name": "C017", "coordinates": [75, 60, -9], "size": [5, 8]},
-          {"name": "C019AB", "coordinates": [85, 60, -9], "size": [5, 8]},
-          {"name": "C021", "coordinates": [85, 48, -9], "size": [5, 10]},
-          {"name": "C025", "coordinates": [85, 34, -9], "size": [5, 10]},
-          {"name": "C020", "coordinates": [75, 48, -9], "size": [5, 10]},
-          {"name": "C024", "coordinates": [75, 34, -9], "size": [5, 8]},
-          {"name": "C007", "coordinates": [51, 48, -9], "size": [5, 8]},
-          {"name": "C005", "coordinates": [51, 42, -9], "size": [5, 8]},
-          {"name": "C003", "coordinates": [51, 34, -9], "size": [5, 8]},
-          {"name": "C001", "coordinates": [51, 26, -9], "size": [5, 8]},
-          {"name": "C006", "coordinates": [55, 42, -9], "size": [5, 8]},
-          {"name": "C004", "coordinates": [55, 34, -9], "size": [5, 8]},
-          {"name": "C002", "coordinates": [55, 26, -9], "size": [5, 8]},
-          {"name": "C012", "coordinates": [60, 48, -9], "size": [5, 8]},
-          {"name": "C016", "coordinates": [75, 48, -9], "size": [5, 8]}
+          {"name": "C009", "coordinates": [66, 60, -9], "size": [5, 8]},
+          {"name": "C011", "coordinates": [70, 60, -9], "size": [5, 8]},
+          {"name": "C013", "coordinates": [75, 60, -9], "size": [5, 8]},
+          {"name": "C015", "coordinates": [85, 60, -9], "size": [5, 8]},
+          {"name": "C017", "coordinates": [90, 60, -9], "size": [5, 8]},
+          {"name": "C019AB", "coordinates": [100, 60, -9], "size": [5, 8]},
+          {"name": "C021", "coordinates": [100, 48, -9], "size": [5, 10]},
+          {"name": "C025", "coordinates": [100, 34, -9], "size": [5, 10]},
+          {"name": "C020", "coordinates": [90, 48, -9], "size": [5, 10]},
+          {"name": "C024", "coordinates": [90, 34, -9], "size": [5, 8]},
+          {"name": "C007", "coordinates": [66, 48, -9], "size": [5, 8]},
+          {"name": "C005", "coordinates": [66, 42, -9], "size": [5, 8]},
+          {"name": "C003", "coordinates": [66, 34, -9], "size": [5, 8]},
+          {"name": "C001", "coordinates": [66, 26, -9], "size": [5, 8]},
+          {"name": "C006", "coordinates": [70, 42, -9], "size": [5, 8]},
+          {"name": "C004", "coordinates": [70, 34, -9], "size": [5, 8]},
+          {"name": "C002", "coordinates": [70, 26, -9], "size": [5, 8]},
+          {"name": "C012", "coordinates": [75, 48, -9], "size": [5, 8]},
+          {"name": "C016", "coordinates": [90, 48, -9], "size": [5, 8]}
         ],
         "corridors": [
           {
             "points": [
-              [51, 55, -9],  
-              [55, 55, -9], 
-              [60, 55, -9],   
-              [65, 55, -9],   
-              [70, 55, -9],   
+              [66, 55, -9],  
+              [70, 55, -9], 
               [75, 55, -9],   
               [80, 55, -9],   
-              [85, 55, -9]    
+              [85, 55, -9],   
+              [90, 55, -9],   
+              [95, 55, -9],   
+              [100, 55, -9]    
             ]
           },
           {
             "points": [
-              [82, 60, -9],  
-              [82, 55, -9], 
-              [82, 50, -9],  
-              [82, 45, -9],   
-              [82, 40, -9],   
-              [82, 35, -9],  
-              [82, 30, -9] 
+              [97, 60, -9],  
+              [97, 55, -9], 
+              [97, 50, -9],  
+              [97, 45, -9],   
+              [97, 40, -9],   
+              [97, 35, -9],  
+              [97, 30, -9] 
             ]
           }
         ],
         "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, -9]},
-          {"name": "Stairs3", "coordinates": [53, 60, -9]},  
-          {"name": "Stairs4", "coordinates": [83, 60, -9]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, -9]}   
+          {"name": "Stairs2", "coordinates": [98, 26, -9]},
+          {"name": "Stairs3", "coordinates": [68, 60, -9]},  
+          {"name": "Stairs4", "coordinates": [98, 60, -9]}, 
+          {"name": "Stairs5", "coordinates": [68, 26, -9]}   
         ]
       },
       {
         "name": "level1",
         "z": -3,
         "floorPlane": {
-          "minX": 50,
-          "maxX": 95,
+          "minX": 65,
+          "maxX": 110,
           "minY": 23,
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C109", "coordinates": [51, 60, -3], "size": [5, 8]},
-          {"name": "C111", "coordinates": [55, 60, -3], "size": [5, 8]},
-          {"name": "C113", "coordinates": [60, 60, -3], "size": [5, 8]},
-          {"name": "C115", "coordinates": [70, 60, -3], "size": [5, 8]},
-          {"name": "C117", "coordinates": [75, 60, -3], "size": [5, 8]},
-          {"name": "C119AB", "coordinates": [85, 60, -3], "size": [5, 8]},
-          {"name": "C121", "coordinates": [85, 48, -3], "size": [5, 10]},
-          {"name": "C125", "coordinates": [85, 34, -3], "size": [5, 10]},
-          {"name": "C120", "coordinates": [75, 48, -3], "size": [5, 10]},
-          {"name": "C124", "coordinates": [75, 34, -3], "size": [5, 8]},
-          {"name": "C107", "coordinates": [51, 48, -3], "size": [5, 8]},
-          {"name": "C105", "coordinates": [51, 42, -3], "size": [5, 8]},
-          {"name": "C103", "coordinates": [51, 34, -3], "size": [5, 8]},
-          {"name": "C101", "coordinates": [51, 26, -3], "size": [5, 8]},
-          {"name": "C106", "coordinates": [55, 42, -3], "size": [5, 8]},
-          {"name": "C104", "coordinates": [55, 34, -3], "size": [5, 8]},
-          {"name": "C102", "coordinates": [55, 26, -3], "size": [5, 8]},
-          {"name": "C112", "coordinates": [60, 48, -3], "size": [5, 8]},
-          {"name": "C116", "coordinates": [75, 48, -3], "size": [5, 8]}
+          {"name": "C109", "coordinates": [66, 60, -3], "size": [5, 8]},
+          {"name": "C111", "coordinates": [70, 60, -3], "size": [5, 8]},
+          {"name": "C113", "coordinates": [75, 60, -3], "size": [5, 8]},
+          {"name": "C115", "coordinates": [85, 60, -3], "size": [5, 8]},
+          {"name": "C117", "coordinates": [90, 60, -3], "size": [5, 8]},
+          {"name": "C119AB", "coordinates": [100, 60, -3], "size": [5, 8]},
+          {"name": "C121", "coordinates": [100, 48, -3], "size": [5, 10]},
+          {"name": "C125", "coordinates": [100, 34, -3], "size": [5, 10]},
+          {"name": "C120", "coordinates": [90, 48, -3], "size": [5, 10]},
+          {"name": "C124", "coordinates": [90, 34, -3], "size": [5, 8]},
+          {"name": "C107", "coordinates": [66, 48, -3], "size": [5, 8]},
+          {"name": "C105", "coordinates": [66, 42, -3], "size": [5, 8]},
+          {"name": "C103", "coordinates": [66, 34, -3], "size": [5, 8]},
+          {"name": "C101", "coordinates": [66, 26, -3], "size": [5, 8]},
+          {"name": "C106", "coordinates": [70, 42, -3], "size": [5, 8]},
+          {"name": "C104", "coordinates": [70, 34, -3], "size": [5, 8]},
+          {"name": "C102", "coordinates": [70, 26, -3], "size": [5, 8]},
+          {"name": "C112", "coordinates": [75, 48, -3], "size": [5, 8]},
+          {"name": "C116", "coordinates": [90, 48, -3], "size": [5, 8]}
         ],
         "corridors": [
           {
             "points": [
-              [51, 55, -3],  
-              [55, 55, -3], 
-              [60, 55, -3],   
-              [65, 55, -3],   
-              [70, 55, -3],   
+              [66, 55, -3],  
+              [70, 55, -3], 
               [75, 55, -3],   
               [80, 55, -3],   
-              [85, 55, -3]    
+              [85, 55, -3],   
+              [90, 55, -3],   
+              [95, 55, -3],   
+              [100, 55, -3]    
             ]
           },
           {
             "points": [
-              [82, 60, -3],  
-              [82, 55, -3], 
-              [82, 50, -3],  
-              [82, 45, -3],   
-              [82, 40, -3],   
-              [82, 35, -3],  
-              [82, 30, -3] 
+              [97, 60, -3],  
+              [97, 55, -3], 
+              [97, 50, -3],  
+              [97, 45, -3],   
+              [97, 40, -3],   
+              [97, 35, -3],  
+              [97, 30, -3] 
             ]
           },
           {
             "name": "connectToBuildingA",
             "points": [
-              [50, 20, -3],  
-              [53, 20, -3]   
+              [65, 20, -3],  
+              [68, 20, -3]   
             ]
           }
         ],
         "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, -3]},
-          {"name": "Stairs3", "coordinates": [53, 60, -3]},  
-          {"name": "Stairs4", "coordinates": [83, 60, -3]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, -3]}   
+          {"name": "Stairs2", "coordinates": [98, 26, -3]},
+          {"name": "Stairs3", "coordinates": [68, 60, -3]},  
+          {"name": "Stairs4", "coordinates": [98, 60, -3]}, 
+          {"name": "Stairs5", "coordinates": [68, 26, -3]}   
         ]
       },
       {
         "name": "level2",
         "z": 2,
         "floorPlane": {
-          "minX": 50,
-          "maxX": 95,
+          "minX": 65,
+          "maxX": 110,
           "minY": 23,
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C209", "coordinates": [51, 60, 2], "size": [5, 8]},
-          {"name": "C211", "coordinates": [55, 60, 2], "size": [5, 8]},
-          {"name": "C213", "coordinates": [60, 60, 2], "size": [5, 8]},
-          {"name": "C215", "coordinates": [70, 60, 2], "size": [5, 8]},
-          {"name": "C217", "coordinates": [75, 60, 2], "size": [5, 8]},
-          {"name": "C219AB", "coordinates": [85, 60, 2], "size": [5, 8]},
-          {"name": "C221", "coordinates": [85, 48, 2], "size": [5, 10]},
-          {"name": "C225", "coordinates": [85, 34, 2], "size": [5, 10]},
-          {"name": "C220", "coordinates": [75, 48, 2], "size": [5, 10]},
-          {"name": "C224", "coordinates": [75, 34, 2], "size": [5, 8]},
-          {"name": "C207", "coordinates": [51, 48, 2], "size": [5, 8]},
-          {"name": "C205", "coordinates": [51, 42, 2], "size": [5, 8]},
-          {"name": "C203", "coordinates": [51, 34, 2], "size": [5, 8]},
-          {"name": "C201", "coordinates": [51, 26, 2], "size": [5, 8]},
-          {"name": "C206", "coordinates": [55, 42, 2], "size": [5, 8]},
-          {"name": "C204", "coordinates": [55, 34, 2], "size": [5, 8]},
-          {"name": "C202", "coordinates": [55, 26, 2], "size": [5, 8]},
-          {"name": "C212", "coordinates": [60, 48, 2], "size": [5, 8]},
-          {"name": "C216", "coordinates": [75, 48, 2], "size": [5, 8]}
+          {"name": "C209", "coordinates": [66, 60, 2], "size": [5, 8]},
+          {"name": "C211", "coordinates": [70, 60, 2], "size": [5, 8]},
+          {"name": "C213", "coordinates": [75, 60, 2], "size": [5, 8]},
+          {"name": "C215", "coordinates": [85, 60, 2], "size": [5, 8]},
+          {"name": "C217", "coordinates": [90, 60, 2], "size": [5, 8]},
+          {"name": "C219AB", "coordinates": [100, 60, 2], "size": [5, 8]},
+          {"name": "C221", "coordinates": [100, 48, 2], "size": [5, 10]},
+          {"name": "C225", "coordinates": [100, 34, 2], "size": [5, 10]},
+          {"name": "C220", "coordinates": [90, 48, 2], "size": [5, 10]},
+          {"name": "C224", "coordinates": [90, 34, 2], "size": [5, 8]},
+          {"name": "C207", "coordinates": [66, 48, 2], "size": [5, 8]},
+          {"name": "C205", "coordinates": [66, 42, 2], "size": [5, 8]},
+          {"name": "C203", "coordinates": [66, 34, 2], "size": [5, 8]},
+          {"name": "C201", "coordinates": [66, 26, 2], "size": [5, 8]},
+          {"name": "C206", "coordinates": [70, 42, 2], "size": [5, 8]},
+          {"name": "C204", "coordinates": [70, 34, 2], "size": [5, 8]},
+          {"name": "C202", "coordinates": [70, 26, 2], "size": [5, 8]},
+          {"name": "C212", "coordinates": [75, 48, 2], "size": [5, 8]},
+          {"name": "C216", "coordinates": [90, 48, 2], "size": [5, 8]}
         ],
         "corridors": [
           {
             "points": [
-              [51, 55, 2],  
-              [55, 55, 2], 
-              [60, 55, 2],   
-              [65, 55, 2],   
-              [70, 55, 2],   
+              [66, 55, 2],  
+              [70, 55, 2], 
               [75, 55, 2],   
               [80, 55, 2],   
-              [85, 55, 2]    
+              [85, 55, 2],   
+              [90, 55, 2],   
+              [95, 55, 2],   
+              [100, 55, 2]    
             ]
           },
           {
             "points": [
-              [82, 60, 2],  
-              [82, 55, 2], 
-              [82, 50, 2],  
-              [82, 45, 2],   
-              [82, 40, 2],   
-              [82, 35, 2],  
-              [82, 30, 2] 
+              [97, 60, 2],  
+              [97, 55, 2], 
+              [97, 50, 2],  
+              [97, 45, 2],   
+              [97, 40, 2],   
+              [97, 35, 2],  
+              [97, 30, 2] 
             ]
           }
         ],
         "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, 2]},
-          {"name": "Stairs3", "coordinates": [53, 60, 2]},  
-          {"name": "Stairs4", "coordinates": [83, 60, 2]}, 
-          {"name": "Stairs5", "coordinates": [53, 26, 2]}   
+          {"name": "Stairs2", "coordinates": [98, 26, 2]},
+          {"name": "Stairs3", "coordinates": [68, 60, 2]},  
+          {"name": "Stairs4", "coordinates": [98, 60, 2]}, 
+          {"name": "Stairs5", "coordinates": [68, 26, 2]}   
         ]
       },
       {
         "name": "level3",
         "z": 7,
         "floorPlane": {
-          "minX": 50,
-          "maxX": 95,
+          "minX": 65,
+          "maxX": 110,
           "minY": 23,
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C311", "coordinates": [55, 60, 7], "size": [5, 8]},
-          {"name": "C313", "coordinates": [60, 60, 7], "size": [5, 8]},
-          {"name": "C315", "coordinates": [70, 60, 7], "size": [5, 8]},
-          {"name": "C317", "coordinates": [75, 60, 7], "size": [5, 8]},
-          {"name": "C319", "coordinates": [85, 60, 7], "size": [5, 8]},
-          {"name": "C322", "coordinates": [75, 42, 7], "size": [5, 8]},
-          {"name": "C324", "coordinates": [75, 34, 7], "size": [5, 8]},
-          {"name": "C326", "coordinates": [75, 26, 7], "size": [5, 8]},
-          {"name": "C321", "coordinates": [85, 48, 7], "size": [5, 8]},
-          {"name": "C323", "coordinates": [85, 42, 7], "size": [5, 8]},
-          {"name": "C325", "coordinates": [85, 34, 7], "size": [5, 8]},
-          {"name": "C327", "coordinates": [85, 26, 7], "size": [5, 8]},
-          {"name": "Lower School Gym", "coordinates": [53, 26, 7], "size": [7, 22]}
+          {"name": "C311", "coordinates": [70, 60, 7], "size": [5, 8]},
+          {"name": "C313", "coordinates": [75, 60, 7], "size": [5, 8]},
+          {"name": "C315", "coordinates": [85, 60, 7], "size": [5, 8]},
+          {"name": "C317", "coordinates": [90, 60, 7], "size": [5, 8]},
+          {"name": "C319", "coordinates": [100, 60, 7], "size": [5, 8]},
+          {"name": "C322", "coordinates": [90, 42, 7], "size": [5, 8]},
+          {"name": "C324", "coordinates": [90, 34, 7], "size": [5, 8]},
+          {"name": "C326", "coordinates": [90, 26, 7], "size": [5, 8]},
+          {"name": "C321", "coordinates": [100, 48, 7], "size": [5, 8]},
+          {"name": "C323", "coordinates": [100, 42, 7], "size": [5, 8]},
+          {"name": "C325", "coordinates": [100, 34, 7], "size": [5, 8]},
+          {"name": "C327", "coordinates": [100, 26, 7], "size": [5, 8]},
+          {"name": "Lower School Gym", "coordinates": [68, 26, 7], "size": [7, 22]}
         ],
         "corridors": [
           {
             "points": [
-              [55, 55, 7],  
-              [60, 55, 7],   
-              [65, 55, 7],   
-              [70, 55, 7],   
+              [70, 55, 7],  
               [75, 55, 7],   
               [80, 55, 7],   
-              [85, 55, 7]   
+              [85, 55, 7],   
+              [90, 55, 7],   
+              [95, 55, 7],   
+              [100, 55, 7]   
             ]
           },
           {
             "points": [
-              [82, 60, 7],  
-              [82, 55, 7], 
-              [82, 50, 7],  
-              [82, 45, 7],   
-              [82, 40, 7],   
-              [82, 35, 7],  
-              [82, 30, 7] 
+              [97, 60, 7],  
+              [97, 55, 7], 
+              [97, 50, 7],  
+              [97, 45, 7],   
+              [97, 40, 7],   
+              [97, 35, 7],  
+              [97, 30, 7] 
             ]
           },
           {
             "name": "connectToBuildingA",
             "points": [
-              [50, 55, 7],  
-              [55, 55, 7]   
+              [65, 55, 7],  
+              [70, 55, 7]   
             ]
           }
         ],
         "stairs": [
-          {"name": "Stairs2", "coordinates": [83, 26, 7]},
-          {"name": "Stairs3", "coordinates": [53, 60, 7]}, 
-          {"name": "Stairs4", "coordinates": [83, 60, 7]},  
-          {"name": "Stairs5", "coordinates": [53, 26, 7]}   
+          {"name": "Stairs2", "coordinates": [98, 26, 7]},
+          {"name": "Stairs3", "coordinates": [68, 60, 7]}, 
+          {"name": "Stairs4", "coordinates": [98, 60, 7]},  
+          {"name": "Stairs5", "coordinates": [68, 26, 7]}   
         ]
       }
     ],
