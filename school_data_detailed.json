@@ -551,8 +551,8 @@
           {"name": "C223,227", "coordinates": [100, 60, 2], "size": [5, 8]},
           {"name": "C221", "coordinates": [100, 48, 2], "size": [5, 8]},
           {"name": "C225", "coordinates": [100, 34, 2], "size": [5, 10]},
-          {"name": "C220", "coordinates": [90, 48, 2], "size": [5, 8]},
-          {"name": "C224", "coordinates": [90, 34, 2], "size": [5, 8]},
+          {"name": "C234", "coordinates": [90, 40, 2], "size": [5, 8]},
+          {"name": "C238", "coordinates": [90, 26, 2], "size": [5, 8]},
           {"name": "C207", "coordinates": [66, 48, 2], "size": [5, 8]},
           {"name": "C205", "coordinates": [66, 42, 2], "size": [5, 8]},
           {"name": "C203", "coordinates": [66, 34, 2], "size": [5, 8]},
@@ -560,7 +560,7 @@
           {"name": "C206", "coordinates": [72, 42, 2], "size": [3, 8]},
           {"name": "C204", "coordinates": [72, 34, 2], "size": [3, 8]},
           {"name": "C202", "coordinates": [72, 26, 2], "size": [3, 8]},
-          {"name": "C212", "coordinates": [75, 48, 2], "size": [5, 8]},
+     
           {"name": "C216", "coordinates": [90, 48, 2], "size": [5, 8]}
         ],
         "corridors": [
