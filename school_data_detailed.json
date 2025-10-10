@@ -432,7 +432,7 @@
               [97, 30, -9] 
             ]
           },
-           {
+          {
             "points": [
               [68, 60, -9],  
               [68, 55, -9], 
@@ -467,17 +467,17 @@
           {"name": "C115", "coordinates": [85, 60, -3], "size": [5, 8]},
           {"name": "C117", "coordinates": [90, 60, -3], "size": [5, 8]},
           {"name": "C119AB", "coordinates": [100, 60, -3], "size": [5, 8]},
-          {"name": "C121", "coordinates": [100, 48, -3], "size": [5, 10]},
+          {"name": "C121", "coordinates": [100, 48, -3], "size": [5, 8]},
           {"name": "C125", "coordinates": [100, 34, -3], "size": [5, 10]},
-          {"name": "C120", "coordinates": [90, 48, -3], "size": [5, 10]},
+          {"name": "C120", "coordinates": [90, 48, -3], "size": [5, 8]},
           {"name": "C124", "coordinates": [90, 34, -3], "size": [5, 8]},
           {"name": "C107", "coordinates": [66, 48, -3], "size": [5, 8]},
           {"name": "C105", "coordinates": [66, 42, -3], "size": [5, 8]},
           {"name": "C103", "coordinates": [66, 34, -3], "size": [5, 8]},
           {"name": "C101", "coordinates": [66, 26, -3], "size": [5, 8]},
-          {"name": "C106", "coordinates": [70, 42, -3], "size": [5, 8]},
-          {"name": "C104", "coordinates": [70, 34, -3], "size": [5, 8]},
-          {"name": "C102", "coordinates": [70, 26, -3], "size": [5, 8]},
+          {"name": "C106", "coordinates": [72, 42, -3], "size": [3, 8]},
+          {"name": "C104", "coordinates": [72, 34, -3], "size": [3, 8]},
+          {"name": "C102", "coordinates": [72, 26, -3], "size": [3, 8]},
           {"name": "C112", "coordinates": [75, 48, -3], "size": [5, 8]},
           {"name": "C116", "coordinates": [90, 48, -3], "size": [5, 8]}
         ],
@@ -506,13 +506,23 @@
             ]
           },
           {
+            "points": [
+              [68, 60, -3],  
+              [68, 55, -3], 
+              [68, 50, -3],  
+              [68, 45, -3],   
+              [68, 40, -3],   
+              [68, 35, -3],  
+              [68, 30, -3] 
+            ]
+          },
+          {
             "name": "connectToBuildingA",
             "points": [
               [53, 20, -3],  
               [58, 20, -3],  
               [63, 20, -3],  
               [65, 20, -3] 
-              
             ]
           }
         ],
@@ -539,17 +549,17 @@
           {"name": "C215", "coordinates": [85, 60, 2], "size": [5, 8]},
           {"name": "C217", "coordinates": [90, 60, 2], "size": [5, 8]},
           {"name": "C219AB", "coordinates": [100, 60, 2], "size": [5, 8]},
-          {"name": "C221", "coordinates": [100, 48, 2], "size": [5, 10]},
+          {"name": "C221", "coordinates": [100, 48, 2], "size": [5, 8]},
           {"name": "C225", "coordinates": [100, 34, 2], "size": [5, 10]},
-          {"name": "C220", "coordinates": [90, 48, 2], "size": [5, 10]},
+          {"name": "C220", "coordinates": [90, 48, 2], "size": [5, 8]},
           {"name": "C224", "coordinates": [90, 34, 2], "size": [5, 8]},
           {"name": "C207", "coordinates": [66, 48, 2], "size": [5, 8]},
           {"name": "C205", "coordinates": [66, 42, 2], "size": [5, 8]},
           {"name": "C203", "coordinates": [66, 34, 2], "size": [5, 8]},
           {"name": "C201", "coordinates": [66, 26, 2], "size": [5, 8]},
-          {"name": "C206", "coordinates": [70, 42, 2], "size": [5, 8]},
-          {"name": "C204", "coordinates": [70, 34, 2], "size": [5, 8]},
-          {"name": "C202", "coordinates": [70, 26, 2], "size": [5, 8]},
+          {"name": "C206", "coordinates": [72, 42, 2], "size": [3, 8]},
+          {"name": "C204", "coordinates": [72, 34, 2], "size": [3, 8]},
+          {"name": "C202", "coordinates": [72, 26, 2], "size": [3, 8]},
           {"name": "C212", "coordinates": [75, 48, 2], "size": [5, 8]},
           {"name": "C216", "coordinates": [90, 48, 2], "size": [5, 8]}
         ],
@@ -575,6 +585,17 @@
               [97, 40, 2],   
               [97, 35, 2],  
               [97, 30, 2] 
+            ]
+          },
+          {
+            "points": [
+              [68, 60, 2],  
+              [68, 55, 2], 
+              [68, 50, 2],  
+              [68, 45, 2],   
+              [68, 40, 2],   
+              [68, 35, 2],  
+              [68, 30, 2] 
             ]
           }
         ],
@@ -613,7 +634,7 @@
           {
             "points": [
               [65, 55, 7],  
-               [70, 55, 7], 
+              [70, 55, 7], 
               [75, 55, 7],   
               [80, 55, 7],   
               [85, 55, 7],   
@@ -664,7 +685,8 @@
       {"from": ["Stairs5", "lowerLevel"], "to": ["Stairs5", "level1"]},
       {"from": ["Stairs5", "level1"], "to": ["Stairs5", "level2"]},
       {"from": ["Stairs5", "level2"], "to": ["Stairs5", "level3"]},
-      {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]}
+      {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
+      {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]}
     ]
   }
 }
