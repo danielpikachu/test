@@ -543,12 +543,12 @@
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C209", "coordinates": [66, 60, 2], "size": [5, 8]},
-          {"name": "C211", "coordinates": [70, 60, 2], "size": [5, 8]},
-          {"name": "C213", "coordinates": [75, 60, 2], "size": [5, 8]},
-          {"name": "C215", "coordinates": [85, 60, 2], "size": [5, 8]},
-          {"name": "C217", "coordinates": [90, 60, 2], "size": [5, 8]},
-          {"name": "C219AB", "coordinates": [100, 60, 2], "size": [5, 8]},
+          {"name": "C209", "coordinates": [66, 60, 2], "size": [2, 8]},
+          {"name": "C211", "coordinates": [68, 60, 2], "size": [2, 8]},
+          {"name": "C213", "coordinates": [72, 60, 2], "size": [5, 8]},
+          {"name": "C215", "coordinates": [77, 60, 2], "size": [5, 8]},
+          {"name": "C218", "coordinates": [77, 48, 2], "size": [5, 8]},
+          {"name": "C223,227", "coordinates": [100, 60, 2], "size": [5, 8]},
           {"name": "C221", "coordinates": [100, 48, 2], "size": [5, 8]},
           {"name": "C225", "coordinates": [100, 34, 2], "size": [5, 10]},
           {"name": "C220", "coordinates": [90, 48, 2], "size": [5, 8]},
