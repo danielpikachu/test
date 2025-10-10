@@ -402,9 +402,9 @@
           {"name": "C005", "coordinates": [66, 42, -9], "size": [5, 8]},
           {"name": "C003", "coordinates": [66, 34, -9], "size": [5, 8]},
           {"name": "C001", "coordinates": [66, 26, -9], "size": [5, 8]},
-          {"name": "C006", "coordinates": [70, 42, -9], "size": [5, 8]},
-          {"name": "C004", "coordinates": [70, 34, -9], "size": [5, 8]},
-          {"name": "C002", "coordinates": [70, 26, -9], "size": [5, 8]},
+          {"name": "C006", "coordinates": [72, 42, -9], "size": [3, 8]},
+          {"name": "C004", "coordinates": [72, 34, -9], "size": [3, 8]},
+          {"name": "C002", "coordinates": [72, 26, -9], "size": [3, 8]},
           {"name": "C012", "coordinates": [75, 48, -9], "size": [5, 8]},
           {"name": "C016", "coordinates": [90, 48, -9], "size": [5, 8]}
         ],
