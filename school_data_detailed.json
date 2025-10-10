@@ -561,9 +561,10 @@
           {"name": "C206", "coordinates": [72, 42, 2], "size": [3, 8]},
           {"name": "C204", "coordinates": [72, 34, 2], "size": [3, 8]},
           {"name": "C202", "coordinates": [72, 26, 2], "size": [3, 8]},
-          
+          {"name": "C219", "coordinates": [85, 60, 2], "size": [5, 8]},
+          {"name": "C222", "coordinates": [85, 48, 2], "size": [5, 8]},
      
-          {"name": "C216", "coordinates": [90, 48, 2], "size": [5, 8]}
+          {"name": "C221", "coordinates": [90, 60, 2], "size": [5, 8]}
         ],
         "corridors": [
           {
