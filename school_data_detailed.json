@@ -461,25 +461,26 @@
           "maxY": 73
         },
         "classrooms": [
-          {"name": "C109", "coordinates": [66, 60, -3], "size": [5, 8]},
-          {"name": "C111", "coordinates": [70, 60, -3], "size": [5, 8]},
-          {"name": "C113", "coordinates": [75, 60, -3], "size": [5, 8]},
-          {"name": "C115", "coordinates": [85, 60, -3], "size": [5, 8]},
+          {"name": "C109", "coordinates": [72, 60, -3], "size": [5, 8]},
+          {"name": "C111", "coordinates": [77, 60, -3], "size": [5, 8]},
+          {"name": "C113", "coordinates": [82, 60, -3], "size": [5, 8]},
+          {"name": "C115", "coordinates": [87, 60, -3], "size": [3, 8]},
           {"name": "C117", "coordinates": [90, 60, -3], "size": [5, 8]},
-          {"name": "C119AB", "coordinates": [100, 60, -3], "size": [5, 8]},
-          {"name": "C121", "coordinates": [100, 48, -3], "size": [5, 8]},
-          {"name": "C125", "coordinates": [100, 34, -3], "size": [5, 10]},
-          {"name": "C120", "coordinates": [90, 48, -3], "size": [5, 8]},
-          {"name": "C124", "coordinates": [90, 34, -3], "size": [5, 8]},
-          {"name": "C107", "coordinates": [66, 48, -3], "size": [5, 8]},
-          {"name": "C105", "coordinates": [66, 42, -3], "size": [5, 8]},
-          {"name": "C103", "coordinates": [66, 34, -3], "size": [5, 8]},
-          {"name": "C101", "coordinates": [66, 26, -3], "size": [5, 8]},
-          {"name": "C106", "coordinates": [72, 42, -3], "size": [3, 8]},
-          {"name": "C104", "coordinates": [72, 34, -3], "size": [3, 8]},
-          {"name": "C102", "coordinates": [72, 26, -3], "size": [3, 8]},
-          {"name": "C112", "coordinates": [75, 48, -3], "size": [5, 8]},
-          {"name": "C116", "coordinates": [90, 48, -3], "size": [5, 8]}
+          {"name": "C119", "coordinates": [100, 60, -3], "size": [5, 8]},
+           {"name": "C129", "coordinates": [100, 48, -3], "size": [5, 8]},
+          {"name": "C131", "coordinates": [100, 40, -3], "size": [5, 8]},
+           {"name": "C133", "coordinates": [100, 32, -3], "size": [5, 8]},
+           {"name": "C135", "coordinates": [100, 24, -3], "size": [5, 8]},
+         
+          {"name": "C134", "coordinates": [90, 40, -3], "size": [5, 8]},
+          {"name": "C138", "coordinates": [90, 24, -3], "size": [5, 8]},
+         
+          {"name": "SCHOOL CLINIC", "coordinates": [66, 26, -3], "size": [5, 8]},
+        
+          {"name": "LOWER SCHOOL LIBRATY", "coordinates": [72, 26, -3], "size": [3, 8]},
+          {"name": "C112", "coordinates": [77, 48, -3], "size": [5, 8]},
+           {"name": "C114", "coordinates": [82, 48, -3], "size": [2, 8]},
+          {"name": "C116", "coordinates": [84, 48, -3], "size": [5, 8]}
         ],
         "corridors": [
           {
