@@ -461,6 +461,7 @@
           "maxY": 73
         },
         "classrooms": [
+          {"name": "PLAZA", "coordinates": [66, 52, -3], "size": [5, 8]},
           {"name": "C109", "coordinates": [72, 60, -3], "size": [5, 8]},
           {"name": "C111", "coordinates": [77, 60, -3], "size": [5, 8]},
           {"name": "C113", "coordinates": [82, 60, -3], "size": [5, 8]},
