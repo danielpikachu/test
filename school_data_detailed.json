@@ -77,6 +77,16 @@
               [50, 20, -3],  
               [53, 20, -3]
             ]
+          },
+           {
+            "name": "connectToBuildingB",
+            "style": "gray,dashed",
+            "points": [
+              [22, 18, -3],  
+              [22, 0, -3],   
+              [22, -30, -3], 
+              [22, -70, -3]  
+            ]
           }
         ],
         "stairs": [
@@ -279,7 +289,8 @@
       {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
       {"from": ["Stairs1", "level4"], "to": ["Stairs1", "level5"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]}
+      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
+      {"from": ["connectToBuildingB", "level1"], "to": ["Corridor", "level1", "buildingB"]}
     ]
   },
   "buildingB": {
@@ -373,7 +384,9 @@
       {"from": ["StairsB1", "lowerLevel"], "to": ["StairsB1", "level1"]},
       {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
       {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
-      {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]}
+      {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
+      {"from": ["Corridor", "level1"], "to": ["connectToBuildingB", "level1", "buildingA"]},
+      {"from": ["Corridor", "level1"], "to": ["connectToBuildingB", "level1", "buildingC"]}
     ]
   },
   "buildingC": {
@@ -527,6 +540,16 @@
               [63, 24, -3],  
               [65, 26, -3],
                [68, 26, -3]
+            ]
+          },
+          {
+            "name": "connectToBuilding",
+            "style": "gray,dashed",
+            "points": [
+              [66, 26, -3],  
+              [40, 26, -3],  
+              [22, 26, -3],  
+              [22, -70, -3] 
             ]
           }
         ],
@@ -693,7 +716,8 @@
       {"from": ["Stairs5", "level1"], "to": ["Stairs5", "level2"]},
       {"from": ["Stairs5", "level2"], "to": ["Stairs5", "level3"]},
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
-      {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]}
+      {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
+       {"from": ["connectToBuildingB", "level1"], "to": ["Corridor", "level1", "buildingB"]}
     ]
   }
 }
