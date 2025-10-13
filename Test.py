@@ -150,30 +150,51 @@ def plot_3d_map(school_data, display_options=None):
                 ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
                                 color=building_fill_color, alpha=0.3)
 
-                # 绘制走廊
+                # 绘制走廊（新增外部走廊判断，读取JSON样式）
                 for corr_idx, corridor in enumerate(level['corridors']):
                     points = corridor['points']
                     x = [p[0] for p in points]
                     y = [p[1] for p in points]
                     z_coords = [p[2] for p in points]
                     
-                    # 连廊判断
-                    if 'name' in corridor and ('connectToBuilding' in corridor['name']):
+                    # 1. 优先判断是否为外部走廊（读取JSON的type和style）
+                    is_external = corridor.get('type') == 'external'
+                    if is_external:
+                        # 读取JSON中的样式，无配置则用默认灰色虚线
+                        ext_style = corridor.get('style', {})
+                        corr_line_color = ext_style.get('color', 'gray')  # 优先JSON颜色，默认灰色
+                        corr_line_style = ext_style.get('lineType', '--')  # 优先JSON线型，默认虚线
+                        corr_line_width = 10  # 外部走廊线宽放大，突出显示
+                        corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
+                    
+                    # 2. 非外部走廊：判断是否为连廊
+                    elif 'name' in corridor and ('connectToBuilding' in corridor['name']):
                         corr_line_color = COLORS['connect_corridor']
+                        corr_line_style = '-'  # 连廊用实线
                         corr_line_width = 12  # 放大楼宇间走廊线宽
                         corr_label = f"Connect Corridor ({building_name}-{level_name})"
+                    
+                    # 3. 普通内部走廊
                     else:
-                        # 适配各楼走廊颜色
                         corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
+                        corr_line_style = '-'  # 内部走廊用实线
                         corr_line_width = 8  # 放大普通走廊线宽
                         corr_label = None
                     
-                    # 避免重复添加图例
+                    # 绘制走廊（添加linestyle参数，应用虚线样式）
                     if corr_label and corr_label not in ax.get_legend_handles_labels()[1]:
-                        ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, 
-                                alpha=0.8, label=corr_label)
+                        ax.plot(x, y, z_coords, 
+                                color=corr_line_color, 
+                                linestyle=corr_line_style,  # 应用线型（虚线/实线）
+                                linewidth=corr_line_width, 
+                                alpha=0.8, 
+                                label=corr_label)
                     else:
-                        ax.plot(x, y, z_coords, color=corr_line_color, linewidth=corr_line_width, alpha=0.8)
+                        ax.plot(x, y, z_coords, 
+                                color=corr_line_color, 
+                                linestyle=corr_line_style,  # 应用线型（虚线/实线）
+                                linewidth=corr_line_width, 
+                                alpha=0.8)
                     
                     # 走廊节点
                     for px, py, pz in points:
@@ -903,4 +924,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
