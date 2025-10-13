@@ -361,5 +361,28 @@
       {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["mainCorridor", "level1"]}
     ]
-  }
+  },
+   "externalCorridors": [
+    {
+      "name": "External A→B",
+      "level": "level1",
+      "z": -3,
+      "points": [
+        [22, 10, -3],
+        [22, 0, -3],
+        [22, -30, -3]
+      ]
+    },
+    {
+      "name": "External C→B",
+      "level": "level1",
+      "z": -3,
+      "points": [
+        [65, -30, -3],
+        [45, -30, -3],
+        [25, -30, -3]
+      ]
+    }
+  ]
+}
 }
