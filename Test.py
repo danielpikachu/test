@@ -809,9 +809,20 @@ def main():
                 padding-right: 1rem;   /* Reduce right margin */
                 max-width: 100%;       /* Remove maximum width limit */
             }
+            .author-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
         </style>
     """, unsafe_allow_html=True)
-    
+    st.markdown('<div class="author-tag">DANIEL CREATED</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
 
@@ -923,5 +934,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
