@@ -812,7 +812,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    st.subheader("🏫 Campus Navigation System")
+    st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
 
     # Initialize session state variables
@@ -923,4 +923,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
