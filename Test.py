@@ -746,11 +746,7 @@ def plot_path(ax, graph, path):
 
         # Path line
         ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
-        # Start and end markers
-        ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
-        ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
-        ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
-        ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
+       
 
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
     except Exception as e:
@@ -927,3 +923,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
