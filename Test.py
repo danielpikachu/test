@@ -45,7 +45,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# Plot 3D map - Building B is shown in initial state, hidden during route planning
+# Plot 3D map - All buildings shown during route planning
 def plot_3d_map(school_data, display_options=None):
     # Enlarge figure size
     fig = plt.figure(figsize=(35, 30))
@@ -79,16 +79,13 @@ def plot_3d_map(school_data, display_options=None):
     # Store building label position information
     building_label_positions = {}
 
-    # Iterate through all buildings
+    # Iterate through all buildings (A/B/C)
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
         building_name = building_id.replace('building', '')
         
-        # Hide Building B during route planning
-        if not show_all and building_name == 'B':
-            continue
-        
+        # Keep B building visible during route planning (remove hide logic)
         building_data = school_data[building_id]
         
         # Record highest displayed floor and maximum Y value for the building
@@ -106,8 +103,16 @@ def plot_3d_map(school_data, display_options=None):
             # Determine if current floor should be displayed
             show_level = show_all
             if not show_all:
-                # Only show start and end floors
-                show_level = (level_name == start_level) or (level_name == end_level)
+                # Show start/end floors + B building floors connected to path
+                if building_name == 'B':
+                    # Show B building floors that have path stairs or connect to A/C
+                    show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
+                    # Also show B's level1 (connecting floor) if path involves A/B or C/B
+                    if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C'] and end_building in ['A','C'] and 'B' in [start_building, end_building]):
+                        show_level = show_level or (level_name == 'level1')
+                else:
+                    # Show start and end floors for A/C
+                    show_level = (level_name == start_level) or (level_name == end_level)
             
             # If floor will be displayed, record relevant information
             if show_level:
@@ -214,7 +219,7 @@ def plot_3d_map(school_data, display_options=None):
                             [z, z, z, z, z],
                             color=floor_border_color, linestyle='--', alpha=0.6, linewidth=2)
 
-            # Draw staircases
+            # Draw staircases (include B building stairs)
             for stair in level['stairs']:
                 stair_name = stair['name']
                 # Check if it's a staircase on the path
@@ -242,42 +247,20 @@ def plot_3d_map(school_data, display_options=None):
                     # Staircase label
                     ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
         
-        # Store building label positions
+        # Store building label positions (include B building)
         if level_count > 0 and len(displayed_levels) > 0:
-            # For Buildings A and C, place label next to max Y axis of highest displayed floor during route planning
-            if (building_name in ['A', 'C']) and (not show_all):
-                # Get floorPlane data for highest displayed floor
-                highest_displayed_level = None
-                for level in displayed_levels:
-                    if level['z'] == max_displayed_z:
-                        highest_displayed_level = level
-                        break
-                
-                if highest_displayed_level:
-                    fp = highest_displayed_level['floorPlane']
-                    # Calculate center X coordinate of highest displayed floor
-                    center_x = (fp['minX'] + fp['maxX']) / 2
-                    # Adjust Y offset direction based on building (right for A, left for C)
-                    y_offset = 2.0 if building_name == 'A' else -2.0
-                    label_y = max_displayed_y + y_offset
-                    label_z = max_displayed_z  # Label Z value matches highest displayed floor
+            # For all buildings, place label appropriately
+            if building_name == 'B':
+                label_y = max_displayed_y - 2.0  # B building label placed outside Y (more negative)
             else:
-                # Position for Building B and full display state
-                if building_name == 'B':
-                    label_y = max_displayed_y - 2.0  # Building B label placed outside Y (more negative)
-                else:
-                    label_y = max_displayed_y + 2.0  # Other building labels placed outside Y
-                label_z = max_displayed_z + 1.0
-                center_x = corresponding_x
+                label_y = max_displayed_y + 2.0  # A/C building labels placed outside Y
+            label_z = max_displayed_z + 1.0
+            center_x = corresponding_x
             
             building_label_positions[building_name] = (center_x, label_y, label_z)
 
-    # Add building labels
+    # Add building labels (include B building)
     for building_name, (x, y, z) in building_label_positions.items():
-        # Don't show Building B label during route planning
-        if not show_all and building_name == 'B':
-            continue
-            
         bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
                         facecolor=COLORS['building'].get(building_name, 'lightgray'), alpha=0.7)
         ax.text(
@@ -330,7 +313,7 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_xlabel('X Coordinate', fontsize=18, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=18, fontweight='bold')
     ax.set_zlabel('Floor Height (Z Value)', fontsize=18, fontweight='bold')
-    ax.set_title('Campus 3D Navigation Map (A/C Building Navigation, B Building Initially Visible)', fontsize=24, fontweight='bold', pad=20)
+    ax.set_title('Campus 3D Navigation Map (A/B/C Building Navigation)', fontsize=24, fontweight='bold', pad=20)
     
     # Legend
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16, frameon=True)
@@ -347,10 +330,7 @@ class Graph:
     def add_node(self, building_id, node_type, name, level, coordinates):
         building_name = building_id.replace('building', '')
         
-        # Path planning only handles A/C building nodes, B building nodes not added to navigation graph
-        if building_name == 'B':
-            return None
-        
+        # Add B building nodes (remove B building skip logic)
         # Concise node ID
         if node_type == 'corridor':
             node_id = f"{building_name}-corr-{name}@{level}"
@@ -386,20 +366,17 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
 
-# Build navigation graph (only handles A/C buildings)
+# Build navigation graph (include B building)
 def build_navigation_graph(school_data):
     graph = Graph()
 
-    # Step 1: Add all building nodes (classrooms, stairs, corridors) - only process A/C buildings
+    # Step 1: Add all building nodes (A/B/C - classrooms, stairs, corridors)
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
         building_name = building_id.replace('building', '')
         
-        # Skip B building nodes
-        if building_name == 'B':
-            continue
-        
+        # Process all buildings (A/B/C, remove B skip logic)
         building_data = school_data[building_id]
         
         for level in building_data['levels']:
@@ -416,11 +393,8 @@ def build_navigation_graph(school_data):
                     coordinates=classroom['coordinates']
                 )
 
-            # 2. Add staircase nodes (only process A/C building stairs)
+            # 2. Add staircase nodes (include B building stairs)
             for stair in level['stairs']:
-                # Filter out B building stairs
-                if stair['name'].startswith('StairsB'):
-                    continue
                 graph.add_node(
                     building_id=building_id,
                     node_type='stair',
@@ -442,16 +416,13 @@ def build_navigation_graph(school_data):
                         coordinates=point
                     )
 
-    # Step 2: Add all connections - only process A/C buildings
+    # Step 2: Add all connections (A/B/C)
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
         building_name = building_id.replace('building', '')
         
-        # Skip B building
-        if building_name == 'B':
-            continue
-        
+        # Process all buildings (remove B skip logic)
         building_data = school_data[building_id]
 
         for level in building_data['levels']:
@@ -539,15 +510,12 @@ def build_navigation_graph(school_data):
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
-        # 5. Connect nodes across different floors in the same building
+        # 5. Connect nodes across different floors in the same building (include B)
         for connection in building_data['connections']:
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
             
-            # Filter out B building related connections
-            if 'B' in from_obj_name or 'B' in to_obj_name:
-                continue
-                
+            # Process all connections (remove B filter)
             from_obj_type = 'stair' if from_obj_name.startswith('Stairs') else 'corridor'
             to_obj_type = 'stair' if to_obj_name.startswith('Stairs') else 'corridor'
             
@@ -562,10 +530,43 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)  # Staircase connection weight fixed at 5
 
-    # 6. Connect nodes between A/C buildings
+    # 6. Connect nodes between buildings (A-B, B-C, A-C)
+    # A-B connection (level1)
     a_building_id = 'buildingA'
+    b_building_id = 'buildingB'
     c_building_id = 'buildingC'
     
+    # A-B level1 connection
+    ab_connect_level = 'level1'
+    a_b_corr_name = 'connectToBuildingB-p1'  # A's external corridor to B
+    a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
+    b_a_corr_name = 'connectToBuildingAAndC-p1'  # B's external corridor to A
+    b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
+    
+    if a_b_node_id and b_a_node_id:
+        coords_a = graph.nodes[a_b_node_id]['coordinates']
+        coords_b = graph.nodes[b_a_node_id]['coordinates']
+        distance = euclidean_distance(coords_a, coords_b)
+        graph.add_edge(a_b_node_id, b_a_node_id, distance)
+    else:
+        st.warning("Could not find A-B level1 inter-building corridor connection nodes")
+    
+    # B-C level1 connection
+    bc_connect_level = 'level1'
+    b_c_corr_name = 'connectToBuildingAAndC-p0'  # B's external corridor to C
+    b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
+    c_b_corr_name = 'connectToBuildingB-p1'  # C's external corridor to B
+    c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
+    
+    if b_c_node_id and c_b_node_id:
+        coords_b = graph.nodes[b_c_node_id]['coordinates']
+        coords_c = graph.nodes[c_b_node_id]['coordinates']
+        distance = euclidean_distance(coords_b, coords_c)
+        graph.add_edge(b_c_node_id, c_b_node_id, distance)
+    else:
+        st.warning("Could not find B-C level1 inter-building corridor connection nodes")
+    
+    # Original A-C connections (keep existing)
     # Level 1 inter-building connection
     connect_level1 = 'level1'
     a_corr1_name = 'connectToBuildingC-p3'
@@ -579,7 +580,7 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(coords_a, coords_c)
         graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
-        st.warning("Could not find level 1 inter-building corridor connection nodes")
+        st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
     
     # Level 3 inter-building connection
     connect_level3 = 'level3'
@@ -594,7 +595,7 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(coords_a, coords_c)
         graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
-        st.warning("Could not find level 3 inter-building corridor connection nodes")
+        st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
 
     return graph
 
@@ -629,12 +630,12 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
-# Navigation function (only supports A/C buildings)
+# Navigation function (support A/B/C buildings)
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    # Validate buildings (only A/C allowed)
-    valid_buildings = ['A', 'C']
+    # Validate buildings (A/B/C allowed)
+    valid_buildings = ['A', 'B', 'C']
     if start_building not in valid_buildings or end_building not in valid_buildings:
-        return None, "Invalid building selection, only Buildings A and C are supported", None, None
+        return None, "Invalid building selection, only Buildings A, B and C are supported", None, None
         
     try:
         # Use multiple mappings to find nodes
@@ -689,6 +690,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                         # Determine which buildings the corridor connects
                         if 'connectToBuildingA' in node_name:
                             connected_building = 'A'
+                        elif 'connectToBuildingB' in node_name:
+                            connected_building = 'B'
                         elif 'connectToBuildingC' in node_name:
                             connected_building = 'C'
                         else:
@@ -703,7 +706,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     prev_building = node_building
             
             full_path_str = " → ".join(simplified_path)
-            # Return display options, hide Building B during route planning
+            # Return display options (keep B building visible)
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
@@ -753,11 +756,11 @@ def plot_path(ax, graph, path):
     except Exception as e:
         st.error(f"Failed to draw path: {str(e)}")
 
-# Get all building, floor and classroom information (UI only shows A/C buildings)
+# Get all building, floor and classroom information (include B building)
 def get_classroom_info(school_data):
     try:
-        # UI only shows A/C buildings
-        buildings = [b for b in school_data.keys() if b.startswith('building') and b.replace('building', '') in ['A', 'C']]
+        # Show all buildings (A/B/C)
+        buildings = [b for b in school_data.keys() if b.startswith('building')]
         building_names = [b.replace('building', '') for b in buildings]
         
         classrooms_by_building = {}
@@ -784,7 +787,7 @@ def get_classroom_info(school_data):
         st.error(f"Failed to retrieve classroom information: {str(e)}")
         return [], {}, {}
 
-# Reset app state to initial state (show Building B)
+# Reset app state to initial state (show all buildings including B)
 def reset_app_state():
     st.session_state['display_options'] = {
         'start_level': None,
@@ -814,7 +817,7 @@ def main():
     """, unsafe_allow_html=True)
     
     st.subheader("🏫 Campus Navigation System")
-    st.markdown("3D Map & Inter-building Path Planning (A/C Building Navigation, B Building Initially Visible)")
+    st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
 
     # Initialize session state variables
     if 'display_options' not in st.session_state:
@@ -840,7 +843,7 @@ def main():
         global graph
         graph = build_navigation_graph(school_data)
         building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-        st.success("✅ Campus data loaded successfully! Initial state shows A/B/C buildings, only A/C buildings visible during route planning")
+        st.success("✅ Campus data loaded successfully! Initial state shows A/B/C buildings")
     except Exception as e:
         st.error(f"Initialization error: {str(e)}")
         return
@@ -851,7 +854,7 @@ def main():
     with col1:
         st.markdown("#### 📍 Select Locations")
         
-        # Start point selection (only shows A/C buildings)
+        # Start point selection (include B building)
         st.markdown("#### Start Point")
         start_building = st.selectbox("Building", building_names, key="start_building")
         start_levels = levels_by_building.get(start_building, [])
@@ -859,7 +862,7 @@ def main():
         start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
         start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-        # End point selection (only shows A/C buildings)
+        # End point selection (include B building)
         st.markdown("#### End Point")
         end_building = st.selectbox("Building", building_names, key="end_building")
         end_levels = levels_by_building.get(end_building, [])
@@ -870,7 +873,7 @@ def main():
         # Navigation button and reset button
         nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
         
-        # Add reset view button (shows Building B after reset)
+        # Add reset view button (shows all buildings including B after reset)
         reset_button = st.button(
             "🔄 Reset View", 
             use_container_width=True,
@@ -885,7 +888,7 @@ def main():
     with col2:
         st.markdown("#### 🗺️ 3D Campus Map")
         
-        # Handle navigation button click (hide Building B during route planning)
+        # Handle navigation button click (keep B building visible)
         if nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
@@ -899,7 +902,7 @@ def main():
                     st.markdown("##### 🛤️ Path Details")
                     st.info(simplified_path)
                     
-                    # Save path and display options to session state (show_all=False, Building B hidden)
+                    # Save path and display options to session state (keep B visible)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
                 else:
@@ -907,15 +910,15 @@ def main():
             except Exception as e:
                 st.error(f"Navigation process error: {str(e)}")
         
-        # Draw map
+        # Draw map (include B building)
         try:
-            # If there's a route planning result, use saved display options (Building B hidden)
+            # If there's a route planning result, use saved display options (keep B visible)
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
                 # Draw path
                 plot_path(ax, graph, st.session_state['current_path'])
             else:
-                # Show all floors in initial state and after reset (including Building B)
+                # Show all floors in initial state and after reset (including B)
                 fig, ax = plot_3d_map(school_data)
             
             st.pyplot(fig)
