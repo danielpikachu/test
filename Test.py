@@ -821,9 +821,8 @@ def main():
                 font-size: 16px;
                 font-weight: bold;
                 color: #333;
-                background: white;
-                padding: 5px 10px;
-                border: 1px solid #ccc;
+                background: rgba(255,255,255,0.9);
+                padding: 3px 10px;
                 border-radius: 4px;
                 z-index: 9999;     
         }
@@ -941,6 +940,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
