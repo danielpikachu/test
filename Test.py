@@ -820,7 +820,7 @@ def main():
                 right: 20px;       
                 font-size: 16px;
                 font-weight: bold;
-                color: #333;
+                color: #666;
                 background: rgba(255,255,255,0.9);
                 padding: 3px 10px;
                 border-radius: 4px;
@@ -940,6 +940,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
