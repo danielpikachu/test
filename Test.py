@@ -804,23 +804,28 @@ def main():
     # Adjust margins
     st.markdown("""
         <style>
-            .block-container {
+            html {
+                position: relative;
+                min-height: 100%;
+               }
+               .block-container {
                 padding-left: 1rem;    /* Reduce left margin */
                 padding-right: 1rem;   /* Reduce right margin */
-                max-width: 100%;       /* Remove maximum width limit */
+                max-width: 100%;   /* Remove maximum width limit */
+                padding-bottom: 60px; 
             }
-            .author-tag {
+           .author-tag {
                 position: absolute;
-                top: auto;          
-                bottom: 20px;       
+                bottom: 20px;      
                 right: 20px;       
                 font-size: 16px;
                 font-weight: bold;
                 color: #333;
-                background: rgba(255,255,255,0.9);
-                padding: 3px 10px;
+                background: white;
+                padding: 5px 10px;
+                border: 1px solid #ccc;
                 border-radius: 4px;
-                z-index: 100;      
+                z-index: 9999;     
         }
         </style>
     """, unsafe_allow_html=True)
@@ -936,6 +941,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
