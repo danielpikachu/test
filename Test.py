@@ -817,7 +817,7 @@ def main():
                 padding: 0;
             }
             .block-container {
-                padding-top: 0.5rem !important;
+                padding-top: 0.2rem !important;
                 padding-left: 1rem;
                 padding-right: 1rem;
                 max-width: 100%;
@@ -952,6 +952,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
