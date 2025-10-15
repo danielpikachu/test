@@ -804,6 +804,9 @@ def main():
     # Adjust margins
     st.markdown("""
         <style>
+        .stApp {
+                padding-top: 1rem !important; 
+            }
             body {
                 position: relative;
                 min-height: 100vh;
@@ -945,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
