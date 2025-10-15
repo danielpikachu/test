@@ -805,7 +805,7 @@ def main():
     st.markdown("""
         <style>
         .stApp {
-                padding-top: 0.2rem !important; 
+                padding-top: 0.0rem !important; 
             }
             body {
                 position: relative;
@@ -948,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
