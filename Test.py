@@ -807,6 +807,9 @@ def main():
         .stApp {
                 padding-top: 0.0rem !important; 
             }
+             header {
+                display: none !important;
+                }
             body {
                 position: relative;
                 min-height: 100vh;
@@ -814,6 +817,7 @@ def main():
                 padding: 0;
             }
             .block-container {
+                padding-top: 1rem !important;
                 padding-left: 1rem;
                 padding-right: 1rem;
                 max-width: 100%;
@@ -948,6 +952,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
