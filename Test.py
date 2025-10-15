@@ -804,27 +804,32 @@ def main():
     # Adjust margins
     st.markdown("""
         <style>
-            html {
+            body {
                 position: relative;
-                min-height: 100%;
-               }
-               .block-container {
-                padding-left: 1rem;    /* Reduce left margin */
-                padding-right: 1rem;   /* Reduce right margin */
-                max-width: 100%;   /* Remove maximum width limit */
-                padding-bottom: 60px; 
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
             }
-           .author-tag {
-                position: absolute;
-                bottom: -20px;      
-                right: 20px;       
+            .block-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                max-width: 100%;
+                padding-bottom: 80px; /* 为底部标记预留足够空间 */
+            }
+            /* 右下角标记样式 - 强制定位 */
+            .author-tag {
+                position: fixed; /* 使用fixed定位，以浏览器窗口为基准 */
+                bottom: 30px;   /* 距离窗口底部30px */
+                right: 30px;    /* 距离窗口右侧30px */
                 font-size: 16px;
                 font-weight: bold;
-                color: #666;
-                background: rgba(255,255,255,0.9);
-                padding: 3px 10px;
+                color: #666;    /* 灰色字体 */
+                background: white;
+                padding: 6px 12px;
+                border: 1px solid #ddd;
                 border-radius: 4px;
-                z-index: 9999;     
+                z-index: 9999;  /* 最高层级，确保不被遮挡 */
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 轻微阴影增强可见性 */
         }
         </style>
     """, unsafe_allow_html=True)
@@ -940,6 +945,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
