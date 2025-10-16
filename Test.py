@@ -7,6 +7,8 @@ import streamlit as st
 # -------------------------- 1. Basic Configuration --------------------------
 plt.switch_backend('Agg')  # Resolve Streamlit matplotlib rendering issues
 
+st.set_page_config(page_title="SCIS Navigation System")
+
 # Define color constants: including Buildings A/B/C
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral'},  # Building fill colors
@@ -952,6 +954,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
