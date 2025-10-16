@@ -650,7 +650,7 @@ def plot_path(ax, graph, path):
             else:
                 labels.append("")
 
-        ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10)
+        ax.plot(x, y, z, color=COLORS['path'], linewidth=10, linestyle='-', marker='o', markersize=10)
        
 
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
@@ -836,4 +836,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
