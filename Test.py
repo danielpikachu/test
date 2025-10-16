@@ -25,7 +25,7 @@ COLORS = {
     },
     'stair_label': 'darkred',
     'classroom_label': 'black',
-    'path': 'darkred',
+    'path': 'red',
     'start_marker': 'limegreen',
     'start_label': 'green',
     'end_marker': 'magenta',
@@ -836,3 +836,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
