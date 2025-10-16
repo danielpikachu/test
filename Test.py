@@ -840,7 +840,7 @@ def main():
         }
         </style>
     """, unsafe_allow_html=True)
-    st.markdown('<div class="author-tag">Created By DANIEL </div>', unsafe_allow_html=True)
+    st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
 
@@ -952,6 +952,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
