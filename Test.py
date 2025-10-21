@@ -41,7 +41,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# 绘制3D交互式地图（修复符号错误版）
+# 绘制3D交互式地图（修复线条样式错误）
 def plot_3d_map(school_data, display_options=None):
     fig = go.Figure()
 
@@ -151,7 +151,8 @@ def plot_3d_map(school_data, display_options=None):
                     if is_external:
                         ext_style = corridor.get('style', {})
                         corr_line_color = ext_style.get('color', 'gray')
-                        corr_line_style = ext_style.get('lineType', 'dash')
+                        # 修复：将'dashed'改为'dash'
+                        corr_line_style = 'dash' if ext_style.get('lineType') == 'dashed' else ext_style.get('lineType', 'dash')
                         corr_line_width = 10
                         corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
                     
@@ -174,20 +175,20 @@ def plot_3d_map(school_data, display_options=None):
                         line=dict(
                             color=corr_line_color,
                             width=corr_line_width,
-                            dash=corr_line_style
+                            dash=corr_line_style  # 使用修复后的样式
                         ),
                         name=corr_label if corr_label else None,
                         showlegend=bool(corr_label)
                     ))
                     
-                    # 走廊节点（使用3D支持的square符号）
+                    # 走廊节点
                     fig.add_trace(go.Scatter3d(
                         x=x, y=y, z=z_coords,
                         mode='markers',
                         marker=dict(
                             color=COLORS['corridor_node'],
                             size=3,
-                            symbol='square'  # 3D支持
+                            symbol='square'
                         ),
                         showlegend=False
                     ))
@@ -217,31 +218,31 @@ def plot_3d_map(school_data, display_options=None):
                         )
                     )
                     
-                    # 教室位置标记（使用3D支持的circle符号）
+                    # 教室位置标记
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers',
                         marker=dict(
                             color=building_fill_color,
                             size=5,
-                            symbol='circle',  # 3D支持
+                            symbol='circle',
                             line=dict(width=2, color=floor_border_color)
                         ),
                         showlegend=False
                     ))
                     
-                    # 教室边框
+                    # 教室边框（修复：将'dashed'改为'dash'）
                     class_border_x = [x, x + width, x + width, x, x]
                     class_border_y = [y, y, y + depth, y + depth, y]
                     class_border_z = [z, z, z, z, z]
                     fig.add_trace(go.Scatter3d(
                         x=class_border_x, y=class_border_y, z=class_border_z,
                         mode='lines',
-                        line=dict(color=floor_border_color, width=2, dash='dash'),
+                        line=dict(color=floor_border_color, width=2, dash='dash'),  # 修复此处
                         showlegend=False
                     ))
 
-            # 绘制楼梯（修复符号错误）
+            # 绘制楼梯
             for stair in level['stairs']:
                 stair_name = stair['name']
                 is_path_stair = (building_name, stair_name, level_name) in path_stairs
@@ -253,14 +254,14 @@ def plot_3d_map(school_data, display_options=None):
                     marker_size = 8 if is_path_stair else 6
                     marker_edge_width = 2 if is_path_stair else 1
                     
-                    # 楼梯标记（使用3D支持的diamond符号）
+                    # 楼梯标记
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers',
                         marker=dict(
                             color=stair_color,
                             size=marker_size,
-                            symbol='diamond',  # 替换为3D支持的符号
+                            symbol='diamond',
                             line=dict(width=marker_edge_width, color='black')
                         ),
                         name=stair_label,
@@ -353,28 +354,28 @@ def plot_3d_map(school_data, display_options=None):
                 showlegend=True
             ))
             
-            # 起点标记（使用3D支持的square符号）
+            # 起点标记
             fig.add_trace(go.Scatter3d(
                 x=[x[0]], y=[y[0]], z=[z[0]],
                 mode='markers',
                 marker=dict(
                     color=COLORS['start_marker'],
                     size=12,
-                    symbol='square',  # 替换为3D支持的符号
+                    symbol='square',
                     line=dict(width=2, color='black')
                 ),
                 name='Start',
                 showlegend=True
             ))
             
-            # 终点标记（使用3D支持的diamond符号）
+            # 终点标记
             fig.add_trace(go.Scatter3d(
                 x=[x[-1]], y=[y[-1]], z=[z[-1]],
                 mode='markers',
                 marker=dict(
                     color=COLORS['end_marker'],
                     size=12,
-                    symbol='diamond',  # 替换为3D支持的符号
+                    symbol='diamond',
                     line=dict(width=2, color='black')
                 ),
                 name='End',
