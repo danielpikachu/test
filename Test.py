@@ -41,7 +41,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# 绘制3D交互式地图（修复版）
+# 绘制3D交互式地图（修复符号错误版）
 def plot_3d_map(school_data, display_options=None):
     fig = go.Figure()
 
@@ -180,14 +180,14 @@ def plot_3d_map(school_data, display_options=None):
                         showlegend=bool(corr_label)
                     ))
                     
-                    # 走廊节点
+                    # 走廊节点（使用3D支持的square符号）
                     fig.add_trace(go.Scatter3d(
                         x=x, y=y, z=z_coords,
                         mode='markers',
                         marker=dict(
                             color=COLORS['corridor_node'],
                             size=3,
-                            symbol='square'
+                            symbol='square'  # 3D支持
                         ),
                         showlegend=False
                     ))
@@ -198,7 +198,7 @@ def plot_3d_map(school_data, display_options=None):
                     width, depth = classroom['size']
                     class_name = classroom['name']
 
-                    # 教室标签（3D场景标签）- 修复元组转列表
+                    # 教室标签
                     current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
                     fig.update_layout(
                         scene=dict(
@@ -217,14 +217,14 @@ def plot_3d_map(school_data, display_options=None):
                         )
                     )
                     
-                    # 教室位置标记
+                    # 教室位置标记（使用3D支持的circle符号）
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers',
                         marker=dict(
                             color=building_fill_color,
                             size=5,
-                            symbol='circle',
+                            symbol='circle',  # 3D支持
                             line=dict(width=2, color=floor_border_color)
                         ),
                         showlegend=False
@@ -241,7 +241,7 @@ def plot_3d_map(school_data, display_options=None):
                         showlegend=False
                     ))
 
-            # 绘制楼梯
+            # 绘制楼梯（修复符号错误）
             for stair in level['stairs']:
                 stair_name = stair['name']
                 is_path_stair = (building_name, stair_name, level_name) in path_stairs
@@ -253,21 +253,21 @@ def plot_3d_map(school_data, display_options=None):
                     marker_size = 8 if is_path_stair else 6
                     marker_edge_width = 2 if is_path_stair else 1
                     
-                    # 楼梯标记
+                    # 楼梯标记（使用3D支持的diamond符号）
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers',
                         marker=dict(
                             color=stair_color,
                             size=marker_size,
-                            symbol='triangle-up',
+                            symbol='diamond',  # 替换为3D支持的符号
                             line=dict(width=marker_edge_width, color='black')
                         ),
                         name=stair_label,
                         showlegend=True
                     ))
                     
-                    # 楼梯标签（3D场景标签）- 修复元组转列表
+                    # 楼梯标签
                     current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
                     fig.update_layout(
                         scene=dict(
@@ -296,7 +296,7 @@ def plot_3d_map(school_data, display_options=None):
             center_x = corresponding_x
             building_label_positions[building_name] = (center_x, label_y, label_z)
 
-    # 添加建筑物标签（3D场景标签）- 修复元组转列表
+    # 添加建筑物标签
     for building_name, (x, y, z) in building_label_positions.items():
         current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
         fig.update_layout(
@@ -353,35 +353,35 @@ def plot_3d_map(school_data, display_options=None):
                 showlegend=True
             ))
             
-            # 起点标记
+            # 起点标记（使用3D支持的square符号）
             fig.add_trace(go.Scatter3d(
                 x=[x[0]], y=[y[0]], z=[z[0]],
                 mode='markers',
                 marker=dict(
                     color=COLORS['start_marker'],
                     size=12,
-                    symbol='star',
+                    symbol='square',  # 替换为3D支持的符号
                     line=dict(width=2, color='black')
                 ),
                 name='Start',
                 showlegend=True
             ))
             
-            # 终点标记
+            # 终点标记（使用3D支持的diamond符号）
             fig.add_trace(go.Scatter3d(
                 x=[x[-1]], y=[y[-1]], z=[z[-1]],
                 mode='markers',
                 marker=dict(
                     color=COLORS['end_marker'],
                     size=12,
-                    symbol='star',
+                    symbol='diamond',  # 替换为3D支持的符号
                     line=dict(width=2, color='black')
                 ),
                 name='End',
                 showlegend=True
             ))
             
-            # 起点标签（3D场景标签）- 修复元组转列表
+            # 起点标签
             current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
             fig.update_layout(
                 scene=dict(
@@ -400,7 +400,7 @@ def plot_3d_map(school_data, display_options=None):
                 )
             )
             
-            # 终点标签（3D场景标签）- 修复元组转列表
+            # 终点标签
             current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
             fig.update_layout(
                 scene=dict(
