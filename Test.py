@@ -2,6 +2,7 @@ import json
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
+import traceback
 from plotly.graph_objs.layout.scene import Annotation as SceneAnnotation
 
 st.set_page_config(page_title="SCIS Navigation System")
@@ -41,8 +42,8 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# 绘制3D交互式地图（修复线条样式错误）
-def plot_3d_map(school_data, display_options=None):
+# 绘制3D交互式地图（修复全局变量引用问题，增加graph参数）
+def plot_3d_map(school_data, graph, display_options=None):
     fig = go.Figure()
 
     if display_options is None:
@@ -421,7 +422,7 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             st.warning(f"Path drawing warning: {str(e)}")
 
-    # 布局配置 - 增加了模式栏控制，启用缩放功能
+    # 布局配置 - 包含缩放功能
     fig.update_layout(
         scene=dict(
             xaxis_title='X Coordinate',
@@ -465,13 +466,11 @@ def plot_3d_map(school_data, display_options=None):
         width=1400,
         height=900,
         margin=dict(l=0, r=0, b=0, t=50),
-        # 启用缩放相关控件
         modebar=dict(
             orientation='vertical',
             bgcolor='rgba(255,255,255,0.8)',
             bordercolor='black',
             borderwidth=1,
-            # 明确指定要显示的模式栏按钮，确保缩放功能可用
             buttons=[
                 'zoomIn2d', 'zoomOut2d', 'zoomIn3d', 'zoomOut3d',
                 'pan2d', 'pan3d', 'orbitRotation', 'tableRotation',
@@ -947,7 +946,6 @@ def main():
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
-    # 新增缩放提示
     st.markdown("**💡 You can zoom the 3D map using the controls on the right side of the map**")
 
     # 初始化会话状态
@@ -970,7 +968,6 @@ def main():
         if school_data is None:
             return
             
-        global graph
         graph = build_navigation_graph(school_data)
         building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
         st.success("✅ Campus data loaded successfully! Initial state shows A/B/C buildings")
@@ -1034,16 +1031,17 @@ def main():
             except Exception as e:
                 st.error(f"Navigation process error: {str(e)}")
         
-        # 显示3D地图
+        # 显示3D地图（传入graph参数）
         try:
             if st.session_state['current_path'] is not None:
-                fig = plot_3d_map(school_data, st.session_state['display_options'])
+                fig = plot_3d_map(school_data, graph, st.session_state['display_options'])
             else:
-                fig = plot_3d_map(school_data)
+                fig = plot_3d_map(school_data, graph)
             
             st.plotly_chart(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
+            st.error(f"Error details: {traceback.format_exc()}")
 
 if __name__ == "__main__":
     main()
