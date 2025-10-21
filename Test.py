@@ -2,7 +2,7 @@ import json
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
-from plotly.graph_objects.layout.scene import Annotation as SceneAnnotation
+from plotly.graph_objs.layout.scene import Annotation as SceneAnnotation
 
 st.set_page_config(page_title="SCIS Navigation System")
 
@@ -1037,3 +1037,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
