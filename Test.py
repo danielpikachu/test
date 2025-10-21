@@ -5,8 +5,7 @@ import plotly.graph_objects as go
 import traceback
 from plotly.graph_objs.layout.scene import Annotation as SceneAnnotation
 
-# 强制设置Plotly渲染模式为iframe（解决Streamlit Cloud兼容性问题）
-st.set_option('deprecation.showPyplotGlobalUse', False)
+# 移除了过时的配置项
 
 st.set_page_config(page_title="SCIS Navigation System", layout="wide")
 
