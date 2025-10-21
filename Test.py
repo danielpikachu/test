@@ -41,7 +41,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# 绘制3D交互式地图（修正版）
+# 绘制3D交互式地图（修复版）
 def plot_3d_map(school_data, display_options=None):
     fig = go.Figure()
 
@@ -198,8 +198,8 @@ def plot_3d_map(school_data, display_options=None):
                     width, depth = classroom['size']
                     class_name = classroom['name']
 
-                    # 教室标签（3D场景标签）
-                    current_annotations = fig.layout.scene.annotations if fig.layout.scene else []
+                    # 教室标签（3D场景标签）- 修复元组转列表
+                    current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
                     fig.update_layout(
                         scene=dict(
                             annotations=current_annotations + [
@@ -267,8 +267,8 @@ def plot_3d_map(school_data, display_options=None):
                         showlegend=True
                     ))
                     
-                    # 楼梯标签（3D场景标签）
-                    current_annotations = fig.layout.scene.annotations if fig.layout.scene else []
+                    # 楼梯标签（3D场景标签）- 修复元组转列表
+                    current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
                     fig.update_layout(
                         scene=dict(
                             annotations=current_annotations + [
@@ -296,9 +296,9 @@ def plot_3d_map(school_data, display_options=None):
             center_x = corresponding_x
             building_label_positions[building_name] = (center_x, label_y, label_z)
 
-    # 添加建筑物标签（3D场景标签）
+    # 添加建筑物标签（3D场景标签）- 修复元组转列表
     for building_name, (x, y, z) in building_label_positions.items():
-        current_annotations = fig.layout.scene.annotations if fig.layout.scene else []
+        current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
         fig.update_layout(
             scene=dict(
                 annotations=current_annotations + [
@@ -381,8 +381,8 @@ def plot_3d_map(school_data, display_options=None):
                 showlegend=True
             ))
             
-            # 起点标签（3D场景标签）
-            current_annotations = fig.layout.scene.annotations if fig.layout.scene else []
+            # 起点标签（3D场景标签）- 修复元组转列表
+            current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
             fig.update_layout(
                 scene=dict(
                     annotations=current_annotations + [
@@ -400,8 +400,8 @@ def plot_3d_map(school_data, display_options=None):
                 )
             )
             
-            # 终点标签（3D场景标签）
-            current_annotations = fig.layout.scene.annotations if fig.layout.scene else []
+            # 终点标签（3D场景标签）- 修复元组转列表
+            current_annotations = list(fig.layout.scene.annotations) if (fig.layout.scene and fig.layout.scene.annotations) else []
             fig.update_layout(
                 scene=dict(
                     annotations=current_annotations + [
@@ -1037,4 +1037,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
