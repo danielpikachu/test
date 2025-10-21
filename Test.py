@@ -151,7 +151,6 @@ def plot_3d_map(school_data, display_options=None):
                     if is_external:
                         ext_style = corridor.get('style', {})
                         corr_line_color = ext_style.get('color', 'gray')
-                        # 修复：将'dashed'改为'dash'
                         corr_line_style = 'dash' if ext_style.get('lineType') == 'dashed' else ext_style.get('lineType', 'dash')
                         corr_line_width = 10
                         corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
@@ -175,7 +174,7 @@ def plot_3d_map(school_data, display_options=None):
                         line=dict(
                             color=corr_line_color,
                             width=corr_line_width,
-                            dash=corr_line_style  # 使用修复后的样式
+                            dash=corr_line_style
                         ),
                         name=corr_label if corr_label else None,
                         showlegend=bool(corr_label)
@@ -231,14 +230,14 @@ def plot_3d_map(school_data, display_options=None):
                         showlegend=False
                     ))
                     
-                    # 教室边框（修复：将'dashed'改为'dash'）
+                    # 教室边框
                     class_border_x = [x, x + width, x + width, x, x]
                     class_border_y = [y, y, y + depth, y + depth, y]
                     class_border_z = [z, z, z, z, z]
                     fig.add_trace(go.Scatter3d(
                         x=class_border_x, y=class_border_y, z=class_border_z,
                         mode='lines',
-                        line=dict(color=floor_border_color, width=2, dash='dash'),  # 修复此处
+                        line=dict(color=floor_border_color, width=2, dash='dash'),
                         showlegend=False
                     ))
 
@@ -422,7 +421,7 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             st.warning(f"Path drawing warning: {str(e)}")
 
-    # 布局配置
+    # 布局配置 - 增加了模式栏控制，启用缩放功能
     fig.update_layout(
         scene=dict(
             xaxis_title='X Coordinate',
@@ -466,11 +465,19 @@ def plot_3d_map(school_data, display_options=None):
         width=1400,
         height=900,
         margin=dict(l=0, r=0, b=0, t=50),
+        # 启用缩放相关控件
         modebar=dict(
             orientation='vertical',
             bgcolor='rgba(255,255,255,0.8)',
             bordercolor='black',
-            borderwidth=1
+            borderwidth=1,
+            # 明确指定要显示的模式栏按钮，确保缩放功能可用
+            buttons=[
+                'zoomIn2d', 'zoomOut2d', 'zoomIn3d', 'zoomOut3d',
+                'pan2d', 'pan3d', 'orbitRotation', 'tableRotation',
+                'resetCameraDefault3d', 'resetCameraLastSave3d',
+                'hoverClosest3d', 'hoverClosestCartesian', 'hoverCompareCartesian'
+            ]
         )
     )
 
@@ -940,6 +947,8 @@ def main():
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
+    # 新增缩放提示
+    st.markdown("**💡 You can zoom the 3D map using the controls on the right side of the map**")
 
     # 初始化会话状态
     if 'display_options' not in st.session_state:
