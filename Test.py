@@ -710,7 +710,7 @@ def welcome_page():
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin-top: -300px;
+            margin-top: -450px;
             text-align: center;
         }
         .welcome-title {
@@ -880,6 +880,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
