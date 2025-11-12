@@ -709,7 +709,8 @@ def welcome_page():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
+            min-height: 100vh;
+            margin-top: -100px;
             text-align: center;
         }
         .welcome-title {
@@ -879,4 +880,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
