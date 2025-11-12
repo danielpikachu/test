@@ -829,8 +829,22 @@ def main_interface():
             help="Click to return to initial state, showing all floors (including Building B) and clearing path"
         )
         
+        # 添加退出按钮，返回欢迎页面
+        exit_button = st.button(
+            "🚪 Exit to Welcome Page", 
+            use_container_width=True,
+            help="Click to return to the welcome page",
+            type="secondary"  # 使用次要样式区分
+        )
+        
         if reset_button:
             reset_app_state()
+            st.rerun()
+        
+        if exit_button:
+            # 重置应用状态并返回欢迎页
+            reset_app_state()
+            st.session_state['page'] = 'welcome'
             st.rerun()
 
     with col2:
@@ -880,9 +894,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
