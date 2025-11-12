@@ -709,7 +709,7 @@ def welcome_page():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 80vh;
+            min-height: 80vh;
             text-align: center;
         }
         .welcome-title {
@@ -879,3 +879,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
