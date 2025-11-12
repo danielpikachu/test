@@ -882,11 +882,11 @@ def main_interface():
             st.error(f"Failed to display map: {str(e)}")
 
 def main():
-    # 初始化会话状态，控制显示哪个页面
+    # Initial dialoge to show which page
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
     
-    # 根据当前页面状态显示不同内容
+    # Show different pages based on current status
     if st.session_state['page'] == 'welcome':
         welcome_page()
     else:
@@ -894,3 +894,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
