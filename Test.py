@@ -582,7 +582,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             path_stairs = set()
             prev_building = None
-            prev_level = None  # 新增：跟踪上一个节点的楼层
             
             for node_id in path:
                 node_type = graph.nodes[node_id]['type']
@@ -592,26 +591,10 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    # 新增：判断上下楼信息
-                    if prev_level is not None:
-                        try:
-                            # 提取楼层数字（假设楼层命名为levelX格式）
-                            prev_level_num = int(prev_level.replace('level', ''))
-                            curr_level_num = int(node_level.replace('level', ''))
-                            if curr_level_num > prev_level_num:
-                                direction = "上楼"
-                            elif curr_level_num < prev_level_num:
-                                direction = "下楼"
-                            else:
-                                direction = "同楼层"
-                            simplified_path.append(f"到 {node_building}楼{node_name}，{direction}至{node_level}")
-                        except:
-                            simplified_path.append(f"到 {node_building}楼{node_name} ({node_level})")
-                    else:
-                        simplified_path.append(f"到 {node_building}楼{node_name} ({node_level})")
+                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
                 
                 elif node_type == 'classroom':
-                    simplified_path.append(f"到达 {node_building}楼{node_name} ({node_level})")
+                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
                 
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name:
@@ -625,12 +608,10 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                             connected_building = 'Other'
                             
                         if prev_building and prev_building != node_building:
-                            simplified_path.append(f"通过连廊从{prev_building}楼前往{node_building}楼({node_level})")
+                            simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
                 
-                # 更新上一个节点的信息
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
-                    prev_level = node_level  # 新增：更新上一个楼层信息
             
             full_path_str = " → ".join(simplified_path)
             display_options = {
@@ -848,8 +829,22 @@ def main_interface():
             help="Click to return to initial state, showing all floors (including Building B) and clearing path"
         )
         
+        # 添加退出按钮，返回欢迎页面
+        exit_button = st.button(
+            "🚪 Exit to Welcome Page", 
+            use_container_width=True,
+            help="Click to return to the welcome page",
+            type="secondary"  # 使用次要样式区分
+        )
+        
         if reset_button:
             reset_app_state()
+            st.rerun()
+        
+        if exit_button:
+            # 重置应用状态并返回欢迎页
+            reset_app_state()
+            st.session_state['page'] = 'welcome'
             st.rerun()
 
     with col2:
