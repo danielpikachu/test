@@ -700,7 +700,39 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-def main():
+def welcome_page():
+    # 设置欢迎页面样式
+    st.markdown("""
+        <style>
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 80vh;
+            text-align: center;
+        }
+        .welcome-title {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+        }
+        .enter-button {
+            font-size: 1.5rem;
+            padding: 0.8rem 2rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # 欢迎页面内容
+    st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+    if st.button('Enter System', key='enter_btn', use_container_width=False):
+        st.session_state['page'] = 'main'
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def main_interface():
     st.markdown("""
         <style>
         .stApp {
@@ -834,6 +866,16 @@ def main():
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
 
+def main():
+    # 初始化会话状态，控制显示哪个页面
+    if 'page' not in st.session_state:
+        st.session_state['page'] = 'welcome'
+    
+    # 根据当前页面状态显示不同内容
+    if st.session_state['page'] == 'welcome':
+        welcome_page()
+    else:
+        main_interface()
+
 if __name__ == "__main__":
     main()
-
