@@ -1,0 +1,3 @@
+# .gitignore中添加
+secrets/
+*.json  # 若密钥文件是JSON格式
