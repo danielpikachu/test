@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
-from google.cloud import datastore
+
 
 # 初始化Google Cloud Datastore客户端
 datastore_client = datastore.Client()
@@ -950,3 +950,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
