@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
+from google.cloud import datastore
+
+# 初始化Google Cloud Datastore客户端
+datastore_client = datastore.Client()
 
 plt.switch_backend('Agg')
 
@@ -700,7 +704,39 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
+def get_visit_count():
+    """从Google Cloud Datastore获取当前访问次数"""
+    query = datastore_client.query(kind='VisitCounter')
+    results = list(query.fetch(limit=1))
+    
+    if results:
+        return results[0]['count']
+    else:
+        # 如果没有记录，创建初始记录
+        entity = datastore.Entity(key=datastore_client.key('VisitCounter', 'main_counter'))
+        entity['count'] = 0
+        datastore_client.put(entity)
+        return 0
+
+def increment_visit_count():
+    """增加访问次数并保存到Google Cloud Datastore"""
+    query = datastore_client.query(kind='VisitCounter')
+    results = list(query.fetch(limit=1))
+    
+    if results:
+        entity = results[0]
+        entity['count'] += 1
+    else:
+        entity = datastore.Entity(key=datastore_client.key('VisitCounter', 'main_counter'))
+        entity['count'] = 1
+    
+    datastore_client.put(entity)
+    return entity['count']
+
 def welcome_page():
+    # 获取当前访问次数
+    visit_count = get_visit_count()
+    
     # 设置欢迎页面样式
     st.markdown("""
         <style>
@@ -722,15 +758,35 @@ def welcome_page():
             font-size: 1.5rem;
             padding: 0.8rem 2rem;
         }
+        .visit-count {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
         </style>
     """, unsafe_allow_html=True)
     
     # 欢迎页面内容
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
     st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="button-container">', unsafe_allow_html=True)
     if st.button('Enter System', key='enter_btn', use_container_width=False):
+        # 增加访问次数
+        increment_visit_count()
         st.session_state['page'] = 'main'
         st.rerun()
+    
+    # 显示访问次数
+    st.markdown(f'<div class="visit-count">Total visits: {visit_count}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
@@ -894,4 +950,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
