@@ -6,13 +6,15 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
+import os
 
 plt.switch_backend('Agg')
 
 st.set_page_config(page_title="SCIS Navigation System")
 
-# Google Sheets 配置 - 请替换为你的凭据信息
-SERVICE_ACCOUNT_FILE = 'service_account.json'  # 你的服务账号密钥文件
+# --------------------------
+# Google Sheets 配置（适配 Streamlit Secrets TOML）
+# --------------------------
 SHEET_NAME = 'SCIS_Navigation_Stats'  # 你的Google表格名称
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -20,37 +22,30 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-COLORS = {
-    'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral'},
-    'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},
-    'corridor_line': {'A': 'cyan', 'B': 'forestgreen', 'C': 'salmon'},
-    'corridor_node': 'navy',
-    'corridor_label': 'darkblue',
-    'stair': {
-        'Stairs1': '#FF5733',
-        'Stairs2': '#33FF57',
-        'Stairs3': '#3357FF',
-        'Stairs4': '#FF33F5',
-        'Stairs5': '#F5FF33',
-        'StairsB1': '#33FFF5',
-        'StairsB2': '#FF9933',
-    },
-    'stair_label': 'darkred',
-    'classroom_label': 'black',
-    'path': 'red',
-    'start_marker': 'limegreen',
-    'start_label': 'green',
-    'end_marker': 'magenta',
-    'end_label': 'purple',
-    'connect_corridor': 'gold',
-    'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred'}
-}
+# 从 Streamlit Secrets (TOML格式) 加载密钥
+def get_credentials():
+    try:
+        # 从Streamlit Secrets读取TOML格式的密钥（部署时用）
+        # 注意：Secrets中需以 [google_service_account] 为section名
+        service_account_info = st.secrets["google_service_account"]
+        return Credentials.from_service_account_info(
+            service_account_info,
+            scopes=SCOPE
+        )
+    except KeyError:
+        st.error("Streamlit Secrets中未找到google_service_account配置，请检查TOML格式")
+        return None
+    except Exception as e:
+        st.error(f"密钥加载失败: {str(e)}")
+        return None
 
 def init_google_sheet():
     """初始化Google Sheets连接并确保表格结构正确"""
     try:
-        # 加载凭据
-        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPE)
+        # 加载凭据（使用Streamlit Secrets）
+        creds = get_credentials()
+        if not creds:
+            return None
         client = gspread.authorize(creds)
         
         # 尝试打开表格，如果不存在则创建
@@ -58,8 +53,8 @@ def init_google_sheet():
             sheet = client.open(SHEET_NAME)
         except gspread.exceptions.SpreadsheetNotFound:
             sheet = client.create(SHEET_NAME)
-            # 共享表格给需要访问的邮箱（可选）
-            # sheet.share('your-email@example.com', perm_type='user', role='writer')
+            # 可选：共享表格给你的邮箱（方便查看）
+            # sheet.share('your-email@gmail.com', perm_type='user', role='writer')
         
         # 尝试获取统计工作表，如果不存在则创建
         try:
@@ -76,6 +71,9 @@ def init_google_sheet():
         st.warning(f"Google Sheets初始化失败: {str(e)}. 访问次数统计功能暂时不可用。")
         return None
 
+# --------------------------
+# 访问次数统计逻辑
+# --------------------------
 def update_access_count(worksheet):
     """更新访问次数统计"""
     if not worksheet:
@@ -116,6 +114,35 @@ def get_total_accesses(worksheet):
     except Exception as e:
         st.warning(f"获取总访问次数失败: {str(e)}")
         return 0
+
+# --------------------------
+# 地图与导航核心逻辑（保持不变）
+# --------------------------
+COLORS = {
+    'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral'},
+    'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},
+    'corridor_line': {'A': 'cyan', 'B': 'forestgreen', 'C': 'salmon'},
+    'corridor_node': 'navy',
+    'corridor_label': 'darkblue',
+    'stair': {
+        'Stairs1': '#FF5733',
+        'Stairs2': '#33FF57',
+        'Stairs3': '#3357FF',
+        'Stairs4': '#FF33F5',
+        'Stairs5': '#F5FF33',
+        'StairsB1': '#33FFF5',
+        'StairsB2': '#FF9933',
+    },
+    'stair_label': 'darkred',
+    'classroom_label': 'black',
+    'path': 'red',
+    'start_marker': 'limegreen',
+    'start_label': 'green',
+    'end_marker': 'magenta',
+    'end_label': 'purple',
+    'connect_corridor': 'gold',
+    'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred'}
+}
 
 def load_school_data_detailed(filename):
     try:
