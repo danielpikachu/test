@@ -3,14 +3,22 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
-from google.cloud import datastore
-
-# 初始化Google Cloud Datastore客户端
-datastore_client = datastore.Client()
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 plt.switch_backend('Agg')
 
 st.set_page_config(page_title="SCIS Navigation System")
+
+# Google Sheets 配置 - 请替换为你的凭据信息
+SERVICE_ACCOUNT_FILE = 'service_account.json'  # 你的服务账号密钥文件
+SHEET_NAME = 'SCIS_Navigation_Stats'  # 你的Google表格名称
+SCOPE = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+]
 
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral'},
@@ -37,6 +45,77 @@ COLORS = {
     'connect_corridor': 'gold',
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred'}
 }
+
+def init_google_sheet():
+    """初始化Google Sheets连接并确保表格结构正确"""
+    try:
+        # 加载凭据
+        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPE)
+        client = gspread.authorize(creds)
+        
+        # 尝试打开表格，如果不存在则创建
+        try:
+            sheet = client.open(SHEET_NAME)
+        except gspread.exceptions.SpreadsheetNotFound:
+            sheet = client.create(SHEET_NAME)
+            # 共享表格给需要访问的邮箱（可选）
+            # sheet.share('your-email@example.com', perm_type='user', role='writer')
+        
+        # 尝试获取统计工作表，如果不存在则创建
+        try:
+            stats_worksheet = sheet.worksheet("Access_Stats")
+        except gspread.exceptions.WorksheetNotFound:
+            stats_worksheet = sheet.add_worksheet(title="Access_Stats", rows="1000", cols="3")
+            # 设置表头
+            stats_worksheet.append_row(["Timestamp", "Access_Count", "Total_Accesses"])
+            # 初始化第一行数据
+            stats_worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 1, 1])
+        
+        return stats_worksheet
+    except Exception as e:
+        st.warning(f"Google Sheets初始化失败: {str(e)}. 访问次数统计功能暂时不可用。")
+        return None
+
+def update_access_count(worksheet):
+    """更新访问次数统计"""
+    if not worksheet:
+        return 0
+        
+    try:
+        # 获取所有记录
+        records = worksheet.get_all_values()
+        if len(records) < 2:  # 至少需要表头和一行数据
+            return 0
+            
+        # 获取最后一行数据
+        last_row = records[-1]
+        total = int(last_row[2]) if last_row[2].isdigit() else 0
+        new_total = total + 1
+        
+        # 添加新记录
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        worksheet.append_row([current_time, 1, new_total])
+        
+        return new_total
+    except Exception as e:
+        st.warning(f"更新访问次数失败: {str(e)}")
+        return 0
+
+def get_total_accesses(worksheet):
+    """获取总访问次数"""
+    if not worksheet:
+        return 0
+        
+    try:
+        records = worksheet.get_all_values()
+        if len(records) < 2:
+            return 0
+            
+        last_row = records[-1]
+        return int(last_row[2]) if last_row[2].isdigit() else 0
+    except Exception as e:
+        st.warning(f"获取总访问次数失败: {str(e)}")
+        return 0
 
 def load_school_data_detailed(filename):
     try:
@@ -704,38 +783,13 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-def get_visit_count():
-    """从Google Cloud Datastore获取当前访问次数"""
-    query = datastore_client.query(kind='VisitCounter')
-    results = list(query.fetch(limit=1))
-    
-    if results:
-        return results[0]['count']
-    else:
-        # 如果没有记录，创建初始记录
-        entity = datastore.Entity(key=datastore_client.key('VisitCounter', 'main_counter'))
-        entity['count'] = 0
-        datastore_client.put(entity)
-        return 0
-
-def increment_visit_count():
-    """增加访问次数并保存到Google Cloud Datastore"""
-    query = datastore_client.query(kind='VisitCounter')
-    results = list(query.fetch(limit=1))
-    
-    if results:
-        entity = results[0]
-        entity['count'] += 1
-    else:
-        entity = datastore.Entity(key=datastore_client.key('VisitCounter', 'main_counter'))
-        entity['count'] = 1
-    
-    datastore_client.put(entity)
-    return entity['count']
-
 def welcome_page():
-    # 获取当前访问次数
-    visit_count = get_visit_count()
+    # 初始化Google Sheets连接
+    if 'worksheet' not in st.session_state:
+        st.session_state['worksheet'] = init_google_sheet()
+    
+    # 获取当前总访问次数
+    total_accesses = get_total_accesses(st.session_state['worksheet'])
     
     # 设置欢迎页面样式
     st.markdown("""
@@ -758,16 +812,10 @@ def welcome_page():
             font-size: 1.5rem;
             padding: 0.8rem 2rem;
         }
-        .visit-count {
-            margin-top: 1.5rem;
+        .access-count {
+            margin-top: 1rem;
             font-size: 1.2rem;
             color: #666;
-        }
-        .button-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -776,16 +824,17 @@ def welcome_page():
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
     st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
     
-    st.markdown('<div class="button-container">', unsafe_allow_html=True)
-    if st.button('Enter System', key='enter_btn', use_container_width=False):
-        # 增加访问次数
-        increment_visit_count()
-        st.session_state['page'] = 'main'
-        st.rerun()
+    # 创建包含按钮和访问次数的列
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button('Enter System', key='enter_btn', use_container_width=True):
+            # 更新访问次数
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
+            st.rerun()
     
-    # 显示访问次数
-    st.markdown(f'<div class="visit-count">Total visits: {visit_count}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -950,5 +999,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
