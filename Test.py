@@ -15,7 +15,7 @@ st.set_page_config(page_title="SCIS Navigation System")
 # --------------------------
 # Google Sheets 配置（适配 Streamlit Secrets TOML）
 # --------------------------
-SHEET_NAME = 'SCIS_Navigation_Stats'  # 你的Google表格名称
+SHEET_NAME = 'Navigation visitors'  # 你的Google表格名称
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
@@ -1026,3 +1026,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
