@@ -826,7 +826,7 @@ def welcome_page():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding-top: 9px; 
+            padding-top: -10px; 
            
             text-align: center;
         }
@@ -1030,6 +1030,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
