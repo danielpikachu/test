@@ -826,15 +826,15 @@ def welcome_page():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding-top: 0px; 
-            margin-top: -150px;
+            padding-top: 20px; 
+            margin-top: -100px;
            
             text-align: center;
         }
         .welcome-title {
             font-size: 3rem;
             margin-bottom: 2rem;
-            margin-top: 0; 
+           
             color: #2c3e50;
         }
         .enter-button {
@@ -850,7 +850,9 @@ def welcome_page():
             text-align: center;
             width: 100%;
         }
-        .main > div {
+        .main > div:first-child {
+            height: 100vh;
+            overflow: hidden;
             padding-top: 20px !important;  /* 减小Streamlit默认顶部 padding */
         }
         </style>
@@ -1035,6 +1037,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
