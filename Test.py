@@ -839,6 +839,7 @@ def welcome_page():
             font-size: 2rem;
             padding: 0.8rem 2rem;
             width: 200px;
+            font-weight: bold;
         }
         .access-count {
             margin-top: 1rem;
@@ -1029,6 +1030,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
