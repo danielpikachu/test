@@ -827,7 +827,7 @@ def welcome_page():
             align-items: center;
             justify-content: center;
             padding-top: -10px; 
-            margin-top: -30px;
+            margin-top: -80px;
            
             text-align: center;
         }
@@ -1031,6 +1031,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
