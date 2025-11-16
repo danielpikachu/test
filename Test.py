@@ -838,6 +838,7 @@ def welcome_page():
         .enter-button {
             font-size: 1.5rem;
             padding: 0.8rem 2rem;
+            width: 200px;
         }
         .access-count {
             margin-top: 1rem;
@@ -852,15 +853,15 @@ def welcome_page():
     st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
     
     # 创建包含按钮和访问次数的列
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    col = st.columns(1)
+    with col[0]:
         if st.button('Enter System', key='enter_btn', use_container_width=True):
             # 更新访问次数
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
     
-    with col2:
+   
         st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -1026,4 +1027,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
