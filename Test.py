@@ -866,7 +866,7 @@ def welcome_page():
     
    
         st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
-    
+    st.image("welcome_image.jpg", caption="欢迎页面图片", use_column_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
@@ -1030,6 +1030,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
