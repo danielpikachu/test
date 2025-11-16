@@ -836,13 +836,13 @@ def welcome_page():
             color: #2c3e50;
         }
         .enter-button {
-            font-size: 1.5rem;
+            font-size: 2rem;
             padding: 0.8rem 2rem;
             width: 200px;
         }
         .access-count {
             margin-top: 1rem;
-            font-size: 1.2rem;
+            font-size: 0.8rem;
             color: #666;
             text-align: center;
             width: 100%;
@@ -1029,6 +1029,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
