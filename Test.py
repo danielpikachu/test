@@ -844,6 +844,8 @@ def welcome_page():
             margin-top: 1rem;
             font-size: 1.2rem;
             color: #666;
+            text-align: center;
+            width: 100%;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -1027,5 +1029,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
