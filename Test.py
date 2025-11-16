@@ -827,14 +827,14 @@ def welcome_page():
             align-items: center;
             justify-content: center;
             padding-top: 20px; 
-            margin-top: -100px;
-           
+            margin-top: -120px;
+            padding: 0;
             text-align: center;
         }
         .welcome-title {
             font-size: 3rem;
             margin-bottom: 2rem;
-           
+            margin-top: 0;
             color: #2c3e50;
         }
         .enter-button {
@@ -853,7 +853,11 @@ def welcome_page():
         .main > div:first-child {
             height: 100vh;
             overflow: hidden;
-            padding-top: 20px !important;  /* 减小Streamlit默认顶部 padding */
+            padding-top: 0 !important; 
+        }
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -1037,6 +1041,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
