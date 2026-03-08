@@ -89,18 +89,6 @@
               [22, 18, -3],
               [22, -30, -3]
             ]
-          },
-          {
-            "name": "connectToGate",
-            "type": "external",
-            "style": {
-              "color": "darkorange",
-              "lineType": "solid"
-            },
-            "points": [
-              [22, 18, -3],
-              [18, -10, -3]
-            ]
           }
         ],
         "stairs": [
@@ -121,6 +109,7 @@
           {"name": "A206", "coordinates": [25, 50, 2], "size": [5, 8]},
           {"name": "A207", "coordinates": [20, 50, 2], "size": [5, 8]},
           {"name": "A208", "coordinates": [15, 50, 2], "size": [5, 8]},
+        
           {"name": "A203", "coordinates": [25, 30, 2], "size": [5, 8]},
           {"name": "A204", "coordinates": [30, 30, 2], "size": [5, 8]},
           {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
@@ -248,6 +237,7 @@
           },
           {
             "points": [
+            
               [27, 60, 12],  
               [27, 55, 12],  
               [27, 50, 12],  
@@ -300,8 +290,7 @@
       {"from": ["Stairs1", "level4"], "to": ["Stairs1", "level5"]},
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
-      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["Gate", "level1"]}
+      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]}
     ]
   },
   "buildingB": {
@@ -367,18 +356,6 @@
               [22, -30, -3],
               [22, -50, -3]
             ]
-          },
-          {
-            "name": "connectToGate",
-            "type": "external",
-            "style": {
-              "color": "darkorange",
-              "lineType": "solid"
-            },
-            "points": [
-              [20, -30, -3],
-              [18, -10, -3]
-            ]
           }
         ],
         "stairs": [
@@ -420,8 +397,7 @@
       {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
       {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
       {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
-      {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["Gate", "level1"]}
+      {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]}
     ]
   },
   "buildingC": {
@@ -585,19 +561,6 @@
               [66, 26, -3],
               [22, -30, -3]
             ]
-          },
-          {
-            "name": "connectToGate",
-            "type": "external",
-            "style": {
-              "color": "darkorange",
-              "lineType": "solid"
-            },
-            "points": [
-              [50, 20, -3],
-              [20, 0, -3],
-              [18, -10, -3]
-            ]
           }
         ],
         "stairs": [
@@ -671,8 +634,7 @@
               [68, 45, 2],   
               [68, 40, 2],   
               [68, 35, 2],  
-              [68, 30, 2],
-              [68, 26, 2]
+              [68, 30, 2] 
             ]
           }
         ],
@@ -682,52 +644,90 @@
           {"name": "Stairs4", "coordinates": [98, 60, 2]}, 
           {"name": "Stairs5", "coordinates": [68, 26, 2]}   
         ]
+      },
+      {
+        "name": "level3",
+        "z": 7,
+        "floorPlane": {
+          "minX": 65,
+          "maxX": 110,
+          "minY": 23,
+          "maxY": 73
+        },
+        "classrooms": [
+          {"name": "C311", "coordinates": [70, 60, 7], "size": [5, 8]},
+          {"name": "C313", "coordinates": [75, 60, 7], "size": [5, 8]},
+          {"name": "C315", "coordinates": [85, 60, 7], "size": [5, 8]},
+          {"name": "C317", "coordinates": [90, 60, 7], "size": [5, 8]},
+          {"name": "C319", "coordinates": [100, 60, 7], "size": [5, 8]},
+          {"name": "C322", "coordinates": [90, 42, 7], "size": [5, 8]},
+          {"name": "C324", "coordinates": [90, 34, 7], "size": [5, 8]},
+          {"name": "C326", "coordinates": [90, 26, 7], "size": [5, 8]},
+          {"name": "C321", "coordinates": [100, 48, 7], "size": [5, 8]},
+          {"name": "C323", "coordinates": [100, 42, 7], "size": [5, 8]},
+          {"name": "C325", "coordinates": [100, 34, 7], "size": [5, 8]},
+          {"name": "C327", "coordinates": [100, 26, 7], "size": [5, 8]},
+          {"name": "Lower School Gym", "coordinates": [68, 26, 7], "size": [7, 22]}
+        ],
+        "corridors": [
+          {
+            "points": [
+              [65, 55, 7],  
+              [70, 55, 7], 
+              [75, 55, 7],   
+              [80, 55, 7],   
+              [85, 55, 7],   
+              [90, 55, 7],   
+              [95, 55, 7],   
+              [100, 55, 7]   
+            ]
+          },
+          {
+            "points": [
+              [97, 60, 7],  
+              [97, 55, 7], 
+              [97, 50, 7],  
+              [97, 45, 7],   
+              [97, 40, 7],   
+              [97, 35, 7],  
+              [97, 30, 7] 
+            ]
+          },
+          {
+            "name": "connectToBuildingA",
+            "points": [
+              [53, 55, 7],  
+              [58, 55, 7],  
+              [63, 55, 7],
+              [65, 55, 7]  
+            ]
+          }
+        ],
+        "stairs": [
+          {"name": "Stairs2", "coordinates": [98, 26, 7]},
+          {"name": "Stairs3", "coordinates": [68, 60, 7]}, 
+          {"name": "Stairs4", "coordinates": [98, 60, 7]},  
+          {"name": "Stairs5", "coordinates": [68, 26, 7]}   
+        ]
       }
     ],
     "connections": [
       {"from": ["Stairs2", "lowerLevel"], "to": ["Stairs2", "level1"]},
       {"from": ["Stairs2", "level1"], "to": ["Stairs2", "level2"]},
+      {"from": ["Stairs2", "level2"], "to": ["Stairs2", "level3"]},
       {"from": ["Stairs3", "lowerLevel"], "to": ["Stairs3", "level1"]},
       {"from": ["Stairs3", "level1"], "to": ["Stairs3", "level2"]},
+      {"from": ["Stairs3", "level2"], "to": ["Stairs3", "level3"]},
       {"from": ["Stairs4", "lowerLevel"], "to": ["Stairs4", "level1"]},
       {"from": ["Stairs4", "level1"], "to": ["Stairs4", "level2"]},
+      {"from": ["Stairs4", "level2"], "to": ["Stairs4", "level3"]},
       {"from": ["Stairs5", "lowerLevel"], "to": ["Stairs5", "level1"]},
       {"from": ["Stairs5", "level1"], "to": ["Stairs5", "level2"]},
+      {"from": ["Stairs5", "level2"], "to": ["Stairs5", "level3"]},
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
-      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["Gate", "level1"]}
-    ]
-  },
-  "Gate": {
-    "levels": [
-      {
-        "name": "level1",
-        "z": -3,
-        "floorPlane": {
-          "minX": 15,
-          "maxX": 21,
-          "minY": -15,
-          "maxY": -5
-        },
-        "classrooms": [
-          {"name": "MainGate", "coordinates": [18, -10, -3], "size": [6, 10]}
-        ],
-        "corridors": [
-          {
-            "name": "gateMainCorridor",
-            "points": [
-              [18, -10, -3]
-            ]
-          }
-        ],
-        "stairs": []
-      }
-    ],
-    "connections": [
-      {"from": ["gateMainCorridor", "level1"], "to": ["connectToGate", "level1"]},
-      {"from": ["Gate", "level1"], "to": ["buildingA", "level1"]},
-      {"from": ["Gate", "level1"], "to": ["buildingB", "level1"]},
-      {"from": ["Gate", "level1"], "to": ["buildingC", "level1"]}
+      {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
+      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]}
     ]
   }
 }
+    
