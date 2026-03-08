@@ -289,7 +289,7 @@
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]}
+      {"from": ["gateToA", "level1"], "to": ["mainCorridor", "level1"]}
     ]
   },
   "buildingB": {
@@ -357,16 +357,15 @@
             ]
           },
           {
-            "name": "connectToGate",
+            "name": "gateToB",
             "type": "external",
             "style": {
-              "color": "black",
+              "color": "brown",
               "lineType": "solid"
             },
             "points": [
-              [15, -50, -3],
-              [10, -40, -3],
-              [-15, -30, -3]
+              [-30, -30, -3],
+              [22, -30, -3]
             ]
           }
         ],
@@ -410,7 +409,7 @@
       {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
       {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
       {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]}
+      {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]}
     ]
   },
   "buildingC": {
@@ -576,16 +575,15 @@
             ]
           },
           {
-            "name": "connectToGate",
+            "name": "gateToC",
             "type": "external",
             "style": {
-              "color": "black",
+              "color": "brown",
               "lineType": "solid"
             },
             "points": [
-              [68, 26, -3],
-              [30, -10, -3],
-              [-15, -30, -3]
+              [-30, -30, -3],
+              [66, 26, -3]
             ]
           }
         ],
@@ -753,7 +751,7 @@
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
       {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]}
+      {"from": ["gateToC", "level1"], "to": ["connectToBuildingB", "level1"]}
     ]
   },
   "gate": {
@@ -762,53 +760,61 @@
         "name": "level1",
         "z": -3,
         "floorPlane": {
-          "minX": -25,
-          "maxX": -5,
+          "minX": -40,
+          "maxX": -20,
           "minY": -40,
           "maxY": -20
         },
         "classrooms": [
-          {"name": "Main Gate", "coordinates": [-15, -30, -3], "size": [10, 10]}
+          {"name": "Main Gate", "coordinates": [-30, -30, -3], "size": [10, 10]}
         ],
         "corridors": [
           {
-            "name": "mainEntrance",
+            "name": "gateToA",
             "type": "external",
             "style": {
-              "color": "red",
+              "color": "brown",
               "lineType": "solid"
             },
             "points": [
-              [-15, -30, -3],
-              [-10, -35, -3],
-              [0, -30, -3],
-              [20, -20, -3],
-              [68, 26, -3]
+              [-30, -30, -3],
+              [22, 18, -3]
             ]
           },
           {
-            "name": "connectToBuildingA",
+            "name": "gateToB",
             "type": "external",
             "style": {
-              "color": "black",
+              "color": "brown",
               "lineType": "solid"
             },
             "points": [
-              [-15, -30, -3],
-              [0, -20, -3],
-              [22, 18, -3]
+              [-30, -30, -3],
+              [22, -30, -3]
+            ]
+          },
+          {
+            "name": "gateToC",
+            "type": "external",
+            "style": {
+              "color": "brown",
+              "lineType": "solid"
+            },
+            "points": [
+              [-30, -30, -3],
+              [66, 26, -3]
             ]
           }
         ],
         "stairs": [
-          {"name": "GateStairs", "coordinates": [-15, -30, -3]}
+          {"name": "GateStairs", "coordinates": [-30, -30, -3]}
         ]
       }
     ],
     "connections": [
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]},
-      {"from": ["connectToBuildingA", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]}
+      {"from": ["gateToA", "level1"], "to": ["ENTRANCE", "level1"]},
+      {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
+      {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
     ]
   }
 }
