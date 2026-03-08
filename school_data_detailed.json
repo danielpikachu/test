@@ -109,7 +109,6 @@
           {"name": "A206", "coordinates": [25, 50, 2], "size": [5, 8]},
           {"name": "A207", "coordinates": [20, 50, 2], "size": [5, 8]},
           {"name": "A208", "coordinates": [15, 50, 2], "size": [5, 8]},
-        
           {"name": "A203", "coordinates": [25, 30, 2], "size": [5, 8]},
           {"name": "A204", "coordinates": [30, 30, 2], "size": [5, 8]},
           {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
@@ -237,7 +236,6 @@
           },
           {
             "points": [
-            
               [27, 60, 12],  
               [27, 55, 12],  
               [27, 50, 12],  
@@ -291,7 +289,7 @@
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]} // 新增：A楼连接大门
+      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]}
     ]
   },
   "buildingB": {
@@ -359,7 +357,7 @@
             ]
           },
           {
-            "name": "connectToGate", // 新增：B楼连接大门的走廊
+            "name": "connectToGate",
             "type": "external",
             "style": {
               "color": "black",
@@ -412,7 +410,7 @@
       {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
       {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
       {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]} // 新增：B楼连接大门
+      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]}
     ]
   },
   "buildingC": {
@@ -578,7 +576,7 @@
             ]
           },
           {
-            "name": "connectToGate", // 新增：C楼连接大门的走廊
+            "name": "connectToGate",
             "type": "external",
             "style": {
               "color": "black",
@@ -755,41 +753,41 @@
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
       {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]} // 新增：C楼连接大门
+      {"from": ["connectToGate", "level1"], "to": ["mainEntrance", "level1"]}
     ]
   },
-  "gate": { // 新增：大门节点（与ABC楼同级）
+  "gate": {
     "levels": [
       {
         "name": "level1",
-        "z": -3, // 一楼Z轴位置（与ABC楼level1一致）
+        "z": -3,
         "floorPlane": {
-          "minX": 10, // B楼偏左一点（B楼minX=0，maxX=40）
+          "minX": 10,
           "maxX": 20,
-          "minY": -10, // AB楼中间（A楼minY=10，B楼maxY=-30）
+          "minY": -10,
           "maxY": 10
         },
         "classrooms": [
-          {"name": "Main Gate", "coordinates": [15, 0, -3], "size": [10, 10]} // 大门坐标核心点
+          {"name": "Main Gate", "coordinates": [15, 0, -3], "size": [10, 10]}
         ],
         "corridors": [
           {
-            "name": "mainEntrance", // 大门主入口走廊
+            "name": "mainEntrance",
             "type": "external",
             "style": {
               "color": "red",
               "lineType": "solid"
             },
             "points": [
-              [15, 0, -3], // 大门核心点
-              [15, -10, -3], // 连接B楼方向
-              [15, 10, -3],  // 连接A楼方向
-              [30, 10, -3],  // 连接C楼方向
-              [68, 26, -3]   // 接入C楼走廊
+              [15, 0, -3],
+              [15, -10, -3],
+              [15, 10, -3],
+              [30, 10, -3],
+              [68, 26, -3]
             ]
           },
           {
-            "name": "connectToBuildingA", // 大门连接A楼
+            "name": "connectToBuildingA",
             "type": "external",
             "style": {
               "color": "black",
@@ -798,19 +796,19 @@
             "points": [
               [15, 0, -3],
               [15, 10, -3],
-              [22, 18, -3] // 接入A楼level1的ENTRANCE
+              [22, 18, -3]
             ]
           }
         ],
         "stairs": [
-          {"name": "GateStairs", "coordinates": [15, 0, -3]} // 大门楼梯（备用）
+          {"name": "GateStairs", "coordinates": [15, 0, -3]}
         ]
       }
     ],
-    "connections": [ // 大门与ABC楼的连接关系
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]}, // 大门连接B楼
-      {"from": ["connectToBuildingA", "level1"], "to": ["connectToBuildingB", "level1"]}, // 大门连接A楼
-      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]} // 大门连接C楼
+    "connections": [
+      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]},
+      {"from": ["connectToBuildingA", "level1"], "to": ["connectToBuildingB", "level1"]},
+      {"from": ["mainEntrance", "level1"], "to": ["connectToGate", "level1"]}
     ]
   }
 }
