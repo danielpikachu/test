@@ -768,7 +768,7 @@
           "maxY": 10
         },
         "classrooms": [
-          {"name": "Main Gate", "coordinates": [-15, 0, -3], "size": [10, 10]}
+          {"name": "Main Gate", "coordinates": [-15, -30, -3], "size": [10, 10]}
         ],
         "corridors": [
           {
@@ -779,10 +779,10 @@
               "lineType": "solid"
             },
             "points": [
-              [15, 0, -3],
-              [15, -10, -3],
-              [15, 10, -3],
-              [30, 10, -3],
+              [-15, -30, -3],
+              [-15, -40, -3],
+              [-15, -20, -3],
+              [0, -20, -3],
               [68, 26, -3]
             ]
           },
@@ -794,14 +794,14 @@
               "lineType": "solid"
             },
             "points": [
-              [15, 0, -3],
+              [-15, -30, -3],
               [15, 10, -3],
               [22, 18, -3]
             ]
           }
         ],
         "stairs": [
-          {"name": "GateStairs", "coordinates": [15, 0, -3]}
+          {"name": "GateStairs", "coordinates": [-15, -30, -3]}
         ]
       }
     ],
