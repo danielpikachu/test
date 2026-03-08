@@ -768,7 +768,7 @@
           "maxY": 10
         },
         "classrooms": [
-          {"name": "Main Gate", "coordinates": [15, 0, -3], "size": [10, 10]}
+          {"name": "Main Gate", "coordinates": [-15, 0, -3], "size": [10, 10]}
         ],
         "corridors": [
           {
