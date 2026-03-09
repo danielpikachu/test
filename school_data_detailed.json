@@ -817,10 +817,7 @@
               [66, 26, -3]
             ]
           }
-        ],
-        "stairs": [
-          {"name": "GateStairs", "coordinates": [-30, -30, -3]}
-        ]
+        ]    
       }
     ],
     "connections": [
