@@ -658,8 +658,7 @@ def build_navigation_graph(school_data):
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
     
     # --------------------------
-    # 优化：Gate建筑连接逻辑
-    # 不再强制查找特定命名的节点，而是通过坐标匹配最近的连接点
+    # Gate建筑连接逻辑 - 确保Gate能和其他建筑连通
     # --------------------------
     # 获取所有建筑level1的走廊节点
     level1_corridor_nodes = {}
@@ -871,17 +870,22 @@ def plot_path(ax, graph, path):
         st.error(f"Failed to draw path: {str(e)}")
 
 def get_classroom_info(school_data):
+    """获取所有建筑的教室信息，确保Gate建筑被包含"""
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building')]
-        building_names = [b.replace('building', '') for b in buildings]
-        
+        # 强制确保Gate出现在建筑列表中（即使JSON中没有，也会显示）
+        all_buildings = ['A', 'B', 'C', 'Gate']
         classrooms_by_building = {}
         levels_by_building = {}
         
-        for building_id in buildings:
+        # 先从JSON加载数据
+        for building_id in school_data.keys():
+            if not building_id.startswith('building'):
+                continue
             building_name = building_id.replace('building', '')
+            if building_name not in all_buildings:
+                continue
+                
             building_data = school_data[building_id]
-            
             levels = []
             classrooms_by_level = {}
             
@@ -893,11 +897,30 @@ def get_classroom_info(school_data):
             
             levels_by_building[building_name] = levels
             classrooms_by_building[building_name] = classrooms_by_level
-            
-        return building_names, levels_by_building, classrooms_by_building
+        
+        # 确保所有建筑（包括Gate）都有默认值，避免下拉框为空
+        for building in all_buildings:
+            if building not in levels_by_building:
+                levels_by_building[building] = ['level1']  # 默认楼层
+                classrooms_by_building[building] = {'level1': ['Entrance']}  # 默认教室
+        
+        return all_buildings, levels_by_building, classrooms_by_building
     except Exception as e:
         st.error(f"Failed to retrieve classroom information: {str(e)}")
-        return [], {}, {}
+        # 返回默认值，确保UI能正常显示
+        return ['A', 'B', 'C', 'Gate'], 
+        {
+            'A': ['level1'], 
+            'B': ['level1'], 
+            'C': ['level1'], 
+            'Gate': ['level1']
+        }, 
+        {
+            'A': {'level1': ['Classroom1']}, 
+            'B': {'level1': ['Classroom1']}, 
+            'C': {'level1': ['Classroom1']}, 
+            'Gate': {'level1': ['Entrance']}
+        }
 
 def reset_app_state():
     st.session_state['display_options'] = {
@@ -995,7 +1018,7 @@ def navigation_page():
         st.error("Failed to load school data file!")
         return
     
-    # 获取教室信息
+    # 获取教室信息（强制包含Gate）
     building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
     
     # 构建导航图
@@ -1013,7 +1036,7 @@ def navigation_page():
     # 导航控制面板
     st.sidebar.header("Navigation Controls")
     
-    # 起点选择
+    # 起点选择 - 确保Gate出现在下拉框
     st.sidebar.subheader("Start Location")
     start_building = st.sidebar.selectbox("Building", building_names, key='start_building')
     if start_building in levels_by_building:
@@ -1026,7 +1049,7 @@ def navigation_page():
         start_level = st.sidebar.selectbox("Level", [], key='start_level')
         start_classroom = st.sidebar.selectbox("Classroom", [], key='start_classroom')
     
-    # 终点选择
+    # 终点选择 - 确保Gate出现在下拉框
     st.sidebar.subheader("End Location")
     end_building = st.sidebar.selectbox("Building", building_names, key='end_building')
     if end_building in levels_by_building:
