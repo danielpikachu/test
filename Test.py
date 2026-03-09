@@ -339,6 +339,24 @@ def plot_3d_map(school_data, display_options=None):
             
             building_label_positions[building_name] = (center_x, label_y, label_z)
 
+    # 绘制Gate建筑（如果JSON中没有，添加默认的Gate显示）
+    if 'buildingGate' not in school_data:
+        # 默认Gate位置
+        gate_x, gate_y, gate_z = 0, 0, 0
+        building_label_positions['Gate'] = (gate_x, gate_y + 3.0, gate_z + 1.0)
+        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
+                        facecolor=COLORS['building']['Gate'], alpha=0.7)
+        ax.text(
+            gate_x, gate_y + 3.0, gate_z + 1.0, 
+            f"Building Gate", 
+            color=COLORS['building_label']['Gate'], 
+            fontweight='bold', 
+            fontsize=30,
+            ha='center', 
+            va='center', 
+            bbox=bbox_props
+        )
+
     for building_name, (x, y, z) in building_label_positions.items():
         bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
                         facecolor=COLORS['building'].get(building_name, 'lightgray'), alpha=0.7)
@@ -433,7 +451,8 @@ def euclidean_distance(coords1, coords2):
 def build_navigation_graph(school_data):
     graph = Graph()
 
-    # 第一步：添加所有节点
+    # 第一步：添加所有节点（包括默认的Gate节点）
+    # 先添加JSON中的节点
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
@@ -478,6 +497,32 @@ def build_navigation_graph(school_data):
                         level=level_name,
                         coordinates=point
                     )
+
+    # 添加默认的Gate节点（如果JSON中没有）
+    if 'buildingGate' not in school_data:
+        # 默认Gate位置（可以根据实际情况调整坐标）
+        gate_coords = [0.0, 0.0, 0.0]
+        # 添加Gate的Entrance教室节点
+        graph.add_node(
+            building_id='buildingGate',
+            node_type='classroom',
+            name='Entrance',
+            level='level1',
+            coordinates=gate_coords
+        )
+        # 添加Gate的默认走廊节点
+        graph.add_node(
+            building_id='buildingGate',
+            node_type='corridor',
+            name='main-p0',
+            level='level1',
+            coordinates=gate_coords
+        )
+        # 连接Gate的Entrance到走廊
+        gate_entrance_id = graph.node_id_map.get(('buildingGate', 'classroom', 'Entrance', 'level1'))
+        gate_corridor_id = graph.node_id_map.get(('buildingGate', 'corridor', 'main-p0', 'level1'))
+        if gate_entrance_id and gate_corridor_id:
+            graph.add_edge(gate_entrance_id, gate_corridor_id, 1.0)
 
     # 第二步：添加建筑内部的边
     for building_id in school_data.keys():
@@ -573,7 +618,7 @@ def build_navigation_graph(school_data):
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
         # 添加建筑内部的连接（楼梯-走廊等）
-        for connection in building_data['connections']:
+        for connection in building_data.get('connections', []):
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
             
@@ -663,8 +708,6 @@ def build_navigation_graph(school_data):
     # 获取所有建筑level1的走廊节点
     level1_corridor_nodes = {}
     for building_id in [a_building_id, b_building_id, c_building_id, gate_building_id]:
-        if building_id not in school_data:
-            continue
         building_name = building_id.replace('building', '')
         corridor_nodes = [
             (node_id, graph.nodes[node_id]['coordinates']) 
@@ -770,22 +813,31 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         return None, f"Invalid building selection, only Buildings A, B, C and Gate are supported", None, None
         
     try:
+        # 获取起始节点
         start_key = (start_building, start_classroom, start_level)
-        end_key = (end_building, end_classroom, end_level)
-        
         start_node = graph.node_id_map.get(start_key)
-        end_node = graph.node_id_map.get(end_key)
         
+        # 如果没找到，尝试直接构造节点ID
         if not start_node:
             start_node = f"{start_building}-classroom-{start_classroom}@{start_level}"
-        if not end_node:
-            end_node = f"{end_building}-classroom-{end_classroom}@{end_level}"
-
+        
+        # 检查起始节点是否存在
         if start_node not in graph.nodes:
             return None, f"Starting classroom does not exist: {start_building}{start_classroom}@{start_level}", None, None
+        
+        # 获取目标节点
+        end_key = (end_building, end_classroom, end_level)
+        end_node = graph.node_id_map.get(end_key)
+        
+        # 如果没找到，尝试直接构造节点ID
+        if not end_node:
+            end_node = f"{end_building}-classroom-{end_classroom}@{end_level}"
+        
+        # 检查目标节点是否存在
         if end_node not in graph.nodes:
             return None, f"Destination classroom does not exist: {end_building}{end_classroom}@{end_level}", None, None
 
+        # 执行最短路径计算
         distances, previous_nodes = dijkstra(graph, start_node)
         path = construct_path(previous_nodes, end_node)
 
@@ -796,10 +848,11 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             prev_building = None
             
             for node_id in path:
-                node_type = graph.nodes[node_id]['type']
-                node_name = graph.nodes[node_id]['name']
-                node_level = graph.nodes[node_id]['level']
-                node_building = graph.nodes[node_id]['building']
+                node_info = graph.nodes.get(node_id, {})
+                node_type = node_info.get('type', '')
+                node_name = node_info.get('name', '')
+                node_level = node_info.get('level', '')
+                node_building = node_info.get('building', '')
                 
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
@@ -810,6 +863,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name:
+                        connected_building = 'Other'
                         if 'connectToBuildingA' in node_name:
                             connected_building = 'A'
                         elif 'connectToBuildingB' in node_name:
@@ -818,8 +872,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                             connected_building = 'C'
                         elif 'connectToBuildingGate' in node_name:
                             connected_building = 'Gate'
-                        else:
-                            connected_building = 'Other'
                             
                         if prev_building and prev_building != node_building:
                             simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
@@ -827,7 +879,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
             
-            full_path_str = " → ".join(simplified_path)
+            full_path_str = " → ".join(simplified_path) if simplified_path else "Direct route"
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
@@ -841,6 +893,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         else:
             return None, "No available path between the two classrooms", None, None
     except Exception as e:
+        # 详细的错误信息，方便调试
+        st.error(f"Navigation error: {str(e)}")
         return None, f"Navigation error: {str(e)}", None, None
 
 def plot_path(ax, graph, path):
@@ -872,7 +926,7 @@ def plot_path(ax, graph, path):
 def get_classroom_info(school_data):
     """获取所有建筑的教室信息，确保Gate建筑被包含"""
     try:
-        # 强制确保Gate出现在建筑列表中（即使JSON中没有，也会显示）
+        # 强制确保Gate出现在建筑列表中
         all_buildings = ['A', 'B', 'C', 'Gate']
         classrooms_by_building = {}
         levels_by_building = {}
@@ -898,23 +952,23 @@ def get_classroom_info(school_data):
             levels_by_building[building_name] = levels
             classrooms_by_building[building_name] = classrooms_by_level
         
-        # 确保所有建筑（包括Gate）都有默认值，避免下拉框为空
+        # 确保所有建筑（包括Gate）都有默认值
         for building in all_buildings:
             if building not in levels_by_building:
-                levels_by_building[building] = ['level1']  # 默认楼层
-                classrooms_by_building[building] = {'level1': ['Entrance']}  # 默认教室
+                levels_by_building[building] = ['level1']
+                classrooms_by_building[building] = {'level1': ['Entrance' if building == 'Gate' else 'Classroom1']}
         
         return all_buildings, levels_by_building, classrooms_by_building
     except Exception as e:
         st.error(f"Failed to retrieve classroom information: {str(e)}")
-        # 返回默认值，确保UI能正常显示
-        return ['A', 'B', 'C', 'Gate'], 
+        # 返回默认值
+        return ['A', 'B', 'C', 'Gate'], \
         {
             'A': ['level1'], 
             'B': ['level1'], 
             'C': ['level1'], 
             'Gate': ['level1']
-        }, 
+        }, \
         {
             'A': {'level1': ['Classroom1']}, 
             'B': {'level1': ['Classroom1']}, 
@@ -1036,51 +1090,56 @@ def navigation_page():
     # 导航控制面板
     st.sidebar.header("Navigation Controls")
     
-    # 起点选择 - 确保Gate出现在下拉框
+    # 起点选择
     st.sidebar.subheader("Start Location")
     start_building = st.sidebar.selectbox("Building", building_names, key='start_building')
+    start_level = ""
+    start_classroom = ""
     if start_building in levels_by_building:
         start_level = st.sidebar.selectbox("Level", levels_by_building[start_building], key='start_level')
         if start_level in classrooms_by_building[start_building]:
             start_classroom = st.sidebar.selectbox("Classroom", classrooms_by_building[start_building][start_level], key='start_classroom')
-        else:
-            start_classroom = st.sidebar.selectbox("Classroom", [], key='start_classroom')
-    else:
-        start_level = st.sidebar.selectbox("Level", [], key='start_level')
-        start_classroom = st.sidebar.selectbox("Classroom", [], key='start_classroom')
     
-    # 终点选择 - 确保Gate出现在下拉框
+    # 终点选择
     st.sidebar.subheader("End Location")
     end_building = st.sidebar.selectbox("Building", building_names, key='end_building')
+    end_level = ""
+    end_classroom = ""
     if end_building in levels_by_building:
         end_level = st.sidebar.selectbox("Level", levels_by_building[end_building], key='end_level')
         if end_level in classrooms_by_building[end_building]:
             end_classroom = st.sidebar.selectbox("Classroom", classrooms_by_building[end_building][end_level], key='end_classroom')
-        else:
-            end_classroom = st.sidebar.selectbox("Classroom", [], key='end_classroom')
-    else:
-        end_level = st.sidebar.selectbox("Level", [], key='end_level')
-        end_classroom = st.sidebar.selectbox("Classroom", [], key='end_classroom')
     
     # 导航按钮
     if st.sidebar.button("Navigate", key='navigate_btn'):
-        if start_building and start_level and start_classroom and end_building and end_level and end_classroom:
+        # 检查是否选择了完整的起点和终点
+        if not (start_building and start_level and start_classroom and end_building and end_level and end_classroom):
+            st.warning("Please select complete start and end locations!")
+        else:
+            # 执行导航
             path, message, full_path_str, display_options = navigate(
                 graph, start_building, start_classroom, start_level,
                 end_building, end_classroom, end_level
             )
-            st.session_state['current_path'] = path
-            st.session_state['display_options'] = display_options
-            st.session_state['path_result'] = (message, full_path_str)
-        else:
-            st.warning("Please select complete start and end locations!")
+            
+            # 处理返回结果，避免空值错误
+            if path is not None and message is not None and full_path_str is not None and display_options is not None:
+                st.session_state['current_path'] = path
+                st.session_state['display_options'] = display_options
+                st.session_state['path_result'] = (message, full_path_str)
+            else:
+                st.error(message if message else "Navigation failed!")
     
     # 显示导航结果
     if 'path_result' in st.session_state:
         message, full_path_str = st.session_state['path_result']
         st.subheader("Navigation Result")
         st.success(message)
-        st.write("Route: " + full_path_str)
+        # 确保full_path_str不是None
+        if full_path_str:
+            st.write("Route: " + full_path_str)
+        else:
+            st.write("Route: No route information available")
     
     # 绘制3D地图
     fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
