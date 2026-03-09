@@ -9,7 +9,7 @@ from datetime import datetime
 import os
 
 plt.switch_backend('Agg')
-st.set_page_config(page_title="SCIS Navigation System")
+st.set_page_config(page_title="SCIS Navigation System", layout="wide")
 
 # --------------------------
 # Google Sheets 配置（适配 Streamlit Secrets TOML）
@@ -97,7 +97,7 @@ def get_total_accesses(worksheet):
         return 0
 
 # --------------------------
-# 地图与导航核心逻辑（支持A/B/C/Gate 4建筑，Main Gate教室导航）
+# 地图与导航核心逻辑（完整支持Gate+Main Gate）
 # --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
@@ -128,14 +128,22 @@ COLORS = {
 }
 
 def load_school_data_detailed(filename):
+    """加载学校3D数据（兼容Gate建筑）"""
     try:
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
+    except FileNotFoundError:
+        st.error(f"数据文件 {filename} 未找到，请检查文件路径！")
+        return None
+    except json.JSONDecodeError:
+        st.error("数据文件格式错误，不是有效的JSON文件！")
+        return None
     except Exception as e:
-        st.error(f"Failed to load data file: {str(e)}")
+        st.error(f"加载数据失败: {str(e)}")
         return None
 
 def plot_3d_map(school_data, display_options=None):
+    """绘制3D校园地图（完整支持Gate建筑显示）"""
     fig = plt.figure(figsize=(35, 30))
     ax = fig.add_subplot(111, projection='3d')
     ax.tick_params(axis='x', labelsize=14)
@@ -162,6 +170,7 @@ def plot_3d_map(school_data, display_options=None):
     end_building = display_options.get('end_building')
     building_label_positions = {}
 
+    # 遍历所有建筑（包括Gate）
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
@@ -174,11 +183,12 @@ def plot_3d_map(school_data, display_options=None):
         corresponding_x = 0
         level_count = 0
         
+        # 遍历建筑楼层
         for level in building_data['levels']:
             level_name = level['name']
             z = level['z']
             
-            # 控制楼层显示逻辑（兼容Gate）
+            # 控制楼层显示逻辑（适配Gate）
             show_level = show_all
             if not show_all:
                 if building_name == 'B':
@@ -262,7 +272,7 @@ def plot_3d_map(school_data, display_options=None):
                     for px, py, pz in points:
                         ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
 
-                # 绘制教室（含Main Gate）
+                # 绘制教室（重点：显示Main Gate）
                 for classroom in level['classrooms']:
                     x, y, _ = classroom['coordinates']
                     width, depth = classroom['size']
@@ -341,13 +351,13 @@ def plot_3d_map(school_data, display_options=None):
             ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
             ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
         except Exception as e:
-            st.warning(f"Path drawing warning: {str(e)}")
+            st.warning(f"路径绘制警告: {str(e)}")
 
     # 图表配置
     ax.set_xlabel('X Coordinate', fontsize=18, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=18, fontweight='bold')
     ax.set_zlabel('Floor Height (Z Value)', fontsize=18, fontweight='bold')
-    ax.set_title('Campus 3D Navigation Map (A/B/C/Gate Building Navigation)', fontsize=24, fontweight='bold', pad=20)
+    ax.set_title('SCIS Campus 3D Navigation Map (A/B/C/Gate)', fontsize=24, fontweight='bold', pad=20)
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16, frameon=True)
     ax.grid(True, alpha=0.3, linewidth=2)
     return fig, ax
@@ -359,6 +369,7 @@ class Graph:
         self.node_id_map = {}
 
     def add_node(self, building_id, node_type, name, level, coordinates):
+        """添加节点（兼容Gate建筑）"""
         building_name = building_id.replace('building', '')
         if node_type == 'corridor':
             node_id = f"{building_name}-corr-{name}@{level}"
@@ -373,15 +384,16 @@ class Graph:
             'coordinates': coordinates,
             'neighbors': {}
         }
-        # 节点映射（兼容教室/楼梯/走廊）
+        # 节点映射（关键：教室专属key，确保Main Gate能被找到）
         map_key = (building_id, node_type, name, level)
         self.node_id_map[map_key] = node_id
         if node_type == 'classroom':
-            class_key = (building_name, name, level)  # 教室专属key，适配导航查询
+            class_key = (building_name, name, level)
             self.node_id_map[class_key] = node_id
         return node_id
 
     def add_edge(self, node1_id, node2_id, weight):
+        """添加边（双向）"""
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
@@ -390,10 +402,10 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
-# 构建导航图（支持Gate自动连接A/B/C）
+# 构建导航图（核心：Gate与A/B/C自动连接）
 def build_navigation_graph(school_data):
     graph = Graph()
-    # 第一步：添加所有节点（教室/楼梯/走廊，含Gate的Main Gate）
+    # 第一步：添加所有节点（包括Gate的Main Gate）
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
@@ -402,7 +414,7 @@ def build_navigation_graph(school_data):
         
         for level in building_data['levels']:
             level_name = level['name']
-            # 添加教室节点（含Main Gate）
+            # 添加教室节点（重点：Main Gate）
             for classroom in level['classrooms']:
                 graph.add_node(
                     building_id=building_id,
@@ -433,7 +445,7 @@ def build_navigation_graph(school_data):
                         coordinates=point
                     )
 
-    # 第二步：添加建筑内部的边（教室-走廊/楼梯-走廊/走廊间）
+    # 第二步：添加建筑内部边
     for building_id in school_data.keys():
         if not building_id.startswith('building'):
             continue
@@ -461,7 +473,7 @@ def build_navigation_graph(school_data):
                     if current_node_id and next_node_id:
                         distance = euclidean_distance(graph.nodes[current_node_id]['coordinates'], graph.nodes[next_node_id]['coordinates'])
                         graph.add_edge(current_node_id, next_node_id, distance)
-            # 连接相邻走廊节点（距离<3.0）
+            # 连接相邻走廊节点
             for i in range(len(corr_nodes)):
                 node1_id = corr_nodes[i]
                 coords1 = graph.nodes[node1_id]['coordinates']
@@ -471,7 +483,7 @@ def build_navigation_graph(school_data):
                     distance = euclidean_distance(coords1, coords2)
                     if distance < 3.0:
                         graph.add_edge(node1_id, node2_id, distance)
-            # 连接教室到最近走廊（含Main Gate）
+            # 连接教室到最近走廊（包括Main Gate）
             class_nodes = [
                 node_id for node_id, node_info in graph.nodes.items()
                 if node_info['building'] == building_name 
@@ -491,7 +503,7 @@ def build_navigation_graph(school_data):
                 if nearest_corr_node_id:
                     graph.add_edge(class_node_id, nearest_corr_node_id, min_dist)
                 else:
-                    st.warning(f"Warning: Classroom {graph.nodes[class_node_id]['name']} in Building {building_name}{level_name} has no corridor connection")
+                    st.warning(f"警告：{building_name}楼{level_name}的{classroom['name']}没有找到相邻走廊")
             # 连接楼梯到最近走廊
             stair_nodes = [
                 node_id for node_id, node_info in graph.nodes.items()
@@ -511,7 +523,7 @@ def build_navigation_graph(school_data):
                         nearest_corr_node_id = corr_node_id
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
-        # 建筑内部跨楼层连接（楼梯）
+        # 建筑内部跨楼层连接
         for connection in building_data['connections']:
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
@@ -526,13 +538,13 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # 第三步：添加建筑间连接（A/B/C原有连接 + Gate自动匹配最近节点）
+    # 第三步：建筑间连接（A/B/C原有连接 + Gate智能连接）
     a_building_id = 'buildingA'
     b_building_id = 'buildingB'
     c_building_id = 'buildingC'
     gate_building_id = 'buildingGate'
     
-    # A-B/C 原有硬连接
+    # A-B连接
     ab_connect_level = 'level1'
     a_b_corr_name = 'connectToBuildingB-p1'
     a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
@@ -542,8 +554,9 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(graph.nodes[a_b_node_id]['coordinates'], graph.nodes[b_a_node_id]['coordinates'])
         graph.add_edge(a_b_node_id, b_a_node_id, distance)
     else:
-        st.warning("Could not find A-B level1 inter-building corridor connection nodes")
+        st.warning("未找到A-B level1连接节点（可忽略）")
 
+    # B-C连接
     bc_connect_level = 'level1'
     b_c_corr_name = 'connectToBuildingAAndC-p0'
     b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
@@ -553,9 +566,9 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(graph.nodes[b_c_node_id]['coordinates'], graph.nodes[c_b_node_id]['coordinates'])
         graph.add_edge(b_c_node_id, c_b_node_id, distance)
     else:
-        st.warning("Could not find B-C level1 inter-building corridor connection nodes")
+        st.warning("未找到B-C level1连接节点（可忽略）")
 
-    # A-C 直接连接
+    # A-C直接连接
     connect_level1 = 'level1'
     a_corr1_name = 'connectToBuildingC-p3'
     a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
@@ -565,7 +578,7 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(graph.nodes[a_connect1_node_id]['coordinates'], graph.nodes[c_connect1_node_id]['coordinates'])
         graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
-        st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
+        st.warning("未找到A-C level1连接节点（可忽略）")
 
     connect_level3 = 'level3'
     a_corr3_name = 'connectToBuildingC-p2'
@@ -576,9 +589,9 @@ def build_navigation_graph(school_data):
         distance = euclidean_distance(graph.nodes[a_connect3_node_id]['coordinates'], graph.nodes[c_connect3_node_id]['coordinates'])
         graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
-        st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
+        st.warning("未找到A-C level3连接节点（可忽略）")
 
-    # Gate 智能自动连接：根据坐标匹配A/B/C level1最近的走廊节点（无硬编码，无多余警告）
+    # Gate智能连接：自动匹配A/B/C最近的走廊节点
     level1_corridor_nodes = {}
     for building_id in [a_building_id, b_building_id, c_building_id, gate_building_id]:
         if building_id not in school_data:
@@ -659,14 +672,14 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
-# 导航核心逻辑（支持Gate作为起点/终点，Main Gate教室）
+# 导航核心逻辑（完整支持Gate作为起点/终点）
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
-        return None, "Invalid building selection, only Buildings A, B, C and Gate are supported", None, None
+        return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
         
     try:
-        # 教室节点查询key（适配Graph的class_key）
+        # 关键：教室节点查询（兼容Gate的Main Gate）
         start_key = (start_building, start_classroom, start_level)
         end_key = (end_building, end_classroom, end_level)
         start_node = graph.node_id_map.get(start_key)
@@ -680,9 +693,9 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
         # 校验节点是否存在
         if start_node not in graph.nodes:
-            return None, f"Starting classroom does not exist: {start_building}{start_classroom}@{start_level}", None, None
+            return None, f"起点不存在：{start_building}{start_classroom} @ {start_level}", None, None
         if end_node not in graph.nodes:
-            return None, f"Destination classroom does not exist: {end_building}{end_classroom}@{end_level}", None, None
+            return None, f"终点不存在：{end_building}{end_classroom} @ {end_level}", None, None
 
         # 计算最短路径
         distances, previous_nodes = dijkstra(graph, start_node)
@@ -702,12 +715,12 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
+                    simplified_path.append(f"{node_building}楼{node_name}({node_level})")
                 elif node_type == 'classroom':
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
+                    simplified_path.append(f"{node_building}楼{node_name}({node_level})")
                 elif node_type == 'corridor' and 'connectToBuilding' in node_name:
                     if prev_building and prev_building != node_building:
-                        simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
+                        simplified_path.append(f"从{prev_building}楼走廊前往{node_building}楼({node_level})")
                 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
@@ -722,45 +735,28 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 'start_building': start_building,
                 'end_building': end_building
             }
-            return path, f"Total distance: {total_distance:.2f} units", full_path_str, display_options
+            return path, f"总距离：{total_distance:.2f} 单位", full_path_str, display_options
         else:
-            return None, "No available path between the two classrooms", None, None
+            return None, "未找到可行路径", None, None
     except Exception as e:
-        return None, f"Navigation error: {str(e)}", None, None
+        return None, f"导航错误：{str(e)}", None, None
 
-# 单独绘制路径（兜底）
-def plot_path(ax, graph, path):
-    try:
-        x = []
-        y = []
-        z = []
-        labels = []
-        for node_id in path:
-            coords = graph.nodes[node_id]['coordinates']
-            x.append(coords[0])
-            y.append(coords[1])
-            z.append(coords[2])
-            node_type = graph.nodes[node_id]['type']
-            if node_type == 'classroom':
-                labels.append(graph.nodes[node_id]['name'])
-            elif node_type == 'stair':
-                labels.append(graph.nodes[node_id]['name'])
-            else:
-                labels.append("")
-        ax.plot(x, y, z, color=COLORS['path'], linewidth=10, linestyle='-', marker='o', markersize=10)
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
-    except Exception as e:
-        st.error(f"Failed to draw path: {str(e)}")
-
-# 获取教室信息（适配Gate，供下拉框选择）
+# 获取教室信息（关键：确保Gate显示在下拉框）
 def get_classroom_info(school_data):
+    """提取所有建筑的楼层和教室信息（包括Gate）"""
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building')]
-        building_names = [b.replace('building', '') for b in buildings]
+        # 确保按A/B/C/Gate顺序显示
+        building_order = ['A', 'B', 'C', 'Gate']
+        all_buildings = [b for b in school_data.keys() if b.startswith('building')]
+        building_names = []
+        for b in building_order:
+            if f'building{b}' in all_buildings:
+                building_names.append(b)
+        
         classrooms_by_building = {}
         levels_by_building = {}
         
-        for building_id in buildings:
+        for building_id in all_buildings:
             building_name = building_id.replace('building', '')
             building_data = school_data[building_id]
             levels = []
@@ -768,13 +764,15 @@ def get_classroom_info(school_data):
             for level in building_data['levels']:
                 level_name = level['name']
                 levels.append(level_name)
-                classrooms = [classroom['name'] for classroom in level['classrooms']]  # 含Main Gate
+                # 提取教室名称（包括Main Gate）
+                classrooms = [classroom['name'] for classroom in level['classrooms']]
                 classrooms_by_level[level_name] = classrooms
             levels_by_building[building_name] = levels
             classrooms_by_building[building_name] = classrooms_by_level
+        
         return building_names, levels_by_building, classrooms_by_building
     except Exception as e:
-        st.error(f"Failed to retrieve classroom information: {str(e)}")
+        st.error(f"提取教室信息失败: {str(e)}")
         return [], {}, {}
 
 # 重置应用状态
@@ -798,7 +796,7 @@ def welcome_page():
         st.session_state['worksheet'] = init_google_sheet()
     total_accesses = get_total_accesses(st.session_state['worksheet'])
     
-    # 样式
+    # 样式美化
     st.markdown("""
         <style>
         .welcome-container {
@@ -806,182 +804,147 @@ def welcome_page():
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding-top: 20px;
-            margin-top: -50px;
+            height: 80vh;
             text-align: center;
         }
         .welcome-title {
-            font-size: 3rem;
-            margin-bottom: 2rem;
+            font-size: 3.5rem;
             color: #2c3e50;
+            margin-bottom: 2rem;
         }
         .enter-button {
-            font-size: 2rem;
-            padding: 0.8rem 2rem;
-            width: 200px;
-            font-weight: bold;
+            font-size: 1.5rem;
+            padding: 1rem 3rem;
+            border-radius: 10px;
         }
         .access-count {
-            margin-top: 1rem;
-            font-size: 1rem;
+            margin-top: 2rem;
+            font-size: 1.2rem;
             color: #666;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # 内容
+    # 页面内容
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-    st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
-    col = st.columns(1)
-    with col[0]:
-        if st.button('Enter System', key='enter_btn', use_container_width=True):
-            update_access_count(st.session_state['worksheet'])
-            st.session_state['page'] = 'main'
-            st.rerun()
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
-    # 注释：若需要欢迎图，取消下面一行并确保文件存在
-    # st.image("welcome_image.jpg", use_column_width=True)
+    st.markdown('<h1 class="welcome-title">SCIS 校园导航系统</h1>', unsafe_allow_html=True)
+    st.markdown('<h3>3D可视化 · 跨建筑路径规划 · A/B/C/Gate全覆盖</h3>', unsafe_allow_html=True)
+    
+    if st.button('进入系统', key='enter_btn', use_container_width=False, 
+                help='点击进入3D导航界面', args=([False],), kwargs={'type': 'primary'}):
+        update_access_count(st.session_state['worksheet'])
+        st.session_state['page'] = 'main'
+        st.rerun()
+    
+    st.markdown(f'<div class="access-count">总访问次数：{total_accesses}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 主界面（核心：恢复原代码的左右布局，支持Gate下拉选择）
+# 主界面（核心：确保Gate显示在下拉框）
 def main_interface():
+    # 样式优化
     st.markdown("""
         <style>
-        .stApp {padding-top: 0.0rem !important;}
-        header {display: none !important;}
-        .block-container {
-            padding-top: 0.2rem !important;
-            padding-left: 1rem;
-            padding-right: 1rem;
-            max-width: 100%;
-            padding-bottom: 80px;
-        }
-        .author-tag {
-            position: fixed;
-            bottom: 50px;
-            right: 60px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #666;
-            background: transparent;
-            padding: 6px 12px;
-            border: none;
-            z-index: 9999;
-        }
+        .stApp {padding-top: 1rem !important;}
+        .sidebar .sidebar-content {padding: 1rem;}
+        .block-container {padding: 1rem;}
         </style>
     """, unsafe_allow_html=True)
-    st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
-    st.subheader("🏫SCIS Campus Navigation System")
-    st.markdown("3D Map & Inter-building Path Planning (A/B/C/Gate Building Navigation)")
+    
+    st.title("🏫 SCIS 校园3D导航系统")
+    st.markdown("### 支持A/B/C/Gate建筑互导航 · 含Main Gate出入口")
 
     # 初始化状态
     if 'display_options' not in st.session_state:
-        st.session_state['display_options'] = {
-            'start_level': None,
-            'end_level': None,
-            'path_stairs': set(),
-            'show_all': True,
-            'path': [],
-            'start_building': None,
-            'end_building': None
-        }
-    if 'current_path' not in st.session_state:
-        st.session_state['current_path'] = None
+        reset_app_state()
 
-    try:
-        # 加载数据（固定为school_data_detailed.json）
-        school_data = load_school_data_detailed('school_data_detailed.json')
-        if school_data is None:
-            return
-        # 构建导航图（全局graph）
-        global graph
-        graph = build_navigation_graph(school_data)
-        # 获取建筑/楼层/教室信息（供下拉框）
-        building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-        st.success("✅ Campus data loaded successfully! Initial state shows A/B/C/Gate buildings")
-    except Exception as e:
-        st.error(f"Initialization error: {str(e)}")
+    # 加载数据
+    school_data = load_school_data_detailed('school_data_detailed.json')
+    if not school_data:
         return
-
-    # 左右布局：左侧选择栏，右侧3D地图
-    col1, col2 = st.columns([1, 6])
-    with col1:
-        st.markdown("#### 📍 Select Locations")
-        # 起点选择（Gate会出现在下拉框）
-        st.markdown("#### Start Point")
-        start_building = st.selectbox("Building", building_names, key="start_building")
+    
+    # 构建导航图
+    global graph
+    graph = build_navigation_graph(school_data)
+    
+    # 获取建筑/楼层/教室信息（关键：Gate会被包含）
+    building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+    
+    # 左侧导航栏
+    with st.sidebar:
+        st.header("📍 位置选择")
+        
+        # 起点选择（Gate会显示在下拉框）
+        st.subheader("起点")
+        start_building = st.selectbox("建筑", building_names, key="start_building")
         start_levels = levels_by_building.get(start_building, [])
-        start_level = st.selectbox("Floor", start_levels, key="start_level")
+        start_level = st.selectbox("楼层", start_levels, key="start_level")
         start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-        start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")  # 显示Main Gate
+        start_classroom = st.selectbox("教室/出入口", start_classrooms, key="start_classroom")  # 显示Main Gate
 
-        # 终点选择（Gate会出现在下拉框）
-        st.markdown("#### End Point")
-        end_building = st.selectbox("Building", building_names, key="end_building")
+        # 终点选择（Gate会显示在下拉框）
+        st.subheader("终点")
+        end_building = st.selectbox("建筑", building_names, key="end_building")
         end_levels = levels_by_building.get(end_building, [])
-        end_level = st.selectbox("Floor", end_levels, key="end_level")
+        end_level = st.selectbox("楼层", end_levels, key="end_level")
         end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-        end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")  # 显示Main Gate
+        end_classroom = st.selectbox("教室/出入口", end_classrooms, key="end_classroom")  # 显示Main Gate
 
         # 功能按钮
-        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-        reset_button = st.button(
-            "🔄 Reset View", 
-            use_container_width=True,
-            help="Click to return to initial state, showing all floors and clearing path"
-        )
-        exit_button = st.button(
-            "🚪 Exit to Welcome Page", 
-            use_container_width=True,
-            help="Click to return to the welcome page",
-            type="secondary"
-        )
+        st.divider()
+        nav_btn = st.button("🔍 查找最短路径", use_container_width=True, type="primary")
+        reset_btn = st.button("🔄 重置视图", use_container_width=True)
+        exit_btn = st.button("🚪 返回欢迎页", use_container_width=True)
 
         # 按钮逻辑
-        if reset_button:
+        if reset_btn:
             reset_app_state()
             st.rerun()
-        if exit_button:
+        if exit_btn:
             reset_app_state()
             st.session_state['page'] = 'welcome'
             st.rerun()
 
-    with col2:
-        st.markdown("#### 🗺️ 3D Campus Map")
-        # 导航按钮逻辑
-        if nav_button:
-            try:
+    # 主内容区
+    col_map, col_info = st.columns([4, 1])
+    
+    with col_map:
+        st.subheader("🗺️ 3D校园地图")
+        # 导航逻辑
+        if nav_btn:
+            if not (start_building and start_level and start_classroom and end_building and end_level and end_classroom):
+                st.warning("请完整选择起点和终点！")
+            else:
                 path, message, simplified_path, display_options = navigate(
                     graph, 
                     start_building, start_classroom, start_level,
                     end_building, end_classroom, end_level
                 )
-                if path and display_options:
-                    st.success(f"📊 Navigation result: {message}")
-                    st.markdown("##### 🛤️ Path Details")
-                    st.info(simplified_path)
+                if path:
+                    st.success(f"✅ {message}")
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
+                    # 在信息栏显示路径
+                    with col_info:
+                        st.subheader("🛤️ 导航路径")
+                        st.info(simplified_path)
                 else:
                     st.error(f"❌ {message}")
-            except Exception as e:
-                st.error(f"Navigation process error: {str(e)}")
-
+        
         # 绘制3D地图
         try:
-            if st.session_state['current_path'] is not None:
+            if st.session_state.get('current_path'):
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-                plot_path(ax, graph, st.session_state['current_path'])
             else:
                 fig, ax = plot_3d_map(school_data)
-            st.pyplot(fig)
+            st.pyplot(fig, use_container_width=True)
         except Exception as e:
-            st.error(f"Failed to display map: {str(e)}")
+            st.error(f"地图绘制失败: {str(e)}")
 
 # 主程序入口
 def main():
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
+    
     if st.session_state['page'] == 'welcome':
         welcome_page()
     else:
