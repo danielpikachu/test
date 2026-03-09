@@ -428,7 +428,7 @@ class Graph:
             self.nodes[node2_id]['neighbors'][node1_id] = weight
 
 def euclidean_distance(coords1, coords2):
-    return np.sqrt(sum((a - b) **2 for a, b in zip(coords1, coords2)))
+    return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
 
 def build_navigation_graph(school_data):
     graph = Graph()
@@ -946,8 +946,8 @@ def navigation_page():
     if 'display_options' not in st.session_state:
         reset_app_state()
     
-    # 加载学校数据
-    school_data = load_school_data_detailed('school_data.json')  # 确保JSON文件名正确
+    # 加载学校数据 - 修正文件名
+    school_data = load_school_data_detailed('school_data_detailed.json')  # 关键修改：文件名改为 school_data_detailed.json
     if not school_data:
         st.error("Failed to load school data file!")
         return
