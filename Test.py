@@ -761,8 +761,6 @@ def plot_path(ax, graph, path):
                 labels.append("")
 
         ax.plot(x, y, z, color=COLORS['path'], linewidth=10, linestyle='-', marker='o', markersize=10)
-       
-
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
     except Exception as e:
         st.error(f"Failed to draw path: {str(e)}")
@@ -871,198 +869,129 @@ def welcome_page():
     # 创建包含按钮和访问次数的列
     col = st.columns(1)
     with col[0]:
-        if st.button('Enter System', key='enter_btn', use_container_width=True):
+        if st.button('Enter Navigation System', key='enter_btn', 
+                    use_container_width=True, type='primary'):
             # 更新访问次数
             update_access_count(st.session_state['worksheet'])
-            st.session_state['page'] = 'main'
+            st.session_state['page'] = 'navigation'
             st.rerun()
-    
-   
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
-    st.image("welcome_image.jpg", use_column_width=True)
+        
+        # 显示访问次数
+        st.markdown(f'<div class="access-count">Total visits: {total_accesses}</div>', 
+                   unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-def main_interface():
-    st.markdown("""
-        <style>
-        .stApp {
-                padding-top: 0.0rem !important; 
-            }
-             header {
-                display: none !important;
-                }
-            body {
-                position: relative;
-                min-height: 100vh;
-                margin: 0;
-                padding: 0;
-            }
-            .block-container {
-                padding-top: 0.2rem !important;
-                padding-left: 1rem;
-                padding-right: 1rem;
-                max-width: 100%;
-                padding-bottom: 80px; 
-            }
-         
-            .author-tag {
-                position: fixed; 
-                bottom: 50px;  
-                right: 60px;    
-                font-size: 16px;
-                font-weight: bold;
-                color: #666;    
-                background: transparent;;
-                padding: 6px 12px;
-                border: none;
-                border-radius: 0;
-                z-index: 9999;  
-                
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
-    st.subheader("🏫SCIS Campus Navigation System")
-    st.markdown("3D Map & Inter-building Path Planning (A/B/C Building Navigation)")
-
+def navigation_page():
+    # 初始化会话状态
     if 'display_options' not in st.session_state:
-        st.session_state['display_options'] = {
-            'start_level': None,
-            'end_level': None,
-            'path_stairs': set(),
-            'show_all': True,
-            'path': [],
-            'start_building': None,
-            'end_building': None
-        }
-    if 'current_path' not in st.session_state:
-        st.session_state['current_path'] = None
-
-    try:
-        school_data = load_school_data_detailed('school_data_detailed.json')
-        if school_data is None:
-            return
-            
-        global graph
-        graph = build_navigation_graph(school_data)
-        building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-        st.success("✅ Campus data loaded successfully! Initial state shows A/B/C buildings")
-    except Exception as e:
-        st.error(f"Initialization error: {str(e)}")
+        reset_app_state()
+    
+    # 加载学校数据
+    school_data = load_school_data_detailed('school_data_detailed.json')  # 确保该JSON文件存在
+    if not school_data:
+        st.error("Failed to load school data. Please check the data file.")
         return
-
-    col1, col2 = st.columns([1, 6])
-
+    
+    # 构建导航图
+    global graph
+    graph = build_navigation_graph(school_data)
+    
+    # 获取教室信息
+    building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+    
+    # 页面布局
+    st.title("SCIS Campus 3D Navigation System")
+    
+    # 重置按钮
+    col1, col2 = st.columns([1, 9])
     with col1:
-        st.markdown("#### 📍 Select Locations")
-        
-        st.markdown("#### Start Point")
-        start_building = st.selectbox("Building", building_names, key="start_building")
-        start_levels = levels_by_building.get(start_building, [])
-        start_level = st.selectbox("Floor", start_levels, key="start_level")
-        start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-        start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
-
-        st.markdown("#### End Point")
-        end_building = st.selectbox("Building", building_names, key="end_building")
-        end_levels = levels_by_building.get(end_building, [])
-        end_level = st.selectbox("Floor", end_levels, key="end_level")
-        end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-        end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
-
-        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-        
-        reset_button = st.button(
-            "🔄 Reset View", 
-            use_container_width=True,
-            help="Click to return to initial state, showing all floors (including Building B) and clearing path"
-        )
-        
-        # 添加退出按钮，返回欢迎页面
-        exit_button = st.button(
-            "🚪 Exit to Welcome Page", 
-            use_container_width=True,
-            help="Click to return to the welcome page",
-            type="secondary"  # 使用次要样式区分
-        )
-        
-        if reset_button:
+        if st.button("🔄 Reset", key='reset_btn'):
             reset_app_state()
             st.rerun()
-        
-        if exit_button:
-            # 重置应用状态并返回欢迎页
-            reset_app_state()
-            st.session_state['page'] = 'welcome'
-            st.rerun()
-
-    with col2:
-        st.markdown("#### 🗺️ 3D Campus Map")
-        
-        if nav_button:
-            try:
-                path, message, simplified_path, display_options = navigate(
-                    graph, 
-                    start_building, start_classroom, start_level,
-                    end_building, end_classroom, end_level
-                )
-                
-                if path and display_options:
-                    st.success(f"📊 Navigation result: {message}")
-                    st.markdown("##### 🛤️ Path Details")
-                    st.info(simplified_path)
-                    
-                    st.session_state['current_path'] = path
-                    st.session_state['display_options'] = display_options
-                else:
-                    st.error(f"❌ {message}")
-            except Exception as e:
-                st.error(f"Navigation process error: {str(e)}")
-        
-        try:
-            if st.session_state['current_path'] is not None:
-                fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-                plot_path(ax, graph, st.session_state['current_path'])
+    
+    # 导航控制面板
+    st.sidebar.header("Navigation Control")
+    
+    # 起点选择
+    st.sidebar.subheader("Start Location")
+    start_building = st.sidebar.selectbox("Building", building_names, key='start_building')
+    if start_building in levels_by_building:
+        start_level = st.sidebar.selectbox("Level", levels_by_building[start_building], key='start_level')
+        if start_level in classrooms_by_building[start_building]:
+            start_classroom = st.sidebar.selectbox("Classroom", 
+                                                  classrooms_by_building[start_building][start_level], 
+                                                  key='start_classroom')
+        else:
+            start_classroom = st.sidebar.selectbox("Classroom", [], key='start_classroom')
+    else:
+        start_level = st.sidebar.selectbox("Level", [], key='start_level')
+        start_classroom = st.sidebar.selectbox("Classroom", [], key='start_classroom')
+    
+    # 终点选择
+    st.sidebar.subheader("End Location")
+    end_building = st.sidebar.selectbox("Building", building_names, key='end_building')
+    if end_building in levels_by_building:
+        end_level = st.sidebar.selectbox("Level", levels_by_building[end_building], key='end_level')
+        if end_level in classrooms_by_building[end_building]:
+            end_classroom = st.sidebar.selectbox("Classroom", 
+                                                classrooms_by_building[end_building][end_level], 
+                                                key='end_classroom')
+        else:
+            end_classroom = st.sidebar.selectbox("Classroom", [], key='end_classroom')
+    else:
+        end_level = st.sidebar.selectbox("Level", [], key='end_level')
+        end_classroom = st.sidebar.selectbox("Classroom", [], key='end_classroom')
+    
+    # 导航按钮
+    if st.sidebar.button("Navigate", key='navigate_btn', type='primary'):
+        if start_classroom and end_classroom:
+            path, distance_str, path_str, display_options = navigate(
+                graph, start_building, start_classroom, start_level,
+                end_building, end_classroom, end_level
+            )
+            if path:
+                st.session_state['current_path'] = path
+                st.session_state['display_options'] = display_options
+                st.session_state['path_result'] = (distance_str, path_str)
+                st.success(f"Navigation successful! {distance_str}")
             else:
-                fig, ax = plot_3d_map(school_data)
-            
-            st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Failed to display map: {str(e)}")
+                st.error(distance_str)
+        else:
+            st.warning("Please select both start and end classrooms")
+    
+    # 显示导航路径
+    if 'path_result' in st.session_state:
+        distance_str, path_str = st.session_state['path_result']
+        st.subheader("Navigation Path")
+        st.markdown(f"<div style='font-size: 18px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;'>{path_str}</div>", 
+                   unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 16px; color: #2c3e50;'>{distance_str}</div>", 
+                   unsafe_allow_html=True)
+    
+    # 绘制3D地图
+    st.subheader("3D Campus Map")
+    fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+    st.pyplot(fig)
+    
+    # 返回欢迎页按钮
+    if st.button("← Back to Welcome Page", key='back_btn'):
+        st.session_state['page'] = 'welcome'
+        st.rerun()
 
+# --------------------------
+# 主程序入口
+# --------------------------
 def main():
-    # 初始化会话状态，控制显示哪个页面
+    # 初始化会话状态
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
+        reset_app_state()
     
     # 根据当前页面状态显示不同内容
     if st.session_state['page'] == 'welcome':
         welcome_page()
-    else:
-        main_interface()
+    elif st.session_state['page'] == 'navigation':
+        navigation_page()
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
