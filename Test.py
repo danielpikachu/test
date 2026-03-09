@@ -2,8 +2,7 @@ import json
 import math
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import tkinter as tk
-from tkinter import ttk, messagebox
+import streamlit as st
 
 # -------------------------- 配置常量 --------------------------
 JSON_FILE_PATH = "school_data_detailed.json"
@@ -25,7 +24,7 @@ def init_google_sheets():
         sheet = client.open(SHEET_NAME).sheet1
         return sheet
     except Exception as e:
-        messagebox.showerror("Google Sheets 错误", f"初始化失败: {str(e)}")
+        st.error(f"Google Sheets 初始化失败: {str(e)}")
         return None
 
 # -------------------------- 数据加载与解析 --------------------------
@@ -36,10 +35,10 @@ def load_school_data():
             data = json.load(f)
         return data
     except FileNotFoundError:
-        messagebox.showerror("文件错误", f"未找到 {JSON_FILE_PATH} 文件")
+        st.error(f"未找到 {JSON_FILE_PATH} 文件")
         return None
     except json.JSONDecodeError:
-        messagebox.showerror("格式错误", "JSON文件格式不正确")
+        st.error("JSON文件格式不正确")
         return None
 
 def get_all_locations(data):
@@ -244,186 +243,130 @@ def find_shortest_path(data, start_loc, end_loc):
         "end": end_loc["name"]
     }
 
-# -------------------------- UI 界面 --------------------------
-class SchoolPathFinderApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("学校建筑路径查找器")
-        self.root.geometry("800x600")
-        
-        # 加载数据
-        self.school_data = load_school_data()
-        if not self.school_data:
-            root.quit()
-            return
-        
-        # 获取所有位置
-        self.locations = get_all_locations(self.school_data)
-        self.location_names = [loc["name"] for loc in self.locations]
-        
-        # 初始化Google Sheets
-        self.sheet = init_google_sheets()
-        
-        # 创建UI
-        self.create_widgets()
+# -------------------------- Streamlit UI 界面 --------------------------
+def main():
+    # 页面配置
+    st.set_page_config(
+        page_title="学校建筑路径查找器（含大门）",
+        page_icon="🏫",
+        layout="wide"
+    )
     
-    def create_widgets(self):
-        # 标题
-        title_label = ttk.Label(
-            self.root, 
-            text="学校建筑路径查找器（含大门）", 
-            font=("Arial", 16, "bold")
-        )
-        title_label.pack(pady=10)
-        
-        # 选择框架
-        select_frame = ttk.Frame(self.root)
-        select_frame.pack(pady=10, padx=20, fill=tk.X)
+    # 标题
+    st.title("🏫 学校建筑路径查找器（含大门）")
+    st.divider()
+    
+    # 初始化会话状态（保存当前路径结果）
+    if "current_path_result" not in st.session_state:
+        st.session_state.current_path_result = None
+    
+    # 加载数据
+    school_data = load_school_data()
+    if not school_data:
+        st.stop()
+    
+    # 获取所有位置
+    locations = get_all_locations(school_data)
+    location_names = [loc["name"] for loc in locations]
+    
+    # 初始化Google Sheets
+    sheet = init_google_sheets()
+    
+    # 布局：左右两列
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.subheader("路径选择")
         
         # 起点选择
-        ttk.Label(select_frame, text="起点:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.start_var = tk.StringVar()
-        self.start_combobox = ttk.Combobox(
-            select_frame, 
-            textvariable=self.start_var,
-            values=self.location_names,
-            state="readonly",
-            width=50
+        start_name = st.selectbox(
+            "选择起点",
+            location_names,
+            index=0,
+            key="start_select"
         )
-        self.start_combobox.grid(row=0, column=1, padx=5, pady=5)
-        self.start_combobox.current(0)
         
         # 终点选择
-        ttk.Label(select_frame, text="终点:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.end_var = tk.StringVar()
-        self.end_combobox = ttk.Combobox(
-            select_frame, 
-            textvariable=self.end_var,
-            values=self.location_names,
-            state="readonly",
-            width=50
+        end_name = st.selectbox(
+            "选择终点",
+            location_names,
+            index=1,
+            key="end_select"
         )
-        self.end_combobox.grid(row=1, column=1, padx=5, pady=5)
-        self.end_combobox.current(1)
         
-        # 按钮框架
-        btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(pady=10)
+        # 按钮区域
+        st.divider()
+        col_btn1, col_btn2, col_btn3 = st.columns(3)
         
-        # 查找路径按钮
-        find_btn = ttk.Button(
-            btn_frame, 
-            text="查找路径", 
-            command=self.find_path
-        )
-        find_btn.grid(row=0, column=0, padx=5)
+        with col_btn1:
+            find_btn = st.button("🔍 查找路径", type="primary")
         
-        # 保存到Google Sheets按钮
-        save_btn = ttk.Button(
-            btn_frame, 
-            text="保存到Google Sheets", 
-            command=self.save_to_sheets,
-            state=tk.DISABLED
-        )
-        self.save_btn = save_btn
-        save_btn.grid(row=0, column=1, padx=5)
-        
-        # 清空按钮
-        clear_btn = ttk.Button(
-            btn_frame, 
-            text="清空结果", 
-            command=self.clear_result
-        )
-        clear_btn.grid(row=0, column=2, padx=5)
-        
-        # 结果框架
-        result_frame = ttk.Frame(self.root)
-        result_frame.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
-        
-        # 结果标签
-        ttk.Label(result_frame, text="路径结果:").pack(anchor=tk.W)
-        
-        # 结果文本框
-        self.result_text = tk.Text(result_frame, height=15, width=90)
-        self.result_text.pack(pady=5, fill=tk.BOTH, expand=True)
-        
-        # 滚动条
-        scrollbar = ttk.Scrollbar(self.result_text, orient=tk.VERTICAL, command=self.result_text.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.result_text.config(yscrollcommand=scrollbar.set)
-        
-        # 存储当前路径结果
-        self.current_path_result = None
-    
-    def find_path(self):
-        """查找路径并显示"""
-        try:
-            # 获取选中的起点和终点
-            start_name = self.start_var.get()
-            end_name = self.end_var.get()
-            
-            if start_name == end_name:
-                messagebox.showinfo("提示", "起点和终点不能相同！")
-                return
-            
-            # 查找对应的位置数据
-            start_loc = next(loc for loc in self.locations if loc["name"] == start_name)
-            end_loc = next(loc for loc in self.locations if loc["name"] == end_name)
-            
-            # 查找路径
-            self.current_path_result = find_shortest_path(
-                self.school_data, 
-                start_loc, 
-                end_loc
+        with col_btn2:
+            save_btn = st.button(
+                "💾 保存到Google Sheets",
+                disabled=(st.session_state.current_path_result is None or sheet is None)
             )
-            
-            # 显示结果
-            result_text = f"""
-起点: {self.current_path_result['start']}
-终点: {self.current_path_result['end']}
-直线距离: {self.current_path_result['direct_distance']} 单位
-推荐路径: {self.current_path_result['stair_path']}
-            """
-            
-            self.result_text.delete(1.0, tk.END)
-            self.result_text.insert(tk.END, result_text)
-            
-            # 启用保存按钮
-            self.save_btn.config(state=tk.NORMAL)
-            
-        except Exception as e:
-            messagebox.showerror("错误", f"查找路径失败: {str(e)}")
-    
-    def save_to_sheets(self):
-        """保存路径结果到Google Sheets"""
-        if not self.current_path_result or not self.sheet:
-            messagebox.showwarning("警告", "无结果可保存或Google Sheets未初始化！")
-            return
         
-        try:
-            # 准备数据
-            row_data = [
-                self.current_path_result['start'],
-                self.current_path_result['end'],
-                self.current_path_result['direct_distance'],
-                self.current_path_result['stair_path']
-            ]
-            
-            # 追加到表格
-            self.sheet.append_row(row_data)
-            messagebox.showinfo("成功", "结果已保存到Google Sheets！")
-            
-        except Exception as e:
-            messagebox.showerror("错误", f"保存失败: {str(e)}")
+        with col_btn3:
+            clear_btn = st.button("🗑️ 清空结果")
     
-    def clear_result(self):
-        """清空结果"""
-        self.result_text.delete(1.0, tk.END)
-        self.current_path_result = None
-        self.save_btn.config(state=tk.DISABLED)
+    with col2:
+        st.subheader("路径结果")
+        
+        # 结果显示区域
+        result_placeholder = st.empty()
+        
+        # 清空结果
+        if clear_btn:
+            st.session_state.current_path_result = None
+            result_placeholder.empty()
+            st.success("结果已清空！")
+        
+        # 查找路径
+        if find_btn:
+            if start_name == end_name:
+                st.warning("起点和终点不能相同！")
+            else:
+                try:
+                    # 查找对应的位置数据
+                    start_loc = next(loc for loc in locations if loc["name"] == start_name)
+                    end_loc = next(loc for loc in locations if loc["name"] == end_name)
+                    
+                    # 查找路径
+                    path_result = find_shortest_path(school_data, start_loc, end_loc)
+                    st.session_state.current_path_result = path_result
+                    
+                    # 显示结果
+                    with result_placeholder.container():
+                        st.info(f"""
+                        **起点**: {path_result['start']}
+                        **终点**: {path_result['end']}
+                        **直线距离**: {path_result['direct_distance']} 单位
+                        """)
+                        st.subheader("推荐路径")
+                        st.write(path_result['stair_path'])
+                    
+                except Exception as e:
+                    st.error(f"查找路径失败: {str(e)}")
+        
+        # 保存到Google Sheets
+        if save_btn and st.session_state.current_path_result and sheet:
+            try:
+                # 准备数据
+                row_data = [
+                    st.session_state.current_path_result['start'],
+                    st.session_state.current_path_result['end'],
+                    st.session_state.current_path_result['direct_distance'],
+                    st.session_state.current_path_result['stair_path']
+                ]
+                
+                # 追加到表格
+                sheet.append_row(row_data)
+                st.success("✅ 结果已保存到Google Sheets！")
+                
+            except Exception as e:
+                st.error(f"保存失败: {str(e)}")
 
 # -------------------------- 主程序 --------------------------
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = SchoolPathFinderApp(root)
-    root.mainloop()
+    main()
