@@ -128,116 +128,114 @@ COLORS = {
 }
 
 # --------------------------
-# 3D方位计算核心函数（含Z轴）
+# 3D方位计算核心函数（精简版）
 # --------------------------
-def calculate_3d_direction(coords_prev, coords_curr, coords_next):
+def calculate_simplified_direction(coords_prev, coords_curr, coords_next, node_type_curr):
     """
-    计算3D空间中的方位（含Z轴）
-    coords_prev: 上一节点坐标 (x,y,z)
-    coords_curr: 当前节点坐标 (x,y,z)
-    coords_next: 下一节点坐标 (x,y,z)
-    返回：方位描述字符串（如"往上+左转"、"往下+直行"、"直行"）
+    计算精简版方位：
+    1. 楼梯节点仅返回往上/往下
+    2. 非楼梯节点返回左/右/直行
     """
-    # 1. 计算Z轴方向（上下）
-    z_diff = coords_next[2] - coords_curr[2]
-    z_desc = ""
-    if z_diff > 0.1:  # Z轴上升，往上
-        z_desc = "往上"
-    elif z_diff < -0.1:  # Z轴下降，往下
-        z_desc = "往下"
-    
-    # 2. 计算2D平面方向（左右/直行）
-    # 向量1：上一节点→当前节点
-    v1 = np.array([coords_curr[0] - coords_prev[0], coords_curr[1] - coords_prev[1]])
-    # 向量2：当前节点→下一节点
-    v2 = np.array([coords_next[0] - coords_curr[0], coords_next[1] - coords_curr[1]])
-    
-    # 处理向量长度为0的情况（同一点）
-    if np.linalg.norm(v1) < 0.1 or np.linalg.norm(v2) < 0.1:
-        plane_desc = "直行"
+    # 楼梯节点：仅判断Z轴
+    if node_type_curr == 'stair':
+        z_diff = coords_next[2] - coords_curr[2]
+        if z_diff > 0.1:
+            return "往上"
+        elif z_diff < -0.1:
+            return "往下"
+        else:
+            return ""
+    # 非楼梯节点：仅判断2D平面
     else:
-        # 归一化向量
+        v1 = np.array([coords_curr[0] - coords_prev[0], coords_curr[1] - coords_prev[1]])
+        v2 = np.array([coords_next[0] - coords_curr[0], coords_next[1] - coords_curr[1]])
+        
+        if np.linalg.norm(v1) < 0.1 or np.linalg.norm(v2) < 0.1:
+            return "直行"
+        
         v1_unit = v1 / np.linalg.norm(v1)
         v2_unit = v2 / np.linalg.norm(v2)
         
-        # 点乘判断直行（夹角<25度）
         dot_product = np.dot(v1_unit, v2_unit)
         if dot_product > 0.9:
-            plane_desc = "直行"
+            return "直行"
+        
+        cross_product = np.cross(v1_unit, v2_unit)
+        if cross_product > 0.1:
+            return "左转"
+        elif cross_product < -0.1:
+            return "右转"
         else:
-            # 叉乘判断左转/右转
-            cross_product = np.cross(v1_unit, v2_unit)
-            if cross_product > 0.1:
-                plane_desc = "左转"
-            elif cross_product < -0.1:
-                plane_desc = "右转"
-            else:
-                plane_desc = "直行"
-    
-    # 3. 合并Z轴和平面方位
-    if z_desc and plane_desc:
-        if plane_desc == "直行":
-            return z_desc  # 仅上下，无平面转向
-        else:
-            return f"{z_desc}+{plane_desc}"
-    else:
-        return plane_desc  # 仅平面方向
+            return "直行"
 
-def generate_simplified_path_with_3d_direction(graph, path):
+def generate_simplified_path(graph, path):
     """
-    生成带3D方位的简化路径（仅简化路径，嵌入方位信息）
-    graph: 导航图对象
-    path: 节点ID列表
-    返回：简化路径列表、路径楼梯集合、总距离
+    生成超精简简化路径：
+    1. 过滤所有走廊节点（仅保留教室、楼梯）
+    2. 楼梯间仅显示往上/往下
+    3. 仅保留起点、楼梯、终点
     """
     if len(path) < 2:
-        return ["路径过短"], set(), 0.0
+        return ["路径过短"], 0.0
     
-    simplified_path = []
-    path_stairs = set()
+    # 第一步：过滤节点（仅保留教室、楼梯）
+    filtered_nodes = []
+    for node_id in path:
+        node_info = graph.nodes[node_id]
+        # 跳过走廊节点（含跨建筑走廊）
+        if node_info['type'] == 'corridor':
+            continue
+        filtered_nodes.append(node_info)
+    
+    if len(filtered_nodes) < 2:
+        return ["有效路径节点不足"], 0.0
+    
+    # 第二步：计算总距离
     total_distance = 0.0
+    for i in range(1, len(filtered_nodes)):
+        coords_prev = filtered_nodes[i-1]['coordinates']
+        coords_curr = filtered_nodes[i]['coordinates']
+        total_distance += euclidean_distance(coords_prev, coords_curr)
     
-    # 获取路径节点的完整信息和坐标
-    path_nodes = [graph.nodes[node_id] for node_id in path]
-    path_coords = [node['coordinates'] for node in path_nodes]
-    
-    # 遍历路径节点，生成带方位的简化描述
-    for i in range(len(path_nodes)):
-        current_node = path_nodes[i]
-        current_coords = path_coords[i]
+    # 第三步：生成带精简方位的路径
+    simplified_path = []
+    for i in range(len(filtered_nodes)):
+        current_node = filtered_nodes[i]
         node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})"
         
-        # 标记楼梯节点
+        # 标记楼梯/终点
         if current_node['type'] == 'stair':
-            path_stairs.add((current_node['building'], current_node['name'], current_node['level']))
-            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（楼梯）"
+            node_desc = f"{current_node['building']}楼{current_node['name']}（楼梯）"
+        if i == len(filtered_nodes) - 1:
+            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（终点）"
+        if i == 0:
+            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（起点）"
         
         # 第一个节点直接添加
         if i == 0:
             simplified_path.append(node_desc)
             continue
         
-        # 计算到上一节点的距离
-        prev_coords = path_coords[i-1]
-        segment_dist = euclidean_distance(prev_coords, current_coords)
-        total_distance += segment_dist
-        
-        # 计算方位（需要至少3个节点才能判断转向）
+        # 计算方位（需要至少3个节点）
         direction_desc = ""
-        if i < len(path_nodes) - 1:  # 不是最后一个节点
-            if i >= 1:  # 有上一节点
-                prev_prev_coords = path_coords[i-1] if i-1 >=0 else current_coords
-                direction = calculate_3d_direction(prev_prev_coords, current_coords, path_coords[i+1])
+        if i < len(filtered_nodes) - 1:
+            prev_node = filtered_nodes[i-1]
+            next_node = filtered_nodes[i+1]
+            direction = calculate_simplified_direction(
+                prev_node['coordinates'],
+                current_node['coordinates'],
+                next_node['coordinates'],
+                current_node['type']
+            )
+            if direction:
                 direction_desc = f"（{direction}）"
         
-        # 最后一个节点（终点）
-        if i == len(path_nodes) - 1:
-            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（终点）"
-        
-        # 拼接方位和节点描述
+        # 拼接方位和节点
         simplified_path.append(f"{direction_desc} → {node_desc}")
     
-    return simplified_path, path_stairs, total_distance
+    # 拼接成最终字符串
+    final_path = "".join(simplified_path)
+    return final_path, total_distance
 
 # --------------------------
 # 地图与导航核心逻辑
@@ -316,7 +314,7 @@ def plot_3d_map(school_data, display_options=None):
             if not show_all:
                 if building_name == 'B':
                     show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
-                    if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C','Gate'] and end_building in ['A','C','Gate'] and 'B' in [start_building, end_building]):
+                    if (start_building == 'B' or end_building == 'B'):
                         show_level = show_level or (level_name == 'level1')
                 elif building_name == 'Gate':
                     show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs'])
@@ -359,41 +357,6 @@ def plot_3d_map(school_data, display_options=None):
                 else:
                     ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4)
                 ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], color=building_fill_color, alpha=0.3)
-
-                # 绘制走廊
-                for corr_idx, corridor in enumerate(level.get('corridors', [])):
-                    points = corridor['points']
-                    x = [p[0] for p in points]
-                    y = [p[1] for p in points]
-                    z_coords = [p[2] for p in points]
-                    
-                    is_external = corridor.get('type') == 'external'
-                    if is_external:
-                        ext_style = corridor.get('style', {})
-                        corr_line_color = ext_style.get('color', 'gray')
-                        corr_line_style = ext_style.get('lineType', '--')
-                        corr_line_width = 10
-                        corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
-                    elif 'name' in corridor and ('connectToBuilding' in corridor['name'] or 'gateTo' in corridor['name']):
-                        corr_line_color = COLORS['connect_corridor']
-                        corr_line_style = '-'
-                        corr_line_width = 12
-                        corr_label = f"Connecting Corridor ({building_name}-{level_name})"
-                    else:
-                        corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
-                        corr_line_style = '-'
-                        corr_line_width = 8
-                        corr_label = None
-                    
-                    if corr_label and corr_label not in ax.get_legend_handles_labels()[1]:
-                        ax.plot(x, y, z_coords, color=corr_line_color, linestyle=corr_line_style,
-                                linewidth=corr_line_width, alpha=0.8, label=corr_label)
-                    else:
-                        ax.plot(x, y, z_coords, color=corr_line_color, linestyle=corr_line_style,
-                                linewidth=corr_line_width, alpha=0.8)
-                    # 走廊节点
-                    for px, py, pz in points:
-                        ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
 
                 # 绘制教室
                 for classroom in level.get('classrooms', []):
@@ -452,27 +415,24 @@ def plot_3d_map(school_data, display_options=None):
     # 绘制导航路径
     if path and not show_all:
         try:
-            x = []
-            y = []
-            z = []
-            labels = []
+            # 过滤路径中的走廊节点，仅绘制核心节点
+            filtered_path_coords = []
+            filtered_labels = []
             for node_id in path:
-                coords = graph.nodes[node_id]['coordinates']
-                x.append(coords[0])
-                y.append(coords[1])
-                z.append(coords[2])
-                node_type = graph.nodes[node_id]['type']
-                if node_type == 'classroom':
-                    labels.append(graph.nodes[node_id]['name'])
-                elif node_type == 'stair':
-                    labels.append(graph.nodes[node_id]['name'])
-                else:
-                    labels.append("")
-            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='Navigation Path')
-            ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
-            ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
-            ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
-            ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
+                node_info = graph.nodes[node_id]
+                if node_info['type'] in ['classroom', 'stair']:
+                    filtered_path_coords.append(node_info['coordinates'])
+                    filtered_labels.append(node_info['name'])
+            
+            if filtered_path_coords:
+                x = [c[0] for c in filtered_path_coords]
+                y = [c[1] for c in filtered_path_coords]
+                z = [c[2] for c in filtered_path_coords]
+                ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='Navigation Path')
+                ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
+                ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
+                ax.text(x[0], y[0], z[0], f"Start\n{filtered_labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
+                ax.text(x[-1], y[-1], z[-1], f"End\n{filtered_labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
         except Exception as e:
             st.warning(f"路径绘制警告: {str(e)}")
 
@@ -570,7 +530,7 @@ def build_navigation_graph(school_data):
                     level_name,
                     stair['coordinates']
                 )
-            # 添加走廊节点
+            # 添加走廊节点（保留但后续过滤）
             for corr_idx, corridor in enumerate(level.get('corridors', [])):
                 corr_name = corridor.get('name', f'corr{corr_idx}')
                 for p_idx, point in enumerate(corridor['points']):
@@ -686,7 +646,6 @@ def build_navigation_graph(school_data):
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
     # 第三步：处理跨建筑连接（Gate与A/B/C）
-    # Gate到A/B/C的连接
     gate_corridor_nodes = [
         node_id for node_id, node_info in graph.nodes.items()
         if node_info['building'] == 'Gate' 
@@ -740,14 +699,12 @@ def dijkstra(graph, start_node):
     nodes = set(graph.nodes.keys())
     
     while nodes:
-        # 找到距离最小的节点
         min_node = min(nodes, key=lambda node: distances[node])
         nodes.remove(min_node)
         
         if distances[min_node] == float('inf'):
             break
         
-        # 更新邻居节点距离
         for neighbor, weight in graph.nodes[min_node]['neighbors'].items():
             alternative_route = distances[min_node] + weight
             if alternative_route < distances[neighbor]:
@@ -766,7 +723,7 @@ def construct_path(previous_nodes, end_node):
     return path if len(path) > 1 else None
 
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    """导航核心逻辑（仅简化路径+3D方位）"""
+    """导航核心逻辑（超精简路径）"""
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
         return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
@@ -789,9 +746,15 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         path = construct_path(previous_nodes, end_node)
         
         if path:
-            # 生成带3D方位的简化路径
-            simplified_path_list, path_stairs, total_distance = generate_simplified_path_with_3d_direction(graph, path)
-            full_path_str = "".join(simplified_path_list)  # 拼接成完整字符串
+            # 生成超精简路径（过滤走廊，楼梯仅上下）
+            simplified_path_str, total_distance = generate_simplified_path(graph, path)
+            
+            # 提取路径中的楼梯节点（用于地图显示）
+            path_stairs = set()
+            for node_id in path:
+                node_info = graph.nodes[node_id]
+                if node_info['type'] == 'stair':
+                    path_stairs.add((node_info['building'], node_info['name'], node_info['level']))
             
             display_options = {
                 'start_level': start_level,
@@ -802,7 +765,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 'start_building': start_building,
                 'end_building': end_building
             }
-            return path, f"总距离：{total_distance:.2f} 米", full_path_str, display_options
+            return path, f"总距离：{total_distance:.2f} 米", simplified_path_str, display_options
         else:
             return None, "未找到可行路径", None, None
     except Exception as e:
@@ -814,14 +777,12 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 def get_classroom_info(school_data):
     """提取所有建筑的楼层和教室信息"""
     try:
-        # 建筑映射
         building_mapping = {
             'buildingA': 'A',
             'buildingB': 'B',
             'buildingC': 'C',
             'gate': 'Gate'
         }
-        # 强制显示顺序
         building_order = ['buildingA', 'buildingB', 'buildingC', 'gate']
         
         building_names = []
@@ -841,7 +802,6 @@ def get_classroom_info(school_data):
             for level in building_data['levels']:
                 level_name = level['name']
                 levels.append(level_name)
-                # 提取教室名称
                 classrooms = [classroom['name'] for classroom in level.get('classrooms', [])]
                 classrooms_by_level[level_name] = classrooms
             
@@ -880,7 +840,6 @@ def welcome_page():
         st.session_state['worksheet'] = init_google_sheet()
     total_accesses = get_total_accesses(st.session_state['worksheet'])
     
-    # 样式美化
     st.markdown("""
         <style>
         .welcome-container {
@@ -896,11 +855,6 @@ def welcome_page():
             color: #2c3e50;
             margin-bottom: 2rem;
         }
-        .enter-button {
-            font-size: 1.5rem;
-            padding: 1rem 3rem;
-            border-radius: 10px;
-        }
         .access-count {
             margin-top: 2rem;
             font-size: 1.2rem;
@@ -909,13 +863,11 @@ def welcome_page():
         </style>
     """, unsafe_allow_html=True)
     
-    # 页面内容
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
     st.markdown('<h1 class="welcome-title">SCIS 校园导航系统</h1>', unsafe_allow_html=True)
-    st.markdown('<h3>3D可视化 · 跨建筑路径规划 · 含3D方位指引（左/右/上/下）</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>3D可视化 · 超精简路径 · 楼梯仅显示上下方位</h3>', unsafe_allow_html=True)
     
-    if st.button('进入系统', key='enter_btn', use_container_width=False, 
-                help='点击进入3D导航界面', type='primary'):
+    if st.button('进入系统', key='enter_btn', use_container_width=False, type='primary'):
         update_access_count(st.session_state['worksheet'])
         st.session_state['page'] = 'main'
         st.rerun()
@@ -924,8 +876,7 @@ def welcome_page():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
-    """主界面（仅简化路径+3D方位）"""
-    # 样式优化
+    """主界面（超精简路径）"""
     st.markdown("""
         <style>
         .stApp {padding-top: 1rem !important;}
@@ -937,14 +888,14 @@ def main_interface():
             border-radius: 8px;
             border-left: 5px solid #007bff;
             margin: 10px 0;
-            font-size: 16px;
-            line-height: 1.8;
+            font-size: 18px;
+            line-height: 2;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    st.title("🏫 SCIS 校园3D导航系统（3D方位版）")
-    st.markdown("### 支持A/B/C/Gate建筑互导航 · 简化路径含左/右/上/下方位指引")
+    st.title("🏫 SCIS 校园3D导航系统（超精简版）")
+    st.markdown("### 仅显示起点/楼梯/终点 · 楼梯仅标注往上/往下")
 
     # 初始化状态
     if 'display_options' not in st.session_state:
@@ -1020,9 +971,9 @@ def main_interface():
             reset_app_state()
             st.rerun()
     
-    # 显示带3D方位的简化路径
+    # 显示超精简路径
     if 'path_result' in st.session_state:
-        st.markdown("### 📝 简化导航路径（含3D方位）")
+        st.markdown("### 📝 超精简导航路径")
         msg, path_str = st.session_state['path_result']
         st.markdown(f'<div class="path-container">{path_str}</div>', unsafe_allow_html=True)
         st.markdown(f"### 📏 {msg}")
