@@ -128,6 +128,117 @@ COLORS = {
 }
 
 # --------------------------
+# 方位计算核心函数
+# --------------------------
+def calculate_direction(coords1, coords2, coords3):
+    """
+    计算从coords1→coords2→coords3的转向方向
+    coords: (x,y,z) 坐标，仅使用x,y计算2D方向
+    返回：'straight'(直行)/'left'(左转)/'right'(右转)/'unknown'(未知)
+    """
+    # 提取2D坐标（忽略z轴）
+    v1 = np.array([coords2[0] - coords1[0], coords2[1] - coords1[1]])  # 向量1：当前→下一点
+    v2 = np.array([coords3[0] - coords2[0], coords3[1] - coords2[1]])  # 向量2：下一点→再下一点
+    
+    # 向量长度为0（同一点），返回未知
+    if np.linalg.norm(v1) < 0.1 or np.linalg.norm(v2) < 0.1:
+        return 'unknown'
+    
+    # 归一化向量
+    v1_unit = v1 / np.linalg.norm(v1)
+    v2_unit = v2 / np.linalg.norm(v2)
+    
+    # 点乘判断是否直行（夹角<25度）
+    dot_product = np.dot(v1_unit, v2_unit)
+    if dot_product > 0.9:
+        return 'straight'
+    
+    # 叉乘判断左转/右转（右手坐标系：叉乘>0左转，<0右转）
+    cross_product = np.cross(v1_unit, v2_unit)
+    if cross_product > 0.1:
+        return 'left'
+    elif cross_product < -0.1:
+        return 'right'
+    else:
+        return 'unknown'
+
+def get_direction_desc(direction, distance):
+    """将方向转换为自然语言描述"""
+    distance = round(distance, 1)
+    if direction == 'straight':
+        return f"往前走 {distance} 米"
+    elif direction == 'left':
+        return f"左转后往前走 {distance} 米"
+    elif direction == 'right':
+        return f"右转后往前走 {distance} 米"
+    else:
+        return f"继续往前走 {distance} 米"
+
+def generate_navigation_instructions(graph, path):
+    """
+    生成带方位信息的导航指令
+    graph: 导航图对象
+    path: 节点ID列表
+    返回：带方位的导航指令列表、总距离
+    """
+    if len(path) < 2:
+        return ["路径过短，无需导航"], 0.0
+    
+    instructions = []
+    total_distance = 0.0
+    path_coords = [graph.nodes[node_id]['coordinates'] for node_id in path]
+    path_nodes_info = [graph.nodes[node_id] for node_id in path]
+    
+    # 第一步：添加起点说明
+    start_info = path_nodes_info[0]
+    start_desc = f"起点：{start_info['building']}楼{start_info['name']}({start_info['level']})"
+    instructions.append(start_desc)
+    
+    # 第二步：逐段生成导航指令
+    for i in range(len(path) - 1):
+        current_node = path_nodes_info[i]
+        next_node = path_nodes_info[i + 1]
+        current_coords = path_coords[i]
+        next_coords = path_coords[i + 1]
+        
+        # 计算当前段距离
+        segment_distance = euclidean_distance(current_coords, next_coords)
+        total_distance += segment_distance
+        
+        # 计算方向（需要至少3个节点才能判断转向）
+        if i < len(path) - 2:
+            next_next_coords = path_coords[i + 2]
+            direction = calculate_direction(current_coords, next_coords, next_next_coords)
+        else:
+            direction = 'straight'  # 最后一段默认直行
+        
+        # 生成节点类型描述
+        if next_node['type'] == 'stair':
+            node_desc = f"到达{next_node['building']}楼{next_node['name']}({next_node['level']})（楼梯）"
+        elif next_node['type'] == 'classroom':
+            node_desc = f"到达{next_node['building']}楼{next_node['name']}({next_node['level']})（目的地）"
+        elif 'connectToBuilding' in next_node['name'] or 'gateTo' in next_node['name']:
+            node_desc = f"到达{next_node['building']}楼走廊（跨建筑连接）"
+        else:
+            node_desc = f"到达{next_node['building']}楼走廊节点"
+        
+        # 生成带方位的指令
+        direction_desc = get_direction_desc(direction, segment_distance)
+        if i == len(path) - 2:  # 最后一段
+            instruction = f"{direction_desc}，{node_desc}"
+        else:
+            instruction = f"{direction_desc}，{node_desc}"
+        instructions.append(instruction)
+    
+    # 第三步：添加终点说明和总距离
+    end_info = path_nodes_info[-1]
+    end_desc = f"终点：{end_info['building']}楼{end_info['name']}({end_info['level']})"
+    instructions.append(end_desc)
+    instructions.append(f"总距离：{round(total_distance, 1)} 米")
+    
+    return instructions, total_distance
+
+# --------------------------
 # 地图与导航核心逻辑
 # --------------------------
 def load_school_data_detailed(filename):
@@ -654,10 +765,10 @@ def construct_path(previous_nodes, end_node):
     return path if len(path) > 1 else None
 
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    """导航核心逻辑"""
+    """导航核心逻辑（新增方位信息）"""
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
-        return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
+        return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None, None
         
     try:
         # 教室节点查询
@@ -668,21 +779,22 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         
         # 校验节点是否存在
         if not start_node or start_node not in graph.nodes:
-            return None, f"起点不存在：{start_building}楼{start_classroom} @ {start_level}", None, None
+            return None, f"起点不存在：{start_building}楼{start_classroom} @ {start_level}", None, None, None
         if not end_node or end_node not in graph.nodes:
-            return None, f"终点不存在：{end_building}楼{end_classroom} @ {end_level}", None, None
+            return None, f"终点不存在：{end_building}楼{end_classroom} @ {end_level}", None, None, None
 
         # 计算最短路径
         distances, previous_nodes = dijkstra(graph, start_node)
         path = construct_path(previous_nodes, end_node)
         
         if path:
-            total_distance = distances[end_node]
+            # 生成带方位的导航指令
+            nav_instructions, total_distance = generate_navigation_instructions(graph, path)
+            
+            # 生成简化路径描述（原逻辑保留）
             simplified_path = []
             path_stairs = set()
             prev_building = None
-            
-            # 简化路径描述
             for node_id in path:
                 node_info = graph.nodes[node_id]
                 node_type = node_info['type']
@@ -712,11 +824,12 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 'start_building': start_building,
                 'end_building': end_building
             }
-            return path, f"总距离：{total_distance:.2f} 单位", full_path_str, display_options
+            # 返回值新增：带方位的导航指令
+            return path, f"总距离：{total_distance:.2f} 米", full_path_str, display_options, nav_instructions
         else:
-            return None, "未找到可行路径", None, None
+            return None, "未找到可行路径", None, None, None
     except Exception as e:
-        return None, f"导航错误：{str(e)}", None, None
+        return None, f"导航错误：{str(e)}", None, None, None
 
 # --------------------------
 # 数据提取工具
@@ -780,6 +893,8 @@ def reset_app_state():
     st.session_state['current_path'] = None
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
+    if 'nav_instructions' in st.session_state:
+        del st.session_state['nav_instructions']
 
 # --------------------------
 # 页面布局
@@ -822,7 +937,7 @@ def welcome_page():
     # 页面内容
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
     st.markdown('<h1 class="welcome-title">SCIS 校园导航系统</h1>', unsafe_allow_html=True)
-    st.markdown('<h3>3D可视化 · 跨建筑路径规划 · A/B/C/Gate全覆盖</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>3D可视化 · 跨建筑路径规划 · 带方位导航（左/右/直行）</h3>', unsafe_allow_html=True)
     
     if st.button('进入系统', key='enter_btn', use_container_width=False, 
                 help='点击进入3D导航界面', type='primary'):
@@ -834,18 +949,25 @@ def welcome_page():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
-    """主界面"""
+    """主界面（新增方位信息展示）"""
     # 样式优化
     st.markdown("""
         <style>
         .stApp {padding-top: 1rem !important;}
         .sidebar .sidebar-content {padding: 1rem;}
         .block-container {padding: 1rem;}
+        .nav-instruction {
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-left: 5px solid #2196f3;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
         </style>
     """, unsafe_allow_html=True)
     
-    st.title("🏫 SCIS 校园3D导航系统")
-    st.markdown("### 支持A/B/C/Gate建筑互导航 · 含Main Gate出入口")
+    st.title("🏫 SCIS 校园3D导航系统（带方位信息）")
+    st.markdown("### 支持A/B/C/Gate建筑互导航 · 含左/右/直行方位指引")
 
     # 初始化状态
     if 'display_options' not in st.session_state:
@@ -890,7 +1012,7 @@ def main_interface():
         with col1:
             if st.button("🧭 开始导航", type='primary'):
                 try:
-                    path, msg, path_str, display_options = navigate(
+                    path, msg, path_str, display_options, nav_instructions = navigate(
                         graph,
                         start_building,
                         start_classroom,
@@ -903,6 +1025,7 @@ def main_interface():
                         st.session_state['current_path'] = path
                         st.session_state['display_options'] = display_options
                         st.session_state['path_result'] = (msg, path_str)
+                        st.session_state['nav_instructions'] = nav_instructions  # 保存方位指令
                         st.success(f"导航成功！{msg}")
                     else:
                         st.error(msg)
@@ -921,10 +1044,17 @@ def main_interface():
             reset_app_state()
             st.rerun()
     
-    # 显示路径信息
+    # 显示带方位的导航指令
+    if 'nav_instructions' in st.session_state:
+        st.markdown("### 📝 详细导航指令（含方位）")
+        instructions = st.session_state['nav_instructions']
+        for idx, instr in enumerate(instructions):
+            st.markdown(f'<div class="nav-instruction">{idx+1}. {instr}</div>', unsafe_allow_html=True)
+    
+    # 显示简化路径信息
     if 'path_result' in st.session_state:
+        st.markdown("### 📌 简化路径")
         msg, path_str = st.session_state['path_result']
-        st.markdown("### 📝 导航路径")
         st.info(f"{path_str}")
         st.markdown(f"### 📏 {msg}")
     
