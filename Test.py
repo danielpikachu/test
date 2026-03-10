@@ -128,135 +128,119 @@ COLORS = {
 }
 
 # --------------------------
-# 方位计算核心函数（含Z轴判断）
+# 3D方位计算核心函数（含Z轴）
 # --------------------------
-def calculate_3d_direction(coords1, coords2, coords3):
+def calculate_3d_direction(coords_prev, coords_curr, coords_next):
     """
-    计算3D空间的转向方向（含Z轴）
-    coords: (x,y,z) 坐标
-    返回：平面方向(str) + 垂直方向(str)
-    平面方向：'straight'(直行)/'left'(左转)/'right'(右转)/'unknown'(未知)
-    垂直方向：'up'(往上)/'down'(往下)/'flat'(水平)
+    计算3D空间中的方位（含Z轴）
+    coords_prev: 上一节点坐标 (x,y,z)
+    coords_curr: 当前节点坐标 (x,y,z)
+    coords_next: 下一节点坐标 (x,y,z)
+    返回：方位描述字符串（如"往上+左转"、"往下+直行"、"直行"）
     """
-    # 1. 平面方向判断（X/Y轴）
-    v1_2d = np.array([coords2[0] - coords1[0], coords2[1] - coords1[1]])
-    v2_2d = np.array([coords3[0] - coords2[0], coords3[1] - coords2[1]])
+    # 1. 计算Z轴方向（上下）
+    z_diff = coords_next[2] - coords_curr[2]
+    z_desc = ""
+    if z_diff > 0.1:  # Z轴上升，往上
+        z_desc = "往上"
+    elif z_diff < -0.1:  # Z轴下降，往下
+        z_desc = "往下"
     
-    plane_dir = 'unknown'
-    if np.linalg.norm(v1_2d) > 0.1 and np.linalg.norm(v2_2d) > 0.1:
-        v1_unit = v1_2d / np.linalg.norm(v1_2d)
-        v2_unit = v2_2d / np.linalg.norm(v2_2d)
+    # 2. 计算2D平面方向（左右/直行）
+    # 向量1：上一节点→当前节点
+    v1 = np.array([coords_curr[0] - coords_prev[0], coords_curr[1] - coords_prev[1]])
+    # 向量2：当前节点→下一节点
+    v2 = np.array([coords_next[0] - coords_curr[0], coords_next[1] - coords_curr[1]])
+    
+    # 处理向量长度为0的情况（同一点）
+    if np.linalg.norm(v1) < 0.1 or np.linalg.norm(v2) < 0.1:
+        plane_desc = "直行"
+    else:
+        # 归一化向量
+        v1_unit = v1 / np.linalg.norm(v1)
+        v2_unit = v2 / np.linalg.norm(v2)
         
         # 点乘判断直行（夹角<25度）
         dot_product = np.dot(v1_unit, v2_unit)
         if dot_product > 0.9:
-            plane_dir = 'straight'
+            plane_desc = "直行"
         else:
-            # 叉乘判断左转/右转（右手坐标系）
+            # 叉乘判断左转/右转
             cross_product = np.cross(v1_unit, v2_unit)
             if cross_product > 0.1:
-                plane_dir = 'left'
+                plane_desc = "左转"
             elif cross_product < -0.1:
-                plane_dir = 'right'
+                plane_desc = "右转"
+            else:
+                plane_desc = "直行"
     
-    # 2. 垂直方向判断（Z轴）
-    z_diff = coords2[2] - coords1[2]  # 当前段的Z轴变化（修正之前的笔误）
-    vertical_dir = 'flat'
-    if z_diff > 0.1:  # Z值升高，往上
-        vertical_dir = 'up'
-    elif z_diff < -0.1:  # Z值降低，往下
-        vertical_dir = 'down'
-    
-    return plane_dir, vertical_dir
-
-def get_direction_desc_3d(plane_dir, vertical_dir):
-    """将3D方向转换为自然语言描述"""
-    desc_parts = []
-    # 优先展示垂直方向
-    if vertical_dir == 'up':
-        desc_parts.append("往上")
-    elif vertical_dir == 'down':
-        desc_parts.append("往下")
-    # 再展示平面方向
-    if plane_dir == 'left':
-        desc_parts.append("往左")
-    elif plane_dir == 'right':
-        desc_parts.append("往右")
-    elif plane_dir == 'straight' and vertical_dir == 'flat':
-        desc_parts.append("直行")
-    
-    # 组合描述（无方向时返回"直行"）
-    if not desc_parts:
-        return "直行"
-    return "".join(desc_parts)
+    # 3. 合并Z轴和平面方位
+    if z_desc and plane_desc:
+        if plane_desc == "直行":
+            return z_desc  # 仅上下，无平面转向
+        else:
+            return f"{z_desc}+{plane_desc}"
+    else:
+        return plane_desc  # 仅平面方向
 
 def generate_simplified_path_with_3d_direction(graph, path):
     """
-    生成带3D方位信息的简化路径
+    生成带3D方位的简化路径（仅简化路径，嵌入方位信息）
     graph: 导航图对象
     path: 节点ID列表
-    返回：简化路径字符串、路径楼梯集合、总距离
+    返回：简化路径列表、路径楼梯集合、总距离
     """
     if len(path) < 2:
-        return "路径过短，无需导航", set(), 0.0
+        return ["路径过短"], set(), 0.0
     
     simplified_path = []
     path_stairs = set()
     total_distance = 0.0
-    path_nodes_info = [graph.nodes[node_id] for node_id in path]
-    path_coords = [graph.nodes[node_id]['coordinates'] for node_id in path]
     
-    # 起点
-    start_info = path_nodes_info[0]
-    simplified_path.append(f"{start_info['building']}楼{start_info['name']}({start_info['level']})")
+    # 获取路径节点的完整信息和坐标
+    path_nodes = [graph.nodes[node_id] for node_id in path]
+    path_coords = [node['coordinates'] for node in path_nodes]
     
-    # 遍历路径段（逐段添加方位）
-    for i in range(len(path) - 1):
-        current_info = path_nodes_info[i]
-        next_info = path_nodes_info[i + 1]
+    # 遍历路径节点，生成带方位的简化描述
+    for i in range(len(path_nodes)):
+        current_node = path_nodes[i]
         current_coords = path_coords[i]
-        next_coords = path_coords[i + 1]
+        node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})"
         
-        # 计算当前段距离（3D欧式距离）
-        segment_distance = np.sqrt(
-            (next_coords[0]-current_coords[0])**2 + 
-            (next_coords[1]-current_coords[1])**2 + 
-            (next_coords[2]-current_coords[2])**2
-        )
-        total_distance += segment_distance
+        # 标记楼梯节点
+        if current_node['type'] == 'stair':
+            path_stairs.add((current_node['building'], current_node['name'], current_node['level']))
+            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（楼梯）"
         
-        # 计算3D方向
-        if i < len(path) - 2:
-            next_next_coords = path_coords[i + 2]
-            plane_dir, vertical_dir = calculate_3d_direction(current_coords, next_coords, next_next_coords)
-        else:
-            # 最后一段：仅判断垂直方向，平面默认直行
-            plane_dir = 'straight'
-            z_diff = next_coords[2] - current_coords[2]
-            vertical_dir = 'up' if z_diff > 0.1 else 'down' if z_diff < -0.1 else 'flat'
+        # 第一个节点直接添加
+        if i == 0:
+            simplified_path.append(node_desc)
+            continue
         
-        # 生成方位描述
-        dir_desc = get_direction_desc_3d(plane_dir, vertical_dir)
+        # 计算到上一节点的距离
+        prev_coords = path_coords[i-1]
+        segment_dist = euclidean_distance(prev_coords, current_coords)
+        total_distance += segment_dist
         
-        # 生成节点描述 + 方位
-        if next_info['type'] == 'stair':
-            path_stairs.add((next_info['building'], next_info['name'], next_info['level']))
-            node_desc = f"{dir_desc}到达{next_info['building']}楼{next_info['name']}({next_info['level']})"
-        elif next_info['type'] == 'classroom':
-            node_desc = f"{dir_desc}到达{next_info['building']}楼{next_info['name']}({next_info['level']})"
-        elif 'connectToBuilding' in next_info['name'] or 'gateTo' in next_info['name']:
-            node_desc = f"{dir_desc}从{current_info['building']}楼走廊前往{next_info['building']}楼({next_info['level']})"
-        else:
-            node_desc = f"{dir_desc}到达{next_info['building']}楼走廊节点({next_info['level']})"
+        # 计算方位（需要至少3个节点才能判断转向）
+        direction_desc = ""
+        if i < len(path_nodes) - 1:  # 不是最后一个节点
+            if i >= 1:  # 有上一节点
+                prev_prev_coords = path_coords[i-1] if i-1 >=0 else current_coords
+                direction = calculate_3d_direction(prev_prev_coords, current_coords, path_coords[i+1])
+                direction_desc = f"（{direction}）"
         
-        simplified_path.append(node_desc)
+        # 最后一个节点（终点）
+        if i == len(path_nodes) - 1:
+            node_desc = f"{current_node['building']}楼{current_node['name']}({current_node['level']})（终点）"
+        
+        # 拼接方位和节点描述
+        simplified_path.append(f"{direction_desc} → {node_desc}")
     
-    # 拼接路径字符串
-    full_path_str = " → ".join(simplified_path)
-    return full_path_str, path_stairs, total_distance
+    return simplified_path, path_stairs, total_distance
 
 # --------------------------
-# 地图绘制逻辑
+# 地图与导航核心逻辑
 # --------------------------
 def load_school_data_detailed(filename):
     """加载学校3D数据"""
@@ -502,7 +486,7 @@ def plot_3d_map(school_data, display_options=None):
     return fig, ax
 
 # --------------------------
-# 导航图类与路径算法
+# 导航图类
 # --------------------------
 class Graph:
     def __init__(self):
@@ -538,6 +522,13 @@ class Graph:
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
+
+# --------------------------
+# 路径算法相关
+# --------------------------
+def euclidean_distance(coords1, coords2):
+    """欧式距离计算（3D）"""
+    return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
 def build_navigation_graph(school_data):
     """构建导航图"""
@@ -619,11 +610,7 @@ def build_navigation_graph(school_data):
                     current_node_id = graph.node_id_map.get((building_key, 'corridor', current_point_name, level_name))
                     next_node_id = graph.node_id_map.get((building_key, 'corridor', next_point_name, level_name))
                     if current_node_id and next_node_id:
-                        distance = np.sqrt(
-                            (corr_points[p_idx][0]-corr_points[p_idx+1][0])**2 + 
-                            (corr_points[p_idx][1]-corr_points[p_idx+1][1])**2 + 
-                            (corr_points[p_idx][2]-corr_points[p_idx+1][2])**2
-                        )
+                        distance = euclidean_distance(corr_points[p_idx], corr_points[p_idx + 1])
                         graph.add_edge(current_node_id, next_node_id, distance)
             # 连接相邻走廊节点
             for i in range(len(corr_nodes)):
@@ -632,11 +619,7 @@ def build_navigation_graph(school_data):
                 for j in range(i + 1, len(corr_nodes)):
                     node2_id = corr_nodes[j]
                     coords2 = graph.nodes[node2_id]['coordinates']
-                    distance = np.sqrt(
-                        (coords1[0]-coords2[0])**2 + 
-                        (coords1[1]-coords2[1])**2 + 
-                        (coords1[2]-coords2[2])**2
-                    )
+                    distance = euclidean_distance(coords1, coords2)
                     if distance < 3.0:
                         graph.add_edge(node1_id, node2_id, distance)
             # 连接教室到最近走廊
@@ -652,11 +635,7 @@ def build_navigation_graph(school_data):
                 nearest_corr_node_id = None
                 for corr_node_id in corr_nodes:
                     corr_coords = graph.nodes[corr_node_id]['coordinates']
-                    dist = np.sqrt(
-                        (class_coords[0]-corr_coords[0])**2 + 
-                        (class_coords[1]-corr_coords[1])**2 + 
-                        (class_coords[2]-corr_coords[2])**2
-                    )
+                    dist = euclidean_distance(class_coords, corr_coords)
                     if dist < min_dist:
                         min_dist = dist
                         nearest_corr_node_id = corr_node_id
@@ -677,11 +656,7 @@ def build_navigation_graph(school_data):
                 nearest_corr_node_id = None
                 for corr_node_id in corr_nodes:
                     corr_coords = graph.nodes[corr_node_id]['coordinates']
-                    dist = np.sqrt(
-                        (stair_coords[0]-corr_coords[0])**2 + 
-                        (stair_coords[1]-corr_coords[1])**2 + 
-                        (stair_coords[2]-corr_coords[2])**2
-                    )
+                    dist = euclidean_distance(stair_coords, corr_coords)
                     if dist < min_dist:
                         min_dist = dist
                         nearest_corr_node_id = corr_node_id
@@ -728,16 +703,8 @@ def build_navigation_graph(school_data):
     ]
     if gate_corridor_nodes and a_corridor_nodes:
         gate_node = gate_corridor_nodes[0]
-        a_node = min(a_corridor_nodes, key=lambda x: np.sqrt(
-            (graph.nodes[x]['coordinates'][0]-graph.nodes[gate_node]['coordinates'][0])**2 + 
-            (graph.nodes[x]['coordinates'][1]-graph.nodes[gate_node]['coordinates'][1])**2 + 
-            (graph.nodes[x]['coordinates'][2]-graph.nodes[gate_node]['coordinates'][2])**2
-        ))
-        graph.add_edge(gate_node, a_node, np.sqrt(
-            (graph.nodes[gate_node]['coordinates'][0]-graph.nodes[a_node]['coordinates'][0])**2 + 
-            (graph.nodes[gate_node]['coordinates'][1]-graph.nodes[a_node]['coordinates'][1])**2 + 
-            (graph.nodes[gate_node]['coordinates'][2]-graph.nodes[a_node]['coordinates'][2])**2
-        ))
+        a_node = min(a_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+        graph.add_edge(gate_node, a_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[a_node]['coordinates']))
     
     # Gate到B的连接
     b_corridor_nodes = [
@@ -748,16 +715,8 @@ def build_navigation_graph(school_data):
     ]
     if gate_corridor_nodes and b_corridor_nodes:
         gate_node = gate_corridor_nodes[0]
-        b_node = min(b_corridor_nodes, key=lambda x: np.sqrt(
-            (graph.nodes[x]['coordinates'][0]-graph.nodes[gate_node]['coordinates'][0])**2 + 
-            (graph.nodes[x]['coordinates'][1]-graph.nodes[gate_node]['coordinates'][1])**2 + 
-            (graph.nodes[x]['coordinates'][2]-graph.nodes[gate_node]['coordinates'][2])**2
-        ))
-        graph.add_edge(gate_node, b_node, np.sqrt(
-            (graph.nodes[gate_node]['coordinates'][0]-graph.nodes[b_node]['coordinates'][0])**2 + 
-            (graph.nodes[gate_node]['coordinates'][1]-graph.nodes[b_node]['coordinates'][1])**2 + 
-            (graph.nodes[gate_node]['coordinates'][2]-graph.nodes[b_node]['coordinates'][2])**2
-        ))
+        b_node = min(b_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+        graph.add_edge(gate_node, b_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[b_node]['coordinates']))
     
     # Gate到C的连接
     c_corridor_nodes = [
@@ -768,21 +727,13 @@ def build_navigation_graph(school_data):
     ]
     if gate_corridor_nodes and c_corridor_nodes:
         gate_node = gate_corridor_nodes[0]
-        c_node = min(c_corridor_nodes, key=lambda x: np.sqrt(
-            (graph.nodes[x]['coordinates'][0]-graph.nodes[gate_node]['coordinates'][0])**2 + 
-            (graph.nodes[x]['coordinates'][1]-graph.nodes[gate_node]['coordinates'][1])**2 + 
-            (graph.nodes[x]['coordinates'][2]-graph.nodes[gate_node]['coordinates'][2])**2
-        ))
-        graph.add_edge(gate_node, c_node, np.sqrt(
-            (graph.nodes[gate_node]['coordinates'][0]-graph.nodes[c_node]['coordinates'][0])**2 + 
-            (graph.nodes[gate_node]['coordinates'][1]-graph.nodes[c_node]['coordinates'][1])**2 + 
-            (graph.nodes[gate_node]['coordinates'][2]-graph.nodes[c_node]['coordinates'][2])**2
-        ))
+        c_node = min(c_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+        graph.add_edge(gate_node, c_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[c_node]['coordinates']))
 
     return graph
 
 def dijkstra(graph, start_node):
-    """Dijkstra最短路径算法（3D距离）"""
+    """Dijkstra最短路径算法"""
     distances = {node: float('inf') for node in graph.nodes}
     distances[start_node] = 0
     previous_nodes = {node: None for node in graph.nodes}
@@ -815,7 +766,7 @@ def construct_path(previous_nodes, end_node):
     return path if len(path) > 1 else None
 
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    """导航核心逻辑（简化路径嵌入3D方位）"""
+    """导航核心逻辑（仅简化路径+3D方位）"""
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
         return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
@@ -839,7 +790,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         
         if path:
             # 生成带3D方位的简化路径
-            full_path_str, path_stairs, total_distance = generate_simplified_path_with_3d_direction(graph, path)
+            simplified_path_list, path_stairs, total_distance = generate_simplified_path_with_3d_direction(graph, path)
+            full_path_str = "".join(simplified_path_list)  # 拼接成完整字符串
             
             display_options = {
                 'start_level': start_level,
@@ -972,25 +924,27 @@ def welcome_page():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
-    """主界面"""
+    """主界面（仅简化路径+3D方位）"""
     # 样式优化
     st.markdown("""
         <style>
         .stApp {padding-top: 1rem !important;}
         .sidebar .sidebar-content {padding: 1rem;}
         .block-container {padding: 1rem;}
-        .path-desc {
+        .path-container {
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #dc3545;
+            border-left: 5px solid #007bff;
             margin: 10px 0;
+            font-size: 16px;
+            line-height: 1.8;
         }
         </style>
     """, unsafe_allow_html=True)
     
     st.title("🏫 SCIS 校园3D导航系统（3D方位版）")
-    st.markdown("### 支持A/B/C/Gate建筑互导航 · 含左/右/上/下方位指引")
+    st.markdown("### 支持A/B/C/Gate建筑互导航 · 简化路径含左/右/上/下方位指引")
 
     # 初始化状态
     if 'display_options' not in st.session_state:
@@ -1066,11 +1020,11 @@ def main_interface():
             reset_app_state()
             st.rerun()
     
-    # 显示简化路径信息（含3D方位）
+    # 显示带3D方位的简化路径
     if 'path_result' in st.session_state:
-        st.markdown("### 📝 导航路径（含方位）")
+        st.markdown("### 📝 简化导航路径（含3D方位）")
         msg, path_str = st.session_state['path_result']
-        st.markdown(f'<div class="path-desc">{path_str}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="path-container">{path_str}</div>', unsafe_allow_html=True)
         st.markdown(f"### 📏 {msg}")
     
     # 绘制3D地图
