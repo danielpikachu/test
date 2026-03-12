@@ -204,12 +204,11 @@ def plot_3d_map(school_data, display_options=None):
             if not show_all:
                 if building_name == 'B':
                     show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
-                    if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C','Gate'] and end_building in ['A','C','Gate'] and 'B' in [start_building, end_building]):
+                    if (start_building == 'B' or end_building == 'B'):
                         show_level = show_level or (level_name == 'level1')
                 elif building_name == 'Gate':
-                    show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs'])
-                    if (start_building == 'Gate' or end_building == 'Gate'):
-                        show_level = show_level or (level_name == 'level1')
+                    # 只有起点/终点是Gate时才显示Gate
+                    show_level = (start_building == 'Gate' or end_building == 'Gate') and any((building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs'])
                 else:
                     show_level = (level_name == start_level) or (level_name == end_level)
             
@@ -410,6 +409,26 @@ class Graph:
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
+    
+    def remove_gate_connections(self):
+        """移除所有与Gate相关的连接（保留Gate节点但断开连接）"""
+        # 找出所有Gate节点
+        gate_nodes = [node_id for node_id, node_info in self.nodes.items() if node_info['building'] == 'Gate']
+        
+        # 断开所有指向Gate节点的连接
+        for node_id in self.nodes:
+            if node_id in gate_nodes:
+                continue
+            # 过滤掉邻居中的Gate节点
+            self.nodes[node_id]['neighbors'] = {
+                neighbor_id: weight 
+                for neighbor_id, weight in self.nodes[node_id]['neighbors'].items()
+                if neighbor_id not in gate_nodes
+            }
+        
+        # 清空Gate节点的所有邻居
+        for gate_node_id in gate_nodes:
+            self.nodes[gate_node_id]['neighbors'] = {}
 
 # --------------------------
 # 路径算法相关
@@ -418,8 +437,11 @@ def euclidean_distance(coords1, coords2):
     """欧式距离计算"""
     return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
-def build_navigation_graph(school_data):
-    """构建导航图"""
+def build_navigation_graph(school_data, include_gate_connections=False):
+    """
+    构建导航图
+    :param include_gate_connections: 是否包含与Gate的连接（仅当起点/终点是Gate时设为True）
+    """
     graph = Graph()
     # 建筑映射
     building_mapping = {
@@ -573,66 +595,84 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # 第三步：优先建立ABC楼之间的直接连接（核心修改）
+    # 第三步：建立ABC楼之间的直接连接（核心）
     # 获取各建筑level1的走廊节点
-    building_corridors = {
-        'A': [node_id for node_id, node_info in graph.nodes.items() 
-              if node_info['building'] == 'A' and node_info['type'] == 'corridor' and node_info['level'] == 'level1'],
-        'B': [node_id for node_id, node_info in graph.nodes.items() 
-              if node_info['building'] == 'B' and node_info['type'] == 'corridor' and node_info['level'] == 'level1'],
-        'C': [node_id for node_id, node_info in graph.nodes.items() 
-              if node_info['building'] == 'C' and node_info['type'] == 'corridor' and node_info['level'] == 'level1'],
-        'Gate': [node_id for node_id, node_info in graph.nodes.items() 
-                 if node_info['building'] == 'Gate' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
-    }
+    a_corridors = [node_id for node_id, node_info in graph.nodes.items() 
+                   if node_info['building'] == 'A' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
+    b_corridors = [node_id for node_id, node_info in graph.nodes.items() 
+                   if node_info['building'] == 'B' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
+    c_corridors = [node_id for node_id, node_info in graph.nodes.items() 
+                   if node_info['building'] == 'C' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
     
-    # A-B直接连接
-    if building_corridors['A'] and building_corridors['B']:
-        a_node = min(building_corridors['A'], key=lambda x: graph.nodes[x]['coordinates'][1])  # 取A楼靠近B楼的走廊节点
-        b_node = min(building_corridors['B'], key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[a_node]['coordinates'][0]))  # 取B楼对应位置节点
-        distance = euclidean_distance(graph.nodes[a_node]['coordinates'], graph.nodes[b_node]['coordinates'])
-        graph.add_edge(a_node, b_node, distance)
+    # A-B直接连接（强制优先）
+    if a_corridors and b_corridors:
+        # 选择A楼最靠近B楼的节点
+        a_node = min(a_corridors, key=lambda x: graph.nodes[x]['coordinates'][1])
+        # 选择B楼最靠近A楼的节点
+        b_node = min(b_corridors, key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[a_node]['coordinates'][0]))
+        # 设置极小的权重，确保优先选择
+        graph.add_edge(a_node, b_node, 1.0)
     
-    # B-C直接连接
-    if building_corridors['B'] and building_corridors['C']:
-        b_node = max(building_corridors['B'], key=lambda x: graph.nodes[x]['coordinates'][1])  # 取B楼靠近C楼的走廊节点
-        c_node = min(building_corridors['C'], key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[b_node]['coordinates'][0]))  # 取C楼对应位置节点
-        distance = euclidean_distance(graph.nodes[b_node]['coordinates'], graph.nodes[c_node]['coordinates'])
-        graph.add_edge(b_node, c_node, distance)
+    # B-C直接连接（强制优先）
+    if b_corridors and c_corridors:
+        # 选择B楼最靠近C楼的节点
+        b_node = max(b_corridors, key=lambda x: graph.nodes[x]['coordinates'][1])
+        # 选择C楼最靠近B楼的节点
+        c_node = min(c_corridors, key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[b_node]['coordinates'][0]))
+        # 设置极小的权重，确保优先选择
+        graph.add_edge(b_node, c_node, 1.0)
     
     # A-C直接连接（备用）
-    if building_corridors['A'] and building_corridors['C']:
-        a_node = max(building_corridors['A'], key=lambda x: graph.nodes[x]['coordinates'][0])  # 取A楼靠近C楼的走廊节点
-        c_node = min(building_corridors['C'], key=lambda x: graph.nodes[x]['coordinates'][0])  # 取C楼靠近A楼的走廊节点
-        distance = euclidean_distance(graph.nodes[a_node]['coordinates'], graph.nodes[c_node]['coordinates'])
-        graph.add_edge(a_node, c_node, distance * 1.1)  # 权重稍高，优先走A-B-C
+    if a_corridors and c_corridors:
+        a_node = max(a_corridors, key=lambda x: graph.nodes[x]['coordinates'][0])
+        c_node = min(c_corridors, key=lambda x: graph.nodes[x]['coordinates'][0])
+        graph.add_edge(a_node, c_node, 1.5)
     
-    # 第四步：Gate与ABC楼的连接（仅作为备用）
-    # Gate到A的连接
-    if building_corridors['Gate'] and building_corridors['A']:
-        gate_node = building_corridors['Gate'][0]
-        a_node = min(building_corridors['A'], key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, a_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[a_node]['coordinates']) * 1.5)  # 增加权重，优先走内部连接
-    
-    # Gate到B的连接
-    if building_corridors['Gate'] and building_corridors['B']:
-        gate_node = building_corridors['Gate'][0]
-        b_node = min(building_corridors['B'], key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, b_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[b_node]['coordinates']) * 1.5)
-    
-    # Gate到C的连接
-    if building_corridors['Gate'] and building_corridors['C']:
-        gate_node = building_corridors['Gate'][0]
-        c_node = min(building_corridors['C'], key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, c_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[c_node]['coordinates']) * 1.5)
+    # 第四步：仅在需要时添加Gate连接
+    if include_gate_connections:
+        gate_corridors = [node_id for node_id, node_info in graph.nodes.items() 
+                          if node_info['building'] == 'Gate' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
+        
+        # Gate到A的连接（高权重，仅备用）
+        if gate_corridors and a_corridors:
+            gate_node = gate_corridors[0]
+            a_node = min(a_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, a_node, 100.0)  # 极高权重，仅当无其他路径时选择
+        
+        # Gate到B的连接（高权重，仅备用）
+        if gate_corridors and b_corridors:
+            gate_node = gate_corridors[0]
+            b_node = min(b_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, b_node, 100.0)
+        
+        # Gate到C的连接（高权重，仅备用）
+        if gate_corridors and c_corridors:
+            gate_node = gate_corridors[0]
+            c_node = min(c_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, c_node, 100.0)
+    else:
+        # 移除所有与Gate相关的连接
+        graph.remove_gate_connections()
 
     return graph
 
-def dijkstra(graph, start_node):
-    """Dijkstra最短路径算法"""
+def dijkstra(graph, start_node, ignore_gate_nodes=True):
+    """
+    Dijkstra最短路径算法
+    :param ignore_gate_nodes: 是否忽略Gate节点（ABC导航时设为True）
+    """
+    # 初始化距离
     distances = {node: float('inf') for node in graph.nodes}
     distances[start_node] = 0
     previous_nodes = {node: None for node in graph.nodes}
+    
+    # 如果需要忽略Gate节点，提前标记
+    if ignore_gate_nodes:
+        gate_nodes = set(node_id for node_id, node_info in graph.nodes.items() if node_info['building'] == 'Gate')
+        # 将Gate节点的距离设为无穷大，确保不会被选中
+        for gate_node in gate_nodes:
+            distances[gate_node] = float('inf')
+    
     nodes = set(graph.nodes.keys())
     
     while nodes:
@@ -645,6 +685,10 @@ def dijkstra(graph, start_node):
         
         # 更新邻居节点距离
         for neighbor, weight in graph.nodes[min_node]['neighbors'].items():
+            # 如果忽略Gate节点，跳过Gate邻居
+            if ignore_gate_nodes and graph.nodes[neighbor]['building'] == 'Gate':
+                continue
+                
             alternative_route = distances[min_node] + weight
             if alternative_route < distances[neighbor]:
                 distances[neighbor] = alternative_route
@@ -666,7 +710,10 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
         return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
-        
+    
+    # 判断是否需要包含Gate
+    need_gate = (start_building == 'Gate') or (end_building == 'Gate')
+    
     try:
         # 教室节点查询
         start_key = (start_building, start_classroom, start_level)
@@ -680,11 +727,17 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         if not end_node or end_node not in graph.nodes:
             return None, f"终点不存在：{end_building}楼{end_classroom} @ {end_level}", None, None
 
-        # 计算最短路径
-        distances, previous_nodes = dijkstra(graph, start_node)
+        # 计算最短路径（关键：ABC导航时忽略Gate节点）
+        distances, previous_nodes = dijkstra(graph, start_node, ignore_gate_nodes=not need_gate)
         path = construct_path(previous_nodes, end_node)
         
         if path:
+            # 验证路径中是否包含Gate节点（ABC导航时不允许）
+            if not need_gate:
+                path_buildings = set(graph.nodes[node_id]['building'] for node_id in path)
+                if 'Gate' in path_buildings:
+                    return None, "路径规划错误：ABC楼导航不应经过Gate", None, None
+            
             total_distance = distances[end_node]
             simplified_path = []
             path_stairs = set()
@@ -703,9 +756,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
                 elif node_type == 'classroom':
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
-                elif node_type == 'corridor' and ('connectToBuilding' in node_name or 'gateTo' in node_name):
-                    if prev_building and prev_building != node_building:
-                        simplified_path.append(f"从{prev_building}楼走廊前往{node_building}楼({node_level})")
+                elif node_type == 'corridor' and prev_building and prev_building != node_building:
+                    simplified_path.append(f"从{prev_building}楼前往{node_building}楼({node_level})")
                 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
@@ -786,6 +838,7 @@ def reset_app_state():
         'end_building': None
     }
     st.session_state['current_path'] = None
+    st.session_state['graph'] = None
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
@@ -853,7 +906,7 @@ def main_interface():
     """, unsafe_allow_html=True)
     
     st.title("🏫 SCIS 校园3D导航系统")
-    st.markdown("### 支持A/B/C/Gate建筑互导航 · 含Main Gate出入口")
+    st.markdown("### 支持A/B/C/Gate建筑互导航 · ABC楼优先内部连接")
 
     # 初始化状态
     if 'display_options' not in st.session_state:
@@ -864,9 +917,13 @@ def main_interface():
     if not school_data:
         return
     
-    # 构建导航图
+    # 构建导航图（根据是否需要Gate动态调整）
+    if 'graph' not in st.session_state or st.session_state['graph'] is None:
+        # 默认不包含Gate连接
+        st.session_state['graph'] = build_navigation_graph(school_data, include_gate_connections=False)
+    
     global graph
-    graph = build_navigation_graph(school_data)
+    graph = st.session_state['graph']
     
     # 获取教室信息
     building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
@@ -878,6 +935,8 @@ def main_interface():
         # 起点设置
         st.subheader("起点")
         start_building = st.selectbox("建筑", building_names, key='start_building')
+        start_level = None
+        start_classroom = None
         if start_building in levels_by_building:
             start_level = st.selectbox("楼层", levels_by_building[start_building], key='start_level')
             if start_level in classrooms_by_building[start_building]:
@@ -887,6 +946,8 @@ def main_interface():
         # 终点设置
         st.subheader("终点")
         end_building = st.selectbox("建筑", building_names, key='end_building')
+        end_level = None
+        end_classroom = None
         if end_building in levels_by_building:
             end_level = st.selectbox("楼层", levels_by_building[end_building], key='end_level')
             if end_level in classrooms_by_building[end_building]:
@@ -898,6 +959,11 @@ def main_interface():
         with col1:
             if st.button("🧭 开始导航", type='primary'):
                 try:
+                    # 重新构建图（根据是否需要Gate）
+                    need_gate = (start_building == 'Gate') or (end_building == 'Gate')
+                    graph = build_navigation_graph(school_data, include_gate_connections=need_gate)
+                    st.session_state['graph'] = graph
+                    
                     path, msg, path_str, display_options = navigate(
                         graph,
                         start_building,
