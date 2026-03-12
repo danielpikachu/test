@@ -1,829 +1,1027 @@
-{
-  "buildingA": {
-    "levels": [
-      {
-        "name": "lowerLevel",
-        "z": -6,
-        "floorPlane": {
-          "minX": 0,
-          "maxX": 40,
-          "minY": 10,
-          "maxY": 60
-        },
-        "classrooms": [
-          {"name": "A005", "coordinates": [25, 30, -6], "size": [5, 8]},
-          {"name": "A008", "coordinates": [25, 50, -6], "size": [10, 8]},
-          {"name": "A010", "coordinates": [15, 50, -6], "size": [5, 8]},
-          {"name": "PRACTICE", "coordinates": [20, 50, -6], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [22, 15, -6],   
-              [22, 20, -6],  
-              [22, 25, -6],   
-              [22, 30, -6],  
-              [22, 35, -6],  
-              [22, 40, -6],
-              [22, 45, -6],
-              [22, 50, -6]
-            ]
-          },
-          {
-            "points": [
-              [10, 45, -6],  
-              [15, 45, -6],   
-              [20, 45, -6],   
-              [25, 45, -6],   
-              [30, 45, -6],   
-              [35, 45, -6]   
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [35, 30, -6]}
-        ]
-      },
-      {
-        "name": "level1",
-        "z": -3,
-        "floorPlane": {
-          "minX": 3,
-          "maxX": 42,
-          "minY": 15,
-          "maxY": 55
-        },
-        "classrooms": [
-          {"name": "CAFE", "coordinates": [10, 30, -3], "size": [10, 8]},
-          {"name": "WELCOMECENTER", "coordinates": [22, 40, -3], "size": [10, 8]},
-          {"name": "ENTRANCE", "coordinates": [22, 18, -3], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "name": "mainCorridor",
-            "points": [
-              [22, 20, -3],   
-              [27, 20, -3],  
-              [32, 20, -3],   
-              [37, 20, -3],  
-              [42, 20, -3]  
-            ]
-          },
-          {
-            "name": "connectToBuildingC", 
-            "points": [
-              [42, 20, -3], 
-              [47, 20, -3], 
-              [50, 20, -3],  
-              [53, 20, -3]
-            ]
-          },
-          {
-            "name": "connectToBuildingB",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [22, 18, -3],
-              [22, -30, -3]
-            ]
-          },
-          {
-            "name": "gateToA",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, 18, -3]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [40, 20, -3]}
-        ]
-      },
-      {
-        "name": "level2",
-        "z": 2,
-        "floorPlane": {
-          "minX": 5,
-          "maxX": 40,
-          "minY": 18,
-          "maxY": 60
-        },
-        "classrooms": [
-          {"name": "A205", "coordinates": [30, 50, 2], "size": [5, 8]},
-          {"name": "A206", "coordinates": [25, 50, 2], "size": [5, 8]},
-          {"name": "A207", "coordinates": [20, 50, 2], "size": [5, 8]},
-          {"name": "A208", "coordinates": [15, 50, 2], "size": [5, 8]},
-          {"name": "A203", "coordinates": [25, 30, 2], "size": [5, 8]},
-          {"name": "A204", "coordinates": [30, 30, 2], "size": [5, 8]},
-          {"name": "A210", "coordinates": [15, 30, 2], "size": [5, 8]},
-          {"name": "A202", "coordinates": [10, 20, 2], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [10, 45, 2],   
-              [15, 45, 2],  
-              [20, 45, 2],   
-              [25, 45, 2],  
-              [30, 45, 2],   
-              [35, 45, 2]   
-            ]
-          },
-          {
-            "points": [
-              [22, 50, 2],   
-              [22, 45, 2],   
-              [22, 40, 2],   
-              [22, 35, 2],   
-              [22, 30, 2],   
-              [22, 25, 2],    
-              [22, 20, 2]  
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [35, 20, 2]}
-        ]
-      },
-      {
-        "name": "level3",
-        "z": 7,
-        "floorPlane": {
-          "minX": 5,
-          "maxX": 40,
-          "minY": 30,
-          "maxY": 75
-        },
-        "classrooms": [
-          {"name": "A303", "coordinates": [10, 60, 7], "size": [10, 8]},
-          {"name": "A304", "coordinates": [20, 60, 7], "size": [10, 8]},
-          {"name": "A305", "coordinates": [30, 60, 7], "size": [10, 8]},
-          {"name": "A306", "coordinates": [30, 40, 7], "size": [10, 8]},
-          {"name": "A307", "coordinates": [15, 30, 7], "size": [5, 8]},
-          {"name": "A308", "coordinates": [15, 40, 7], "size": [5, 8]},
-          {"name": "A309", "coordinates": [10, 40, 7], "size": [5, 8]},
-          {"name": "A310", "coordinates": [10, 30, 7], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "name": "mainCorridor",
-            "points": [
-              [10, 55, 7],  
-              [15, 55, 7],   
-              [20, 55, 7],   
-              [25, 55, 7],   
-              [30, 55, 7],   
-              [35, 55, 7],   
-              [40, 55, 7]   
-            ]
-          },
-          {
-            "points": [
-              [25, 60, 7],  
-              [25, 55, 7], 
-              [25, 50, 7],  
-              [25, 45, 7],   
-              [25, 40, 7],   
-              [25, 35, 7],  
-              [25, 30, 7] 
-            ]
-          },
-          {
-            "name": "connectToBuildingC",
-            "points": [
-              [40, 55, 7],  
-              [45, 55, 7],  
-              [50, 55, 7],
-              [53, 55, 7]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [30, 30, 7]}
-        ]
-      },
-      {
-        "name": "level4",
-        "z": 12,
-        "floorPlane": {
-          "minX": 5,
-          "maxX": 45,
-          "minY": 25,
-          "maxY": 75
-        },
-        "classrooms": [
-          {"name": "A403", "coordinates": [10, 60, 12], "size": [5, 8]},
-          {"name": "A404", "coordinates": [15, 60, 12], "size": [5, 8]},
-          {"name": "A405", "coordinates": [20, 60, 12], "size": [5, 8]},
-          {"name": "A406", "coordinates": [25, 60, 12], "size": [5, 8]},
-          {"name": "A407", "coordinates": [30, 60, 12], "size": [5, 8]},
-          {"name": "A408", "coordinates": [35, 60, 12], "size": [5, 8]},
-          {"name": "A414", "coordinates": [12, 40, 12], "size": [4, 8]},
-          {"name": "A413", "coordinates": [16, 40, 12], "size": [4, 8]},
-          {"name": "A412", "coordinates": [20, 40, 12], "size": [5, 8]},
-          {"name": "A410", "coordinates": [30, 40, 12], "size": [5, 8]},
-          {"name": "A409", "coordinates": [35, 40, 12], "size": [5, 8]},
-          {"name": "A415", "coordinates": [12, 30, 12], "size": [5, 8]},
-          {"name": "A411", "coordinates": [17, 30, 12], "size": [8, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [10, 55, 12],  
-              [15, 55, 12],  
-              [20, 55, 12],  
-              [25, 55, 12],  
-              [30, 55, 12], 
-              [35, 55, 12], 
-              [40, 55, 12]   
-            ]
-          },
-          {
-            "points": [
-              [27, 60, 12],  
-              [27, 55, 12],  
-              [27, 50, 12],  
-              [27, 45, 12], 
-              [27, 40, 12],  
-              [27, 35, 12], 
-              [27, 30, 12]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [30, 30, 12]}
-        ]
-      },
-      {
-        "name": "level5",
-        "z": 17,
-        "floorPlane": {
-          "minX": 5,
-          "maxX": 45,
-          "minY": 25,
-          "maxY": 75
-        },
-        "classrooms": [
-          {"name": "US Gym", "coordinates": [10, 30, 17], "size": [30, 40]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [10, 55, 17],  
-              [15, 55, 17],  
-              [20, 55, 17],  
-              [25, 55, 17],  
-              [30, 55, 17], 
-              [35, 55, 17], 
-              [40, 55, 17]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs1", "coordinates": [30, 30, 17]}
-        ]
-      }
-    ],
-    "connections": [
-      {"from": ["Stairs1", "lowerLevel"], "to": ["Stairs1", "level1"]},
-      {"from": ["Stairs1", "level1"], "to": ["Stairs1", "level2"]},
-      {"from": ["Stairs1", "level2"], "to": ["Stairs1", "level3"]},
-      {"from": ["Stairs1", "level3"], "to": ["Stairs1", "level4"]},
-      {"from": ["Stairs1", "level4"], "to": ["Stairs1", "level5"]},
-      {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
-      {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
-      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToA", "level1"], "to": ["mainCorridor", "level1"]}
-    ]
-  },
-  "buildingB": {
-    "levels": [
-      {
-        "name": "lowerLevel",
-        "z": -9,
-        "floorPlane": {
-          "minX": 0,
-          "maxX": 40,
-          "minY": -80,
-          "maxY": -30
-        },
-        "classrooms": [
-          {"name": "CANTEEN", "coordinates": [10, -70, -9], "size": [25, 20]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [22, -70, -9],
-              [22, -65, -9],
-              [22, -60, -9],
-              [22, -55, -9],
-              [22, -50, -9]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "StairsB1", "coordinates": [35, -60, -9]},
-          {"name": "StairsB2", "coordinates": [5, -60, -9]}
-        ]
-      },
-      {
-        "name": "level1",
-        "z": -3,
-        "floorPlane": {
-          "minX": 0,
-          "maxX": 40,
-          "minY": -80,
-          "maxY": -30
-        },
-        "classrooms": [
-          {"name": "CANTEEN", "coordinates": [10, -70, -3], "size": [25, 20]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [22, -70, -3],
-              [22, -65, -3],
-              [22, -60, -3],
-              [22, -55, -3],
-              [22, -50, -3]
-            ]
-          },
-          {
-            "name": "connectToBuildingAAndC",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [22, -30, -3],
-              [22, -50, -3]
-            ]
-          },
-          {
-            "name": "gateToB",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, -30, -3]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "StairsB1", "coordinates": [35, -60, -3]},
-          {"name": "StairsB2", "coordinates": [5, -60, -3]}
-        ]
-      },
-      {
-        "name": "level3",
-        "z": 2,
-        "floorPlane": {
-          "minX": 0,
-          "maxX": 40,
-          "minY": -80,
-          "maxY": -30
-        },
-        "classrooms": [
-          {"name": "THEATER", "coordinates": [10, -70, 2], "size": [25, 20]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [22, -70, 2],
-              [22, -65, 2],
-              [22, -60, 2],
-              [22, -55, 2],
-              [22, -50, 2]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "StairsB1", "coordinates": [35, -60, 2]},
-          {"name": "StairsB2", "coordinates": [5, -60, 2]}
-        ]
-      }
-    ],
-    "connections": [
-      {"from": ["StairsB1", "lowerLevel"], "to": ["StairsB1", "level1"]},
-      {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
-      {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
-      {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
-      {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]}
-    ]
-  },
-  "buildingC": {
-    "levels": [
-      {
-        "name": "lowerLevel",
-        "z": -9,
-        "floorPlane": {
-          "minX": 65,
-          "maxX": 110,
-          "minY": 23,
-          "maxY": 73
-        },
-        "classrooms": [
-          {"name": "C009", "coordinates": [66, 60, -9], "size": [5, 8]},
-          {"name": "C011", "coordinates": [70, 60, -9], "size": [5, 8]},
-          {"name": "C013", "coordinates": [75, 60, -9], "size": [5, 8]},
-          {"name": "C015", "coordinates": [85, 60, -9], "size": [5, 8]},
-          {"name": "C017", "coordinates": [90, 60, -9], "size": [5, 8]},
-          {"name": "C019AB", "coordinates": [100, 60, -9], "size": [5, 8]},
-          {"name": "C021", "coordinates": [100, 48, -9], "size": [5, 8]},
-          {"name": "C025", "coordinates": [100, 34, -9], "size": [5, 10]},
-          {"name": "C020", "coordinates": [90, 48, -9], "size": [5, 8]},
-          {"name": "C024", "coordinates": [90, 34, -9], "size": [5, 8]},
-          {"name": "C007", "coordinates": [66, 48, -9], "size": [5, 8]},
-          {"name": "C005", "coordinates": [66, 42, -9], "size": [5, 8]},
-          {"name": "C003", "coordinates": [66, 34, -9], "size": [5, 8]},
-          {"name": "C001", "coordinates": [66, 26, -9], "size": [5, 8]},
-          {"name": "C006", "coordinates": [72, 42, -9], "size": [3, 8]},
-          {"name": "C004", "coordinates": [72, 34, -9], "size": [3, 8]},
-          {"name": "C002", "coordinates": [72, 26, -9], "size": [3, 8]},
-          {"name": "C012", "coordinates": [75, 48, -9], "size": [5, 8]},
-          {"name": "C016", "coordinates": [90, 48, -9], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [66, 58, -9],  
-              [70, 58, -9], 
-              [75, 58, -9],   
-              [80, 58, -9],   
-              [85, 58, -9],   
-              [90, 58, -9],   
-              [95, 58, -9],   
-              [100, 58, -9]    
-            ]
-          },
-          {
-            "points": [
-              [97, 60, -9],  
-              [97, 55, -9], 
-              [97, 50, -9],  
-              [97, 45, -9],   
-              [97, 40, -9],   
-              [97, 35, -9],  
-              [97, 30, -9] 
-            ]
-          },
-          {
-            "points": [
-              [68, 60, -9],  
-              [68, 55, -9], 
-              [68, 50, -9],  
-              [68, 45, -9],   
-              [68, 40, -9],   
-              [68, 35, -9],  
-              [68, 30, -9] 
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs2", "coordinates": [98, 26, -9]},
-          {"name": "Stairs3", "coordinates": [68, 60, -9]},  
-          {"name": "Stairs4", "coordinates": [98, 60, -9]}, 
-          {"name": "Stairs5", "coordinates": [68, 26, -9]}   
-        ]
-      },
-      {
-        "name": "level1",
-        "z": -3,
-        "floorPlane": {
-          "minX": 65,
-          "maxX": 110,
-          "minY": 23,
-          "maxY": 73
-        },
-        "classrooms": [
-          {"name": "PLAZA", "coordinates": [66, 68, -3], "size": [5, 8]},
-          {"name": "C109", "coordinates": [72, 60, -3], "size": [5, 8]},
-          {"name": "C111", "coordinates": [77, 60, -3], "size": [5, 8]},
-          {"name": "C113", "coordinates": [82, 60, -3], "size": [5, 8]},
-          {"name": "C115", "coordinates": [87, 60, -3], "size": [3, 8]},
-          {"name": "C117", "coordinates": [90, 60, -3], "size": [5, 8]},
-          {"name": "C119", "coordinates": [100, 60, -3], "size": [5, 8]},
-          {"name": "C129", "coordinates": [100, 48, -3], "size": [5, 8]},
-          {"name": "C131", "coordinates": [100, 40, -3], "size": [5, 8]},
-          {"name": "C133", "coordinates": [100, 32, -3], "size": [5, 8]},
-          {"name": "C135", "coordinates": [100, 24, -3], "size": [5, 8]},
-          {"name": "C134", "coordinates": [90, 40, -3], "size": [5, 8]},
-          {"name": "C138", "coordinates": [90, 24, -3], "size": [5, 8]},
-          {"name": "SCHOOL CLINIC", "coordinates": [66, 26, -3], "size": [5, 8]},
-          {"name": "LOWER SCHOOL LIBRATY", "coordinates": [72, 26, -3], "size": [3, 8]},
-          {"name": "C112", "coordinates": [77, 48, -3], "size": [5, 8]},
-          {"name": "C114", "coordinates": [82, 48, -3], "size": [2, 8]},
-          {"name": "C116", "coordinates": [84, 48, -3], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [66, 58, -3],  
-              [70, 58, -3], 
-              [75, 58, -3],   
-              [80, 58, -3],   
-              [85, 58, -3],   
-              [90, 58, -3],   
-              [95, 58, -3],   
-              [100, 58, -3]    
-            ]
-          },
-          {
-            "points": [
-              [97, 60, -3],  
-              [97, 55, -3], 
-              [97, 50, -3],  
-              [97, 45, -3],   
-              [97, 40, -3],   
-              [97, 35, -3],  
-              [97, 30, -3] 
-            ]
-          },
-          {
-            "points": [
-              [68, 60, -3],  
-              [68, 55, -3], 
-              [68, 50, -3],  
-              [68, 45, -3],   
-              [68, 40, -3],   
-              [68, 35, -3],  
-              [68, 30, -3],
-              [68, 26, -3]
-            ]
-          },
-          {
-            "name": "connectToBuildingA",
-            "points": [
-              [53, 20, -3],  
-              [58, 22, -3],  
-              [63, 24, -3],  
-              [65, 26, -3],
-              [68, 26, -3]
-            ]
-          },
-          {
-            "name": "connectToBuildingB",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [66, 26, -3],
-              [22, -30, -3]
-            ]
-          },
-          {
-            "name": "gateToC",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [66, 26, -3]
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs2", "coordinates": [98, 26, -3]},
-          {"name": "Stairs3", "coordinates": [68, 60, -3]},  
-          {"name": "Stairs4", "coordinates": [98, 60, -3]}, 
-          {"name": "Stairs5", "coordinates": [68, 26, -3]}   
-        ]
-      },
-      {
-        "name": "level2",
-        "z": 2,
-        "floorPlane": {
-          "minX": 65,
-          "maxX": 110,
-          "minY": 23,
-          "maxY": 73
-        },
-        "classrooms": [
-          {"name": "C209", "coordinates": [66, 60, 2], "size": [2, 8]},
-          {"name": "C211", "coordinates": [68, 60, 2], "size": [2, 8]},
-          {"name": "C213", "coordinates": [72, 60, 2], "size": [5, 8]},
-          {"name": "C215", "coordinates": [77, 60, 2], "size": [5, 8]},
-          {"name": "C218", "coordinates": [77, 48, 2], "size": [5, 8]},
-          {"name": "C223,227", "coordinates": [100, 60, 2], "size": [5, 8]},
-          {"name": "C229", "coordinates": [100, 48, 2], "size": [5, 8]},
-          {"name": "C231", "coordinates": [100, 40, 2], "size": [5, 8]},
-          {"name": "C234", "coordinates": [90, 40, 2], "size": [5, 8]},
-          {"name": "C235", "coordinates": [100, 26, 2], "size": [5, 8]},
-          {"name": "C238", "coordinates": [90, 26, 2], "size": [5, 8]},
-          {"name": "C207", "coordinates": [66, 48, 2], "size": [5, 8]},
-          {"name": "C205", "coordinates": [66, 42, 2], "size": [5, 8]},
-          {"name": "C203", "coordinates": [66, 34, 2], "size": [5, 8]},
-          {"name": "C201", "coordinates": [66, 26, 2], "size": [5, 8]},
-          {"name": "C206", "coordinates": [72, 42, 2], "size": [3, 8]},
-          {"name": "C204", "coordinates": [72, 34, 2], "size": [3, 8]},
-          {"name": "C202", "coordinates": [72, 26, 2], "size": [3, 8]},
-          {"name": "C219", "coordinates": [85, 60, 2], "size": [5, 8]},
-          {"name": "C222", "coordinates": [85, 48, 2], "size": [5, 8]},
-          {"name": "C221", "coordinates": [90, 60, 2], "size": [5, 8]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [66, 58, 2],  
-              [70, 58, 2], 
-              [75, 58, 2],   
-              [80, 58, 2],   
-              [85, 58, 2],   
-              [90, 58, 2],   
-              [95, 58, 2],   
-              [100, 58, 2]    
-            ]
-          },
-          {
-            "points": [
-              [97, 60, 2],  
-              [97, 55, 2], 
-              [97, 50, 2],  
-              [97, 45, 2],   
-              [97, 40, 2],   
-              [97, 35, 2],  
-              [97, 30, 2] 
-            ]
-          },
-          {
-            "points": [
-              [68, 60, 2],  
-              [68, 55, 2], 
-              [68, 50, 2],  
-              [68, 45, 2],   
-              [68, 40, 2],   
-              [68, 35, 2],  
-              [68, 30, 2] 
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs2", "coordinates": [98, 26, 2]},
-          {"name": "Stairs3", "coordinates": [68, 60, 2]},  
-          {"name": "Stairs4", "coordinates": [98, 60, 2]}, 
-          {"name": "Stairs5", "coordinates": [68, 26, 2]}   
-        ]
-      },
-      {
-        "name": "level3",
-        "z": 7,
-        "floorPlane": {
-          "minX": 65,
-          "maxX": 110,
-          "minY": 23,
-          "maxY": 73
-        },
-        "classrooms": [
-          {"name": "C311", "coordinates": [70, 60, 7], "size": [5, 8]},
-          {"name": "C313", "coordinates": [75, 60, 7], "size": [5, 8]},
-          {"name": "C315", "coordinates": [85, 60, 7], "size": [5, 8]},
-          {"name": "C317", "coordinates": [90, 60, 7], "size": [5, 8]},
-          {"name": "C319", "coordinates": [100, 60, 7], "size": [5, 8]},
-          {"name": "C322", "coordinates": [90, 42, 7], "size": [5, 8]},
-          {"name": "C324", "coordinates": [90, 34, 7], "size": [5, 8]},
-          {"name": "C326", "coordinates": [90, 26, 7], "size": [5, 8]},
-          {"name": "C321", "coordinates": [100, 48, 7], "size": [5, 8]},
-          {"name": "C323", "coordinates": [100, 42, 7], "size": [5, 8]},
-          {"name": "C325", "coordinates": [100, 34, 7], "size": [5, 8]},
-          {"name": "C327", "coordinates": [100, 26, 7], "size": [5, 8]},
-          {"name": "Lower School Gym", "coordinates": [68, 26, 7], "size": [7, 22]}
-        ],
-        "corridors": [
-          {
-            "points": [
-              [65, 55, 7],  
-              [70, 55, 7], 
-              [75, 55, 7],   
-              [80, 55, 7],   
-              [85, 55, 7],   
-              [90, 55, 7],   
-              [95, 55, 7],   
-              [100, 55, 7]   
-            ]
-          },
-          {
-            "points": [
-              [97, 60, 7],  
-              [97, 55, 7], 
-              [97, 50, 7],  
-              [97, 45, 7],   
-              [97, 40, 7],   
-              [97, 35, 7],  
-              [97, 30, 7] 
-            ]
-          },
-          {
-            "name": "connectToBuildingA",
-            "points": [
-              [53, 55, 7],  
-              [58, 55, 7],  
-              [63, 55, 7],
-              [65, 55, 7]  
-            ]
-          }
-        ],
-        "stairs": [
-          {"name": "Stairs2", "coordinates": [98, 26, 7]},
-          {"name": "Stairs3", "coordinates": [68, 60, 7]}, 
-          {"name": "Stairs4", "coordinates": [98, 60, 7]},  
-          {"name": "Stairs5", "coordinates": [68, 26, 7]}   
-        ]
-      }
-    ],
-    "connections": [
-      {"from": ["Stairs2", "lowerLevel"], "to": ["Stairs2", "level1"]},
-      {"from": ["Stairs2", "level1"], "to": ["Stairs2", "level2"]},
-      {"from": ["Stairs2", "level2"], "to": ["Stairs2", "level3"]},
-      {"from": ["Stairs3", "lowerLevel"], "to": ["Stairs3", "level1"]},
-      {"from": ["Stairs3", "level1"], "to": ["Stairs3", "level2"]},
-      {"from": ["Stairs3", "level2"], "to": ["Stairs3", "level3"]},
-      {"from": ["Stairs4", "lowerLevel"], "to": ["Stairs4", "level1"]},
-      {"from": ["Stairs4", "level1"], "to": ["Stairs4", "level2"]},
-      {"from": ["Stairs4", "level2"], "to": ["Stairs4", "level3"]},
-      {"from": ["Stairs5", "lowerLevel"], "to": ["Stairs5", "level1"]},
-      {"from": ["Stairs5", "level1"], "to": ["Stairs5", "level2"]},
-      {"from": ["Stairs5", "level2"], "to": ["Stairs5", "level3"]},
-      {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
-      {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
-      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToC", "level1"], "to": ["connectToBuildingB", "level1"]}
-    ]
-  },
-  "gate": {
-    "levels": [
-      {
-        "name": "level1",
-        "z": -3,
-        "floorPlane": {
-          "minX": -40,
-          "maxX": -20,
-          "minY": -40,
-          "maxY": -20
-        },
-        "classrooms": [
-          {"name": "Main Gate", "coordinates": [-30, -30, -3], "size": [10, 10]}
-        ],
-        "corridors": [
-          {
-            "name": "gateToA",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, 18, -3]
-            ]
-          },
-          {
-            "name": "gateToB",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, -30, -3]
-            ]
-          },
-          {
-            "name": "gateToC",
-            "type": "external",
-            "style": {
-              "color": "brown",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [66, 26, -3]
-            ]
-          }
-        ]    
-      }
-    ],
-    "connections": [
-      {"from": ["gateToA", "level1"], "to": ["ENTRANCE", "level1"]},
-      {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
-    ]
-  }
+import json
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+import os
+
+plt.switch_backend('Agg')
+
+st.set_page_config(page_title="SCIS Navigation System")
+
+# --------------------------
+# Google Sheets 配置（适配 Streamlit Secrets TOML）
+# --------------------------
+SHEET_NAME = 'Navigation visitors'  # 你的Google表格名称
+SCOPE = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+]
+
+# 从 Streamlit Secrets 读取密钥
+def get_credentials():
+    try:
+        service_account_info = st.secrets["google_service_account"]
+        return Credentials.from_service_account_info(service_account_info)
+    except KeyError:
+        st.error("未找到google_service_account配置，请检查Streamlit Secrets")
+        return None
+    except Exception as e:
+        st.error(f"密钥加载失败: {str(e)}")
+        return None
+
+def init_google_sheet():
+    """初始化Google Sheets连接，统计访问次数"""
+    try:
+        creds = get_credentials()
+        if not creds:
+            return None
+        client = gspread.authorize(creds)
+        
+        # 打开/创建表格
+        try:
+            sheet = client.open(SHEET_NAME)
+        except gspread.exceptions.SpreadsheetNotFound:
+            sheet = client.create(SHEET_NAME)
+            # 可选：分享表格给你的邮箱（替换为自己的邮箱）
+            # sheet.share('your-email@example.com', perm_type='user', role='writer')
+        
+        # 打开/创建统计工作表
+        try:
+            stats_worksheet = sheet.worksheet("Access_Stats")
+        except gspread.exceptions.WorksheetNotFound:
+            stats_worksheet = sheet.add_worksheet(title="Access_Stats", rows=1000, cols=3)
+            stats_worksheet.append_row(["Timestamp", "Access_Count", "Total_Accesses"])
+            stats_worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 1, 1])
+        
+        return stats_worksheet
+    except Exception as e:
+        st.warning(f"Google Sheets初始化失败: {str(e)}。访问统计功能将不可用。")
+        return None
+
+# --------------------------
+# 访问次数统计逻辑
+# --------------------------
+def update_access_count(worksheet):
+    """更新访问次数统计"""
+    if not worksheet:
+        return 0
+        
+    try:
+        # 获取所有记录（跳过表头）
+        records = worksheet.get_all_values()[1:]
+        if not records:
+            total = 1
+        else:
+            total = int(records[-1][2]) + 1
+        
+        # 添加新记录
+        worksheet.append_row([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            1,
+            total
+        ])
+        return total
+    except Exception as e:
+        st.warning(f"更新访问次数失败: {str(e)}")
+        return 0
+
+def get_total_accesses(worksheet):
+    """获取总访问次数"""
+    if not worksheet:
+        return 0
+        
+    try:
+        records = worksheet.get_all_values()[1:]
+        if not records:
+            return 0
+        return int(records[-1][2])
+    except Exception as e:
+        st.warning(f"获取总访问次数失败: {str(e)}")
+        return 0
+
+# --------------------------
+# 颜色配置（适配Gate）
+# --------------------------
+COLORS = {
+    'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
+    'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 7: 'orange', 12: 'purple', 17: 'red', 0: 'gold'},
+    'corridor_line': {'A': 'cyan', 'B': 'forestgreen', 'C': 'salmon', 'Gate': 'gold'},
+    'corridor_node': 'navy',
+    'corridor_label': 'darkblue',
+    'stair': {
+        'Stairs1': '#FF5733',
+        'Stairs2': '#33FF57',
+        'Stairs3': '#3357FF',
+        'Stairs4': '#FF33F5',
+        'Stairs5': '#F5FF33',
+        'StairsB1': '#33FFF5',
+        'StairsB2': '#FF9933',
+        'GateStairs': '#D4AF37'
+    },
+    'stair_label': 'darkred',
+    'classroom_label': 'black',
+    'path': 'red',
+    'start_marker': 'limegreen',
+    'start_label': 'green',
+    'end_marker': 'magenta',
+    'end_label': 'purple',
+    'connect_corridor': 'gold',
+    'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}
 }
+
+# --------------------------
+# 加载校园数据（适配JSON文件名：school_data_detailed.json）
+# --------------------------
+def load_school_data(file_path="school_data_detailed.json"):
+    """加载校园JSON数据（适配指定文件名）"""
+    try:
+        # 优先从文件加载（核心修改：文件名改为school_data_detailed.json）
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # 兼容检查：确保gate存在
+        if 'gate' not in data:
+            # 自动生成基础gate数据（备用）
+            data['gate'] = {
+                "levels": [
+                    {
+                        "name": "level1",
+                        "z": -3,
+                        "floorPlane": {
+                            "minX": -40,
+                            "maxX": -20,
+                            "minY": -40,
+                            "maxY": -20
+                        },
+                        "classrooms": [
+                            {"name": "Main Gate", "coordinates": [-30, -30, -3], "size": [10, 10]}
+                        ],
+                        "corridors": [
+                            {
+                                "name": "gateToA",
+                                "type": "external",
+                                "style": {"color": "brown", "lineType": "dashed"},
+                                "points": [[-30, -30, -3], [22, 18, -3]]
+                            },
+                            {
+                                "name": "gateToB",
+                                "type": "external",
+                                "style": {"color": "brown", "lineType": "dashed"},
+                                "points": [[-30, -30, -3], [22, -30, -3]]
+                            },
+                            {
+                                "name": "gateToC",
+                                "type": "external",
+                                "style": {"color": "brown", "lineType": "dashed"},
+                                "points": [[-30, -30, -3], [66, 26, -3]]
+                            }
+                        ],
+                        "stairs": [{"name": "GateStairs", "coordinates": [-30, -30, -3]}]
+                    }
+                ],
+                "connections": [
+                    {"from": ["gateToA", "level1"], "to": ["ENTRANCE", "level1"]},
+                    {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
+                    {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
+                ]
+            }
+        
+        return data
+    except FileNotFoundError:
+        st.error(f"未找到数据文件: {file_path}，请确认文件存在且路径正确")
+        return None
+    except json.JSONDecodeError:
+        st.error("JSON文件格式错误，请检查文件内容")
+        return None
+    except Exception as e:
+        st.error(f"加载校园数据失败: {str(e)}")
+        return None
+
+# --------------------------
+# 3D地图绘制
+# --------------------------
+def plot_3d_map(school_data, display_options=None):
+    """绘制3D校园地图"""
+    fig = plt.figure(figsize=(35, 30))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # 默认显示配置
+    if display_options is None:
+        display_options = {
+            'start_level': None,
+            'end_level': None,
+            'path_stairs': set(),
+            'show_all': True,
+            'path': [],
+            'start_building': None,
+            'end_building': None
+        }
+    
+    show_all = display_options['show_all']
+    start_level = display_options['start_level']
+    end_level = display_options['end_level']
+    start_building = display_options['start_building']
+    end_building = display_options['end_building']
+    path = display_options['path']
+    
+    # 建筑标签位置缓存
+    building_label_positions = {}
+    
+    # 遍历所有建筑
+    building_mapping = {
+        'buildingA': 'A',
+        'buildingB': 'B',
+        'buildingC': 'C',
+        'gate': 'Gate'
+    }
+    
+    for building_key, building_data in school_data.items():
+        building_name = building_mapping.get(building_key, building_key)
+        
+        # 遍历建筑的所有楼层
+        for level in building_data['levels']:
+            level_name = level['name']
+            z = level['z']
+            
+            # 控制楼层显示
+            if not show_all:
+                # 只显示起点/终点楼层
+                if (start_building == building_name and level_name != start_level) and \
+                   (end_building == building_name and level_name != end_level):
+                    continue
+            
+            # 绘制楼层平面
+            floor = level['floorPlane']
+            x = [floor['minX'], floor['maxX'], floor['maxX'], floor['minX'], floor['minX']]
+            y = [floor['minY'], floor['minY'], floor['maxY'], floor['maxY'], floor['minY']]
+            z_floor = [z] * 5
+            ax.plot3D(x, y, z_floor, color=COLORS['floor_z'].get(z, 'gray'), alpha=0.3)
+            
+            # 记录建筑标签位置（取第一个楼层的中心）
+            if building_name not in building_label_positions:
+                center_x = (floor['minX'] + floor['maxX']) / 2
+                center_y = (floor['minY'] + floor['maxY']) / 2
+                building_label_positions[building_name] = (center_x, center_y, z + 1)
+            
+            # 绘制教室
+            for classroom in level.get('classrooms', []):
+                cx, cy, cz = classroom['coordinates']
+                w, h = classroom['size']
+                
+                # 绘制教室立方体
+                x_c = [cx, cx+w, cx+w, cx, cx]
+                y_c = [cy, cy, cy+h, cy+h, cy]
+                z_c = [cz] * 5
+                ax.plot3D(x_c, y_c, z_c, color=COLORS['building'][building_name], alpha=0.7)
+                ax.text(cx + w/2, cy + h/2, cz, classroom['name'], 
+                        color=COLORS['classroom_label'], fontsize=8, ha='center')
+            
+            # 绘制走廊
+            for corridor in level.get('corridors', []):
+                points = corridor['points']
+                x_corr = [p[0] for p in points]
+                y_corr = [p[1] for p in points]
+                z_corr = [p[2] for p in points]
+                
+                # 走廊样式
+                corr_color = COLORS['corridor_line'].get(building_name, 'gray')
+                if corridor.get('type') == 'external':
+                    linestyle = '--' if corridor.get('style', {}).get('lineType') == 'dashed' else '-'
+                    color = corridor.get('style', {}).get('color', corr_color)
+                else:
+                    linestyle = '-'
+                    color = corr_color
+                
+                ax.plot3D(x_corr, y_corr, z_corr, color=color, linestyle=linestyle, linewidth=2)
+                
+                # 绘制走廊节点
+                for i, (x, y, z) in enumerate(points):
+                    ax.scatter(x, y, z, color=COLORS['corridor_node'], s=20)
+                    if corridor.get('name') and i == 0:
+                        ax.text(x, y, z, corridor['name'], 
+                                color=COLORS['corridor_label'], fontsize=7, ha='center')
+            
+            # 绘制楼梯
+            for stair in level.get('stairs', []):
+                sx, sy, sz = stair['coordinates']
+                ax.scatter(sx, sy, sz, color=COLORS['stair'].get(stair['name'], 'red'), s=50, marker='^')
+                ax.text(sx, sy, sz + 0.5, stair['name'], 
+                        color=COLORS['stair_label'], fontsize=9, ha='center')
+    
+    # 绘制建筑标签
+    for building_name, (x, y, z) in building_label_positions.items():
+        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
+                         facecolor=COLORS['building'][building_name], alpha=0.7)
+        ax.text(x, y, z, f"Building {building_name}", 
+                color=COLORS['building_label'][building_name], fontsize=12, 
+                ha='center', va='center', bbox=bbox_props, weight='bold')
+    
+    # 绘制导航路径
+    if path and not show_all:
+        try:
+            x_path = []
+            y_path = []
+            z_path = []
+            labels = []
+            
+            for node_id in path:
+                if node_id in graph.nodes:
+                    coords = graph.nodes[node_id]['coordinates']
+                    x_path.append(coords[0])
+                    y_path.append(coords[1])
+                    z_path.append(coords[2])
+                    
+                    # 节点标签
+                    node_type = graph.nodes[node_id]['type']
+                    if node_type == 'classroom':
+                        labels.append(graph.nodes[node_id]['name'])
+                    elif node_type == 'stair':
+                        labels.append(graph.nodes[node_id]['name'])
+                    else:
+                        labels.append("")
+            
+            # 绘制路径线
+            ax.plot3D(x_path, y_path, z_path, color=COLORS['path'], linewidth=3, marker='o', markersize=5)
+            
+            # 起点/终点标记
+            if x_path:
+                # 起点
+                ax.scatter(x_path[0], y_path[0], z_path[0], 
+                          color=COLORS['start_marker'], s=100, marker='*')
+                ax.text(x_path[0], y_path[0], z_path[0] + 1, 
+                        f"Start: {labels[0] if labels[0] else 'Gate'}", 
+                        color=COLORS['start_label'], fontsize=10, ha='center')
+                
+                # 终点
+                ax.scatter(x_path[-1], y_path[-1], z_path[-1], 
+                          color=COLORS['end_marker'], s=100, marker='*')
+                ax.text(x_path[-1], y_path[-1], z_path[-1] + 1, 
+                        f"End: {labels[-1] if labels[-1] else 'Gate'}", 
+                        color=COLORS['end_label'], fontsize=10, ha='center')
+        except Exception as e:
+            st.warning(f"绘制导航路径失败: {str(e)}")
+    
+    # 设置坐标轴标签
+    ax.set_xlabel('X Coordinate', fontsize=18, weight='bold')
+    ax.set_ylabel('Y Coordinate', fontsize=18, weight='bold')
+    ax.set_zlabel('Z Height (Floor)', fontsize=18, weight='bold')
+    ax.set_title('SCIS Campus 3D Navigation Map (Gate/A/B/C)', fontsize=24, weight='bold', pad=20)
+    
+    # 调整视角
+    ax.view_init(elev=20, azim=45)
+    ax.grid(True, alpha=0.3, linewidth=2)
+    
+    return fig, ax
+
+# --------------------------
+# 图结构（导航核心）
+# --------------------------
+class Graph:
+    def __init__(self):
+        self.nodes = {}       # 节点字典: {node_id: {'building': '', 'type': '', 'name': '', 'level': '', 'coordinates': [], 'neighbors': {}}}
+        self.node_id_map = {} # 映射: {(building_key, type, name, level): node_id}
+
+    def add_node(self, building_key, node_type, name, level, coordinates):
+        """添加节点"""
+        building_name = {
+            'buildingA': 'A',
+            'buildingB': 'B',
+            'buildingC': 'C',
+            'gate': 'Gate'
+        }.get(building_key, building_key)
+        
+        # 生成节点ID
+        if node_type == 'corridor':
+            node_id = f"{building_name}-corr-{name}@{level}"
+        elif node_type == 'stair':
+            node_id = f"{building_name}-stair-{name}@{level}"
+        elif node_type == 'classroom':
+            node_id = f"{building_name}-class-{name}@{level}"
+        else:
+            node_id = f"{building_name}-{node_type}-{name}@{level}"
+        
+        # 存储节点信息
+        self.nodes[node_id] = {
+            'building': building_name,
+            'building_key': building_key,
+            'type': node_type,
+            'name': name,
+            'level': level,
+            'coordinates': coordinates,
+            'neighbors': {}
+        }
+        
+        # 建立映射
+        map_key = (building_key, node_type, name, level)
+        self.node_id_map[map_key] = node_id
+        
+        return node_id
+
+    def add_edge(self, node1_id, node2_id, weight):
+        """添加边（双向）"""
+        if node1_id in self.nodes and node2_id in self.nodes:
+            self.nodes[node1_id]['neighbors'][node2_id] = weight
+            self.nodes[node2_id]['neighbors'][node1_id] = weight
+
+def euclidean_distance(coords1, coords2):
+    """计算欧几里得距离"""
+    return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
+
+def build_navigation_graph(school_data):
+    """构建导航图（支持Gate与A/B/C直接连接）"""
+    graph = Graph()
+    
+    # 1. 添加所有节点
+    for building_key, building_data in school_data.items():
+        # 遍历楼层
+        for level in building_data['levels']:
+            level_name = level['name']
+            
+            # 添加教室节点
+            for classroom in level.get('classrooms', []):
+                graph.add_node(
+                    building_key,
+                    'classroom',
+                    classroom['name'],
+                    level_name,
+                    classroom['coordinates']
+                )
+            
+            # 添加楼梯节点
+            for stair in level.get('stairs', []):
+                graph.add_node(
+                    building_key,
+                    'stair',
+                    stair['name'],
+                    level_name,
+                    stair['coordinates']
+                )
+            
+            # 添加走廊节点
+            for corridor in level.get('corridors', []):
+                corr_name = corridor.get('name', f"corr_{id(corridor)}")
+                for i, point in enumerate(corridor['points']):
+                    graph.add_node(
+                        building_key,
+                        'corridor',
+                        f"{corr_name}-p{i}",
+                        level_name,
+                        point
+                    )
+    
+    # 2. 添加内部边（同建筑/同楼层）
+    for building_key, building_data in school_data.items():
+        for level in building_data['levels']:
+            level_name = level['name']
+            
+            # 2.1 走廊内部节点连接
+            for corridor in level.get('corridors', []):
+                corr_name = corridor.get('name', f"corr_{id(corridor)}")
+                points = corridor['points']
+                
+                # 连接相邻的走廊点
+                for i in range(len(points) - 1):
+                    node1_id = graph.node_id_map.get((building_key, 'corridor', f"{corr_name}-p{i}", level_name))
+                    node2_id = graph.node_id_map.get((building_key, 'corridor', f"{corr_name}-p{i+1}", level_name))
+                    
+                    if node1_id and node2_id:
+                        distance = euclidean_distance(points[i], points[i+1])
+                        graph.add_edge(node1_id, node2_id, distance)
+            
+            # 2.2 教室连接到最近的走廊节点
+            for classroom in level.get('classrooms', []):
+                class_node_id = graph.node_id_map.get((building_key, 'classroom', classroom['name'], level_name))
+                if not class_node_id:
+                    continue
+                
+                # 找到最近的走廊节点
+                min_distance = float('inf')
+                nearest_corr_node = None
+                
+                # 遍历所有同楼层的走廊节点
+                for (bk, nt, nn, nl), node_id in graph.node_id_map.items():
+                    if bk == building_key and nt == 'corridor' and nl == level_name:
+                        corr_coords = graph.nodes[node_id]['coordinates']
+                        distance = euclidean_distance(classroom['coordinates'], corr_coords)
+                        if distance < min_distance:
+                            min_distance = distance
+                            nearest_corr_node = node_id
+                
+                if nearest_corr_node:
+                    graph.add_edge(class_node_id, nearest_corr_node, min_distance)
+            
+            # 2.3 楼梯连接到最近的走廊节点
+            for stair in level.get('stairs', []):
+                stair_node_id = graph.node_id_map.get((building_key, 'stair', stair['name'], level_name))
+                if not stair_node_id:
+                    continue
+                
+                # 找到最近的走廊节点
+                min_distance = float('inf')
+                nearest_corr_node = None
+                
+                for (bk, nt, nn, nl), node_id in graph.node_id_map.items():
+                    if bk == building_key and nt == 'corridor' and nl == level_name:
+                        corr_coords = graph.nodes[node_id]['coordinates']
+                        distance = euclidean_distance(stair['coordinates'], corr_coords)
+                        if distance < min_distance:
+                            min_distance = distance
+                            nearest_corr_node = node_id
+                
+                if nearest_corr_node:
+                    graph.add_edge(stair_node_id, nearest_corr_node, min_distance)
+        
+        # 2.4 建筑内部跨楼层连接（楼梯）
+        for connection in building_data.get('connections', []):
+            from_obj = connection['from']  # [name, level]
+            to_obj = connection['to']      # [name, level]
+            
+            # 判断是楼梯还是走廊连接
+            if from_obj[0] in ['Stairs1', 'Stairs2', 'Stairs3', 'Stairs4', 'Stairs5', 'StairsB1', 'StairsB2', 'GateStairs']:
+                # 楼梯连接
+                from_node_id = graph.node_id_map.get((building_key, 'stair', from_obj[0], from_obj[1]))
+                to_node_id = graph.node_id_map.get((building_key, 'stair', to_obj[0], to_obj[1]))
+            else:
+                # 走廊连接
+                from_node_id = graph.node_id_map.get((building_key, 'corridor', from_obj[0], from_obj[1]))
+                to_node_id = graph.node_id_map.get((building_key, 'corridor', to_obj[0], to_obj[1]))
+            
+            if from_node_id and to_node_id:
+                # 楼梯/走廊跨楼层距离（固定值）
+                graph.add_edge(from_node_id, to_node_id, 5.0)
+    
+    # 3. 添加建筑间外部连接（核心：Gate与A/B/C直接连接）
+    connect_level = 'level1'
+    
+    # 3.1 Gate ↔ A 直接连接
+    gate_a_from = graph.node_id_map.get(('gate', 'corridor', 'gateToA-p0', connect_level))
+    gate_a_to = graph.node_id_map.get(('buildingA', 'corridor', 'gateToA-p3', connect_level))
+    if gate_a_from and gate_a_to:
+        coords1 = graph.nodes[gate_a_from]['coordinates']
+        coords2 = graph.nodes[gate_a_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(gate_a_from, gate_a_to, distance)
+    
+    # 3.2 Gate ↔ B 直接连接
+    gate_b_from = graph.node_id_map.get(('gate', 'corridor', 'gateToB-p0', connect_level))
+    gate_b_to = graph.node_id_map.get(('buildingB', 'corridor', 'gateToB-p3', connect_level))
+    if gate_b_from and gate_b_to:
+        coords1 = graph.nodes[gate_b_from]['coordinates']
+        coords2 = graph.nodes[gate_b_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(gate_b_from, gate_b_to, distance)
+    
+    # 3.3 Gate ↔ C 直接连接
+    gate_c_from = graph.node_id_map.get(('gate', 'corridor', 'gateToC-p0', connect_level))
+    gate_c_to = graph.node_id_map.get(('buildingC', 'corridor', 'gateToC-p3', connect_level))
+    if gate_c_from and gate_c_to:
+        coords1 = graph.nodes[gate_c_from]['coordinates']
+        coords2 = graph.nodes[gate_c_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(gate_c_from, gate_c_to, distance)
+    
+    # 3.4 A ↔ B 原有连接
+    a_b_from = graph.node_id_map.get(('buildingA', 'corridor', 'connectToBuildingB-p1', connect_level))
+    a_b_to = graph.node_id_map.get(('buildingB', 'corridor', 'connectToBuildingAAndC-p1', connect_level))
+    if a_b_from and a_b_to:
+        coords1 = graph.nodes[a_b_from]['coordinates']
+        coords2 = graph.nodes[a_b_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(a_b_from, a_b_to, distance)
+    
+    # 3.5 B ↔ C 原有连接
+    b_c_from = graph.node_id_map.get(('buildingB', 'corridor', 'connectToBuildingAAndC-p0', connect_level))
+    b_c_to = graph.node_id_map.get(('buildingC', 'corridor', 'connectToBuildingB-p3', connect_level))
+    if b_c_from and b_c_to:
+        coords1 = graph.nodes[b_c_from]['coordinates']
+        coords2 = graph.nodes[b_c_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(b_c_from, b_c_to, distance)
+    
+    # 3.6 A ↔ C 原有连接（level1）
+    a_c1_from = graph.node_id_map.get(('buildingA', 'corridor', 'connectToBuildingC-p3', connect_level))
+    a_c1_to = graph.node_id_map.get(('buildingC', 'corridor', 'connectToBuildingA-p4', connect_level))
+    if a_c1_from and a_c1_to:
+        coords1 = graph.nodes[a_c1_from]['coordinates']
+        coords2 = graph.nodes[a_c1_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(a_c1_from, a_c1_to, distance)
+    
+    # 3.7 A ↔ C 原有连接（level3）
+    a_c3_from = graph.node_id_map.get(('buildingA', 'corridor', 'connectToBuildingC-p3', 'level3'))
+    a_c3_to = graph.node_id_map.get(('buildingC', 'corridor', 'connectToBuildingA-p3', 'level3'))
+    if a_c3_from and a_c3_to:
+        coords1 = graph.nodes[a_c3_from]['coordinates']
+        coords2 = graph.nodes[a_c3_to]['coordinates']
+        distance = euclidean_distance(coords1, coords2)
+        graph.add_edge(a_c3_from, a_c3_to, distance)
+    
+    return graph
+
+# --------------------------
+# 最短路径算法（Dijkstra）
+# --------------------------
+def dijkstra(graph, start_node_id):
+    """Dijkstra算法找最短路径"""
+    # 初始化距离字典
+    distances = {node: float('inf') for node in graph.nodes}
+    distances[start_node_id] = 0
+    
+    # 前驱节点字典
+    previous_nodes = {node: None for node in graph.nodes}
+    
+    # 未访问节点集合
+    unvisited = set(graph.nodes.keys())
+    
+    while unvisited:
+        # 找到当前距离最小的节点
+        current_node = min(unvisited, key=lambda node: distances[node])
+        
+        # 如果距离是无穷大，说明无法到达
+        if distances[current_node] == float('inf'):
+            break
+        
+        # 遍历邻居节点
+        for neighbor, weight in graph.nodes[current_node]['neighbors'].items():
+            if neighbor in unvisited:
+                new_distance = distances[current_node] + weight
+                if new_distance < distances[neighbor]:
+                    distances[neighbor] = new_distance
+                    previous_nodes[neighbor] = current_node
+        
+        # 标记为已访问
+        unvisited.remove(current_node)
+    
+    return distances, previous_nodes
+
+def reconstruct_path(previous_nodes, end_node_id):
+    """重构路径"""
+    path = []
+    current_node = end_node_id
+    
+    while current_node is not None:
+        path.insert(0, current_node)
+        current_node = previous_nodes[current_node]
+    
+    # 路径长度至少为2才有效
+    return path if len(path) > 1 else None
+
+def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
+    """导航主函数"""
+    # 验证建筑
+    valid_buildings = ['A', 'B', 'C', 'Gate']
+    if start_building not in valid_buildings or end_building not in valid_buildings:
+        return None, f"无效建筑！仅支持: {', '.join(valid_buildings)}", None, None
+    
+    # 映射建筑名称到key
+    building_key_map = {
+        'A': 'buildingA',
+        'B': 'buildingB',
+        'C': 'buildingC',
+        'Gate': 'gate'
+    }
+    
+    # 找到起点节点
+    start_key = building_key_map[start_building]
+    start_node_id = graph.node_id_map.get((start_key, 'classroom', start_classroom, start_level))
+    
+    # 找到终点节点
+    end_key = building_key_map[end_building]
+    end_node_id = graph.node_id_map.get((end_key, 'classroom', end_classroom, end_level))
+    
+    # 验证节点是否存在
+    if not start_node_id:
+        return None, f"起点不存在: {start_building}楼 {start_level} 层 {start_classroom}", None, None
+    if not end_node_id:
+        return None, f"终点不存在: {end_building}楼 {end_level} 层 {end_classroom}", None, None
+    
+    # 计算最短路径
+    distances, previous_nodes = dijkstra(graph, start_node_id)
+    
+    # 重构路径
+    path = reconstruct_path(previous_nodes, end_node_id)
+    if not path:
+        return None, "无法找到路径！", None, None
+    
+    # 计算总距离
+    total_distance = distances[end_node_id]
+    
+    # 生成简化路径描述
+    simplified_path = []
+    path_stairs = set()
+    
+    for node_id in path:
+        node = graph.nodes[node_id]
+        building = node['building']
+        node_type = node['type']
+        name = node['name']
+        level = node['level']
+        
+        if node_type == 'stair':
+            path_stairs.add((building, name, level))
+            simplified_path.append(f"{building}楼 {level} 层 {name}")
+        elif node_type == 'classroom':
+            simplified_path.append(f"{building}楼 {level} 层 {name}")
+        elif node_type == 'corridor' and 'connectTo' in name:
+            # 外部走廊
+            simplified_path.append(f"从{building}楼前往{name.replace('connectToBuilding', '')}楼")
+    
+    # 生成显示配置
+    display_options = {
+        'start_level': start_level,
+        'end_level': end_level,
+        'path_stairs': path_stairs,
+        'show_all': False,
+        'path': path,
+        'start_building': start_building,
+        'end_building': end_building
+    }
+    
+    return path, f"最短路径距离: {total_distance:.2f} 单位", " → ".join(simplified_path), display_options
+
+# --------------------------
+# 辅助函数：获取建筑/楼层/教室列表
+# --------------------------
+def get_building_list(school_data):
+    """获取建筑列表"""
+    buildings = []
+    if 'buildingA' in school_data:
+        buildings.append('A')
+    if 'buildingB' in school_data:
+        buildings.append('B')
+    if 'buildingC' in school_data:
+        buildings.append('C')
+    if 'gate' in school_data:
+        buildings.append('Gate')
+    return buildings
+
+def get_level_list(school_data, building_name):
+    """获取指定建筑的楼层列表"""
+    building_key_map = {
+        'A': 'buildingA',
+        'B': 'buildingB',
+        'C': 'buildingC',
+        'Gate': 'gate'
+    }
+    building_key = building_key_map.get(building_name)
+    if not building_key or building_key not in school_data:
+        return []
+    
+    return [level['name'] for level in school_data[building_key]['levels']]
+
+def get_classroom_list(school_data, building_name, level_name):
+    """获取指定建筑/楼层的教室列表"""
+    building_key_map = {
+        'A': 'buildingA',
+        'B': 'buildingB',
+        'C': 'buildingC',
+        'Gate': 'gate'
+    }
+    building_key = building_key_map.get(building_name)
+    if not building_key or building_key not in school_data:
+        return []
+    
+    # 找到对应楼层
+    for level in school_data[building_key]['levels']:
+        if level['name'] == level_name:
+            return [classroom['name'] for classroom in level.get('classrooms', [])]
+    
+    return []
+
+# --------------------------
+# 状态重置
+# --------------------------
+def reset_app_state():
+    """重置应用状态"""
+    st.session_state['display_options'] = {
+        'start_level': None,
+        'end_level': None,
+        'path_stairs': set(),
+        'show_all': True,
+        'path': [],
+        'start_building': None,
+        'end_building': None
+    }
+    st.session_state['current_path'] = None
+    st.session_state['path_message'] = ""
+    st.session_state['path_details'] = ""
+
+# --------------------------
+# 欢迎页面
+# --------------------------
+def welcome_page():
+    """欢迎页面"""
+    # 初始化Google Sheets
+    if 'worksheet' not in st.session_state:
+        st.session_state['worksheet'] = init_google_sheet()
+    
+    # 获取总访问次数
+    total_accesses = get_total_accesses(st.session_state['worksheet'])
+    
+    # 页面样式
+    st.markdown("""
+        <style>
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 80vh;
+            text-align: center;
+        }
+        .welcome-title {
+            font-size: 3rem;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+        .enter-button {
+            font-size: 1.5rem;
+            padding: 1rem 3rem;
+            border-radius: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .access-count {
+            margin-top: 2rem;
+            font-size: 1rem;
+            color: #666;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # 页面内容
+    st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="welcome-title">SCIS 校园3D导航系统</h1>', unsafe_allow_html=True)
+    
+    col = st.columns(1)
+    with col[0]:
+        if st.button('进入系统', key='enter_btn', use_container_width=True):
+            # 更新访问次数
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
+            st.rerun()
+    
+    st.markdown(f'<div class="access-count">总访问次数: {total_accesses}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --------------------------
+# 主界面
+# --------------------------
+def main_interface():
+    """主界面"""
+    # 初始化状态
+    if 'display_options' not in st.session_state:
+        reset_app_state()
+    
+    # 加载数据（自动读取school_data_detailed.json）
+    school_data = load_school_data()
+    if not school_data:
+        st.error("加载校园数据失败！请确认school_data_detailed.json文件存在")
+        return
+    
+    # 构建导航图
+    global graph
+    graph = build_navigation_graph(school_data)
+    
+    # 页面样式
+    st.markdown("""
+        <style>
+        .stApp {
+            padding-top: 1rem;
+        }
+        header {
+            display: none !important;
+        }
+        .author-tag {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 14px;
+            color: #666;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .nav-card {
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # 页面标题
+    st.subheader("🏫 SCIS 校园3D导航系统 (Gate/A/B/C楼)", divider='blue')
+    
+    # 布局
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        st.markdown('<div class="nav-card">', unsafe_allow_html=True)
+        st.markdown("#### 📍 选择导航点")
+        
+        # 获取建筑列表
+        buildings = get_building_list(school_data)
+        
+        # 起点选择
+        st.markdown("##### 起点")
+        start_building = st.selectbox("建筑", buildings, key="start_building")
+        start_levels = get_level_list(school_data, start_building)
+        start_level = st.selectbox("楼层", start_levels, key="start_level")
+        start_classrooms = get_classroom_list(school_data, start_building, start_level)
+        start_classroom = st.selectbox("教室/地点", start_classrooms, key="start_classroom")
+        
+        st.divider()
+        
+        # 终点选择
+        st.markdown("##### 终点")
+        end_building = st.selectbox("建筑", buildings, key="end_building")
+        end_levels = get_level_list(school_data, end_building)
+        end_level = st.selectbox("楼层", end_levels, key="end_level")
+        end_classrooms = get_classroom_list(school_data, end_building, end_level)
+        end_classroom = st.selectbox("教室/地点", end_classrooms, key="end_classroom")
+        
+        st.divider()
+        
+        # 按钮
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("🔍 查找路径", use_container_width=True):
+                path, message, details, display_options = navigate(
+                    graph,
+                    start_building,
+                    start_classroom,
+                    start_level,
+                    end_building,
+                    end_classroom,
+                    end_level
+                )
+                st.session_state['current_path'] = path
+                st.session_state['path_message'] = message
+                st.session_state['path_details'] = details
+                if display_options:
+                    st.session_state['display_options'] = display_options
+        
+        with col_btn2:
+            if st.button("🔄 重置视图", use_container_width=True):
+                reset_app_state()
+                st.rerun()
+        
+        # 返回欢迎页
+        if st.button("🚪 返回首页", use_container_width=True, type="secondary"):
+            reset_app_state()
+            st.session_state['page'] = 'welcome'
+            st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 路径信息
+        if 'path_message' in st.session_state and st.session_state['path_message']:
+            st.markdown('<div class="nav-card">', unsafe_allow_html=True)
+            st.markdown("#### 📊 路径信息")
+            if st.session_state['current_path']:
+                st.success(st.session_state['path_message'])
+                st.markdown("##### 🛤️ 路径详情")
+                st.info(st.session_state['path_details'])
+            else:
+                st.error(st.session_state['path_message'])
+            st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("#### 🗺️ 3D校园地图")
+        try:
+            fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+            st.pyplot(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"绘制地图失败: {str(e)}")
+    
+    # 作者标签
+    st.markdown('<div class="author-tag">SCIS Campus Navigation System v2.0</div>', unsafe_allow_html=True)
+
+# --------------------------
+# 主函数
+# --------------------------
+def main():
+    """应用主函数"""
+    # 初始化页面状态
+    if 'page' not in st.session_state:
+        st.session_state['page'] = 'welcome'
+    
+    # 路由
+    if st.session_state['page'] == 'welcome':
+        welcome_page()
+    elif st.session_state['page'] == 'main':
+        main_interface()
+
+if __name__ == "__main__":
+    # 全局graph变量
+    graph = None
+    main()
