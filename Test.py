@@ -123,8 +123,34 @@ COLORS = {
     'start_label': 'green',
     'end_marker': 'magenta',
     'end_label': 'purple',
-    'connect_corridor': 'gold',
+    'connect_corridor': 'gold',  # 连廊专用颜色
+    'ac_corridor': 'orange',     # AC连廊专用高亮颜色
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}
+}
+
+# --------------------------
+# 连廊配置（核心：补充AC各楼层连廊）
+# --------------------------
+# 基础连廊（1楼）
+CORRIDOR_CONNECTIONS_LEVEL1 = [
+    # 格式: (建筑1, 连廊节点名, 建筑2, 连廊节点名, 权重/距离)
+    ('A', 'connect_to_B', 'B', 'connect_to_A', 5.0),
+    ('A', 'connect_to_Gate', 'Gate', 'connect_to_A', 8.0),
+    ('B', 'connect_to_C', 'C', 'connect_to_B', 5.0),
+    ('B', 'connect_to_Gate', 'Gate', 'connect_to_B', 7.0),
+    ('C', 'connect_to_Gate', 'Gate', 'connect_to_C', 9.0),
+    ('A', 'connect_to_C', 'C', 'connect_to_A', 8.0),  # AC1楼直接连廊（关键补充）
+]
+
+# 3楼连廊
+CORRIDOR_CONNECTIONS_LEVEL3 = [
+    ('A', 'connect_to_C', 'C', 'connect_to_A', 7.5),  # AC3楼直接连廊（更短）
+]
+
+# 所有连廊配置（按楼层分组）
+ALL_CORRIDOR_CONNECTIONS = {
+    'level1': CORRIDOR_CONNECTIONS_LEVEL1,
+    'level3': CORRIDOR_CONNECTIONS_LEVEL3
 }
 
 # --------------------------
@@ -181,6 +207,9 @@ def plot_3d_map(school_data, display_options=None):
         'gate': 'Gate'
     }
     
+    # 存储连廊节点坐标（用于绘制连廊）
+    corridor_junction_coords = {}
+    
     # 遍历所有建筑
     for building_key in school_data.keys():
         if building_key not in building_mapping:
@@ -205,10 +234,9 @@ def plot_3d_map(school_data, display_options=None):
                 if building_name == 'B':
                     show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
                     if (start_building == 'B' or end_building == 'B'):
-                        show_level = show_level or (level_name == 'level1')
+                        show_level = show_level or (level_name == start_level) or (level_name == end_level)
                 elif building_name == 'Gate':
-                    # 只有起点/终点是Gate时才显示Gate
-                    show_level = (start_building == 'Gate' or end_building == 'Gate') and any((building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs'])
+                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any((building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs'])
                 else:
                     show_level = (level_name == start_level) or (level_name == end_level)
             
@@ -247,7 +275,7 @@ def plot_3d_map(school_data, display_options=None):
                     ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4)
                 ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], color=building_fill_color, alpha=0.3)
 
-                # 绘制走廊
+                # 绘制走廊（区分普通走廊、普通连廊、AC专用连廊）
                 for corr_idx, corridor in enumerate(level.get('corridors', [])):
                     points = corridor['points']
                     x = [p[0] for p in points]
@@ -255,17 +283,40 @@ def plot_3d_map(school_data, display_options=None):
                     z_coords = [p[2] for p in points]
                     
                     is_external = corridor.get('type') == 'external'
+                    # 判断是否是连廊
+                    is_connecting = 'name' in corridor and any(
+                        conn in corridor['name'] for conn in ['connect_to_A', 'connect_to_B', 'connect_to_C', 'connect_to_Gate']
+                    )
+                    # 判断是否是AC连廊
+                    is_ac_corridor = 'name' in corridor and ('connect_to_C' in corridor['name'] and building_name == 'A' or 
+                                                             'connect_to_A' in corridor['name'] and building_name == 'C')
+                    
                     if is_external:
                         ext_style = corridor.get('style', {})
                         corr_line_color = ext_style.get('color', 'gray')
                         corr_line_style = ext_style.get('lineType', '--')
                         corr_line_width = 10
                         corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
-                    elif 'name' in corridor and ('connectToBuilding' in corridor['name'] or 'gateTo' in corridor['name']):
+                    elif is_ac_corridor:
+                        # AC连廊专用样式（橙色高亮）
+                        corr_line_color = COLORS['ac_corridor']
+                        corr_line_style = '-'
+                        corr_line_width = 18  # 更粗的线条突出AC连廊
+                        corr_label = f"AC Direct Corridor ({building_name} ↔ C/A) - {level_name}"
+                        # 记录AC连廊节点坐标
+                        for i, (px, py, pz) in enumerate(points):
+                            node_name = f"{corridor['name']}-p{i}"
+                            corridor_junction_coords[(building_name, node_name, level_name)] = (px, py, pz)
+                    elif is_connecting:
+                        # 普通连廊样式
                         corr_line_color = COLORS['connect_corridor']
                         corr_line_style = '-'
-                        corr_line_width = 12
-                        corr_label = f"Connecting Corridor ({building_name}-{level_name})"
+                        corr_line_width = 15
+                        corr_label = f"Connecting Corridor ({building_name} ↔ {corridor['name'].split('_')[-1]}) - {level_name}"
+                        # 记录普通连廊节点坐标
+                        for i, (px, py, pz) in enumerate(points):
+                            node_name = f"{corridor['name']}-p{i}"
+                            corridor_junction_coords[(building_name, node_name, level_name)] = (px, py, pz)
                     else:
                         corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
                         corr_line_style = '-'
@@ -280,7 +331,15 @@ def plot_3d_map(school_data, display_options=None):
                                 linewidth=corr_line_width, alpha=0.8)
                     # 走廊节点
                     for px, py, pz in points:
-                        ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
+                        marker_size = 100 if is_ac_corridor else 80 if is_connecting else 40
+                        marker = 'D' if is_ac_corridor else 's' if is_connecting else 'o'
+                        edge_color = 'red' if is_ac_corridor else 'black'
+                        ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=marker_size, 
+                                  marker=marker, alpha=0.9, edgecolors=edge_color, linewidth=2)
+                        if is_connecting:
+                            # 连廊节点添加标签
+                            ax.text(px, py, pz+0.5, corridor['name'], color=COLORS['corridor_label'], 
+                                    fontweight='bold', fontsize=12, ha='center')
 
                 # 绘制教室
                 for classroom in level.get('classrooms', []):
@@ -325,6 +384,33 @@ def plot_3d_map(school_data, display_options=None):
             center_x = corresponding_x
             building_label_positions[building_name] = (center_x, label_y, label_z)
 
+    # 绘制建筑间连廊连接线（按楼层区分）
+    for level_name, connections in ALL_CORRIDOR_CONNECTIONS.items():
+        for conn in connections:
+            b1, n1, b2, n2, _ = conn
+            # 找连廊起点和终点坐标（带楼层）
+            start_key = (b1, f"{n1}-p0", level_name)
+            end_key = (b2, f"{n2}-p0", level_name)
+            
+            if start_key in corridor_junction_coords and end_key in corridor_junction_coords:
+                x1, y1, z1 = corridor_junction_coords[start_key]
+                x2, y2, z2 = corridor_junction_coords[end_key]
+                
+                # 判断是否是AC连廊，使用不同颜色
+                if (b1 == 'A' and b2 == 'C') or (b1 == 'C' and b2 == 'A'):
+                    line_color = COLORS['ac_corridor']
+                    line_width = 12
+                    label = f"AC Direct Corridor ({level_name})"
+                else:
+                    line_color = COLORS['connect_corridor']
+                    line_width = 10
+                    label = f"Corridor {b1}-{b2} ({level_name})"
+                
+                # 绘制连廊连接线
+                ax.plot([x1, x2], [y1, y2], [z1, z2], 
+                       color=line_color, linewidth=line_width, linestyle='-', 
+                       alpha=0.7, label=label if label not in ax.get_legend_handles_labels()[1] else "")
+
     # 绘制建筑名称标签
     for building_name, (x, y, z) in building_label_positions.items():
         bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="black", 
@@ -343,33 +429,76 @@ def plot_3d_map(school_data, display_options=None):
             y = []
             z = []
             labels = []
+            path_buildings = []
             for node_id in path:
                 coords = graph.nodes[node_id]['coordinates']
                 x.append(coords[0])
                 y.append(coords[1])
                 z.append(coords[2])
                 node_type = graph.nodes[node_id]['type']
+                node_building = graph.nodes[node_id]['building']
+                path_buildings.append(node_building)
+                
                 if node_type == 'classroom':
                     labels.append(graph.nodes[node_id]['name'])
                 elif node_type == 'stair':
                     labels.append(graph.nodes[node_id]['name'])
+                elif node_type == 'corridor':
+                    if 'connect_to_C' in graph.nodes[node_id]['name'] and node_building == 'A':
+                        labels.append(f"AC连廊({graph.nodes[node_id]['level']})")
+                    elif 'connect_to_A' in graph.nodes[node_id]['name'] and node_building == 'C':
+                        labels.append(f"AC连廊({graph.nodes[node_id]['level']})")
+                    elif 'connect_to' in graph.nodes[node_id]['name']:
+                        labels.append(f"连廊({graph.nodes[node_id]['name'].split('_')[-1]})")
+                    else:
+                        labels.append("")
                 else:
                     labels.append("")
-            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='Navigation Path')
-            ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
-            ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
-            ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
-            ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
+            
+            # 绘制路径主线
+            ax.plot(x, y, z, color=COLORS['path'], linewidth=8, linestyle='-', marker='o', markersize=12, label='Navigation Path')
+            
+            # 高亮AC连廊路段
+            for i in range(len(path)-1):
+                node1 = path[i]
+                node2 = path[i+1]
+                node1_info = graph.nodes[node1]
+                node2_info = graph.nodes[node2]
+                
+                # 判断是否是AC连廊路段
+                if (node1_info['building'] in ['A', 'C'] and node2_info['building'] in ['A', 'C'] and
+                    'connect_to' in node1_info['name'] and 'connect_to' in node2_info['name']):
+                    ax.plot([x[i], x[i+1]], [y[i], y[i+1]], [z[i], z[i+1]], 
+                           color=COLORS['ac_corridor'], linewidth=12, linestyle='-', alpha=0.9)
+            
+            # 起点终点标记
+            ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1200, marker='*', label='Start', edgecolors='black', linewidth=3)
+            ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1200, marker='*', label='End', edgecolors='black', linewidth=3)
+            
+            # 起点终点标签
+            ax.text(x[0], y[0], z[0]+1, f"起点\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=18, ha='center')
+            ax.text(x[-1], y[-1], z[-1]+1, f"终点\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=18, ha='center')
+            
+            # AC连廊节点高亮
+            for i, node_id in enumerate(path):
+                node_info = graph.nodes[node_id]
+                if (node_info['type'] == 'corridor' and 
+                    ('connect_to_C' in node_info['name'] or 'connect_to_A' in node_info['name']) and
+                    node_info['building'] in ['A', 'C']):
+                    ax.scatter(x[i], y[i], z[i], color='orange', s=1000, marker='D', edgecolors='red', linewidth=3, alpha=0.9)
+                    
         except Exception as e:
             st.warning(f"路径绘制警告: {str(e)}")
 
     # 图表配置
-    ax.set_xlabel('X Coordinate', fontsize=18, fontweight='bold')
-    ax.set_ylabel('Y Coordinate', fontsize=18, fontweight='bold')
+    ax.set_xlabel('X Coordinate (m)', fontsize=18, fontweight='bold')
+    ax.set_ylabel('Y Coordinate (m)', fontsize=18, fontweight='bold')
     ax.set_zlabel('Floor Height (Z Value)', fontsize=18, fontweight='bold')
-    ax.set_title('SCIS Campus 3D Navigation Map (A/B/C/Gate)', fontsize=24, fontweight='bold', pad=20)
+    ax.set_title('SCIS Campus 3D Navigation Map (AC Direct Corridors)', fontsize=26, fontweight='bold', pad=20)
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16, frameon=True)
     ax.grid(True, alpha=0.3, linewidth=2)
+    # 调整视角，更好地展示AC连廊
+    ax.view_init(elev=25, azim=50)
     return fig, ax
 
 # --------------------------
@@ -409,26 +538,6 @@ class Graph:
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
-    
-    def remove_gate_connections(self):
-        """移除所有与Gate相关的连接（保留Gate节点但断开连接）"""
-        # 找出所有Gate节点
-        gate_nodes = [node_id for node_id, node_info in self.nodes.items() if node_info['building'] == 'Gate']
-        
-        # 断开所有指向Gate节点的连接
-        for node_id in self.nodes:
-            if node_id in gate_nodes:
-                continue
-            # 过滤掉邻居中的Gate节点
-            self.nodes[node_id]['neighbors'] = {
-                neighbor_id: weight 
-                for neighbor_id, weight in self.nodes[node_id]['neighbors'].items()
-                if neighbor_id not in gate_nodes
-            }
-        
-        # 清空Gate节点的所有邻居
-        for gate_node_id in gate_nodes:
-            self.nodes[gate_node_id]['neighbors'] = {}
 
 # --------------------------
 # 路径算法相关
@@ -437,11 +546,8 @@ def euclidean_distance(coords1, coords2):
     """欧式距离计算"""
     return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
-def build_navigation_graph(school_data, include_gate_connections=False):
-    """
-    构建导航图
-    :param include_gate_connections: 是否包含与Gate的连接（仅当起点/终点是Gate时设为True）
-    """
+def build_navigation_graph(school_data):
+    """构建导航图（包含AC各楼层直接连廊）"""
     graph = Graph()
     # 建筑映射
     building_mapping = {
@@ -480,7 +586,7 @@ def build_navigation_graph(school_data, include_gate_connections=False):
                     level_name,
                     stair['coordinates']
                 )
-            # 添加走廊节点
+            # 添加走廊节点（包括连廊）
             for corr_idx, corridor in enumerate(level.get('corridors', [])):
                 corr_name = corridor.get('name', f'corr{corr_idx}')
                 for p_idx, point in enumerate(corridor['points']):
@@ -595,84 +701,49 @@ def build_navigation_graph(school_data, include_gate_connections=False):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # 第三步：建立ABC楼之间的直接连接（核心）
-    # 获取各建筑level1的走廊节点
-    a_corridors = [node_id for node_id, node_info in graph.nodes.items() 
-                   if node_info['building'] == 'A' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
-    b_corridors = [node_id for node_id, node_info in graph.nodes.items() 
-                   if node_info['building'] == 'B' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
-    c_corridors = [node_id for node_id, node_info in graph.nodes.items() 
-                   if node_info['building'] == 'C' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
-    
-    # A-B直接连接（强制优先）
-    if a_corridors and b_corridors:
-        # 选择A楼最靠近B楼的节点
-        a_node = min(a_corridors, key=lambda x: graph.nodes[x]['coordinates'][1])
-        # 选择B楼最靠近A楼的节点
-        b_node = min(b_corridors, key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[a_node]['coordinates'][0]))
-        # 设置极小的权重，确保优先选择
-        graph.add_edge(a_node, b_node, 1.0)
-    
-    # B-C直接连接（强制优先）
-    if b_corridors and c_corridors:
-        # 选择B楼最靠近C楼的节点
-        b_node = max(b_corridors, key=lambda x: graph.nodes[x]['coordinates'][1])
-        # 选择C楼最靠近B楼的节点
-        c_node = min(c_corridors, key=lambda x: abs(graph.nodes[x]['coordinates'][0] - graph.nodes[b_node]['coordinates'][0]))
-        # 设置极小的权重，确保优先选择
-        graph.add_edge(b_node, c_node, 1.0)
-    
-    # A-C直接连接（备用）
-    if a_corridors and c_corridors:
-        a_node = max(a_corridors, key=lambda x: graph.nodes[x]['coordinates'][0])
-        c_node = min(c_corridors, key=lambda x: graph.nodes[x]['coordinates'][0])
-        graph.add_edge(a_node, c_node, 1.5)
-    
-    # 第四步：仅在需要时添加Gate连接
-    if include_gate_connections:
-        gate_corridors = [node_id for node_id, node_info in graph.nodes.items() 
-                          if node_info['building'] == 'Gate' and node_info['type'] == 'corridor' and node_info['level'] == 'level1']
+    # 第三步：添加各楼层的连廊连接（核心：补充AC各楼层直接连廊）
+    for level_name, connections in ALL_CORRIDOR_CONNECTIONS.items():
+        # 获取当前楼层的连廊节点
+        corridor_nodes = {}
+        for building_key in ['buildingA', 'buildingB', 'buildingC', 'gate']:
+            building_name = building_mapping[building_key]
+            corridor_nodes[building_name] = {}
+            # 获取指定楼层的连廊节点
+            for node_id, node_info in graph.nodes.items():
+                if (node_info['building'] == building_name and 
+                    node_info['type'] == 'corridor' and 
+                    node_info['level'] == level_name and
+                    'connect_to' in node_info['name']):
+                    corridor_nodes[building_name][node_info['name']] = node_id
         
-        # Gate到A的连接（高权重，仅备用）
-        if gate_corridors and a_corridors:
-            gate_node = gate_corridors[0]
-            a_node = min(a_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-            graph.add_edge(gate_node, a_node, 100.0)  # 极高权重，仅当无其他路径时选择
-        
-        # Gate到B的连接（高权重，仅备用）
-        if gate_corridors and b_corridors:
-            gate_node = gate_corridors[0]
-            b_node = min(b_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-            graph.add_edge(gate_node, b_node, 100.0)
-        
-        # Gate到C的连接（高权重，仅备用）
-        if gate_corridors and c_corridors:
-            gate_node = gate_corridors[0]
-            c_node = min(c_corridors, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-            graph.add_edge(gate_node, c_node, 100.0)
-    else:
-        # 移除所有与Gate相关的连接
-        graph.remove_gate_connections()
+        # 添加当前楼层的连廊连接
+        for conn in connections:
+            b1, n1, b2, n2, weight = conn
+            # 构建完整的节点名（加-p0后缀）
+            n1_full = f"{n1}-p0"
+            n2_full = f"{n2}-p0"
+            
+            # 获取节点ID
+            node1_id = corridor_nodes[b1].get(n1_full)
+            node2_id = corridor_nodes[b2].get(n2_full)
+            
+            if node1_id and node2_id:
+                graph.add_edge(node1_id, node2_id, weight)
+                # 特别标注AC连廊
+                if (b1 == 'A' and b2 == 'C') or (b1 == 'C' and b2 == 'A'):
+                    st.success(f"✅ 已建立AC直接连廊：{b1}({n1}) ↔ {b2}({n2}) - {level_name} (距离：{weight}m)")
+                else:
+                    st.success(f"已建立连廊连接：{b1}({n1}) ↔ {b2}({n2}) - {level_name} (距离：{weight}m)")
+            else:
+                st.warning(f"⚠️ 无法建立连廊连接：{b1}({n1}) ↔ {b2}({n2}) - {level_name} - 节点不存在")
 
     return graph
 
-def dijkstra(graph, start_node, ignore_gate_nodes=True):
-    """
-    Dijkstra最短路径算法
-    :param ignore_gate_nodes: 是否忽略Gate节点（ABC导航时设为True）
-    """
-    # 初始化距离
+def dijkstra(graph, start_node):
+    """Dijkstra最短路径算法（优先选择AC直接连廊）"""
     distances = {node: float('inf') for node in graph.nodes}
     distances[start_node] = 0
     previous_nodes = {node: None for node in graph.nodes}
-    
-    # 如果需要忽略Gate节点，提前标记
-    if ignore_gate_nodes:
-        gate_nodes = set(node_id for node_id, node_info in graph.nodes.items() if node_info['building'] == 'Gate')
-        # 将Gate节点的距离设为无穷大，确保不会被选中
-        for gate_node in gate_nodes:
-            distances[gate_node] = float('inf')
-    
     nodes = set(graph.nodes.keys())
     
     while nodes:
@@ -685,10 +756,6 @@ def dijkstra(graph, start_node, ignore_gate_nodes=True):
         
         # 更新邻居节点距离
         for neighbor, weight in graph.nodes[min_node]['neighbors'].items():
-            # 如果忽略Gate节点，跳过Gate邻居
-            if ignore_gate_nodes and graph.nodes[neighbor]['building'] == 'Gate':
-                continue
-                
             alternative_route = distances[min_node] + weight
             if alternative_route < distances[neighbor]:
                 distances[neighbor] = alternative_route
@@ -706,14 +773,15 @@ def construct_path(previous_nodes, end_node):
     return path if len(path) > 1 else None
 
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    """导航核心逻辑"""
+    """导航核心逻辑（AC优先走直接连廊）"""
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
         return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
     
-    # 判断是否需要包含Gate
-    need_gate = (start_building == 'Gate') or (end_building == 'Gate')
-    
+    # 特别提示AC导航
+    if start_building in ['A', 'C'] and end_building in ['A', 'C']:
+        st.info(f"📌 检测到AC楼导航，将优先选择AC直接连廊（{start_level}/{end_level}）")
+        
     try:
         # 教室节点查询
         start_key = (start_building, start_classroom, start_level)
@@ -727,23 +795,27 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         if not end_node or end_node not in graph.nodes:
             return None, f"终点不存在：{end_building}楼{end_classroom} @ {end_level}", None, None
 
-        # 计算最短路径（关键：ABC导航时忽略Gate节点）
-        distances, previous_nodes = dijkstra(graph, start_node, ignore_gate_nodes=not need_gate)
+        # 计算最短路径（自动选择AC直接连廊）
+        distances, previous_nodes = dijkstra(graph, start_node)
         path = construct_path(previous_nodes, end_node)
         
         if path:
-            # 验证路径中是否包含Gate节点（ABC导航时不允许）
-            if not need_gate:
-                path_buildings = set(graph.nodes[node_id]['building'] for node_id in path)
-                if 'Gate' in path_buildings:
-                    return None, "路径规划错误：ABC楼导航不应经过Gate", None, None
+            # 分析路径是否经过B楼
+            path_buildings = [graph.nodes[node_id]['building'] for node_id in path]
+            has_b_building = 'B' in path_buildings
+            
+            # AC导航但经过B楼的警告
+            if (start_building in ['A', 'C'] and end_building in ['A', 'C']) and has_b_building:
+                st.warning("⚠️ AC导航但路径经过B楼，可能当前楼层AC连廊未配置")
             
             total_distance = distances[end_node]
             simplified_path = []
             path_stairs = set()
             prev_building = None
+            prev_node_type = None
+            prev_level = None
             
-            # 简化路径描述
+            # 简化路径描述（突出AC直接连廊）
             for node_id in path:
                 node_info = graph.nodes[node_id]
                 node_type = node_info['type']
@@ -756,13 +828,44 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
                 elif node_type == 'classroom':
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
-                elif node_type == 'corridor' and prev_building and prev_building != node_building:
-                    simplified_path.append(f"从{prev_building}楼前往{node_building}楼({node_level})")
+                elif node_type == 'corridor':
+                    if 'connect_to_C' in node_name and node_building == 'A':
+                        # AC连廊（A→C）
+                        simplified_path.append(f"走A楼{node_level}AC直接连廊前往C楼")
+                        prev_building = 'A→C'  # 标记AC连廊
+                    elif 'connect_to_A' in node_name and node_building == 'C':
+                        # AC连廊（C→A）
+                        simplified_path.append(f"走C楼{node_level}AC直接连廊前往A楼")
+                        prev_building = 'C→A'  # 标记AC连廊
+                    elif 'connect_to' in node_name:
+                        # 其他连廊
+                        target_building = node_name.split('_')[-1]
+                        if prev_building and prev_building != node_building:
+                            simplified_path.append(f"通过连廊从{prev_building}楼前往{node_building}楼")
+                        else:
+                            simplified_path.append(f"进入{node_building}楼{target_building}方向连廊")
+                    elif (prev_building == node_building and prev_node_type == 'corridor' and 
+                          prev_level == node_level):
+                        continue  # 跳过连续的同楼层普通走廊节点
+                    else:
+                        simplified_path.append(f"{node_building}楼{node_level}走廊")
                 
-                if node_type in ['classroom', 'stair', 'corridor']:
-                    prev_building = node_building
+                prev_building = node_building
+                prev_node_type = node_type
+                prev_level = node_level
             
+            # 去重并优化路径描述
+            simplified_path = [p for i, p in enumerate(simplified_path) if i == 0 or p != simplified_path[i-1]]
             full_path_str = " → ".join(simplified_path)
+            
+            # 路径说明
+            if start_building in ['A', 'C'] and end_building in ['A', 'C'] and not has_b_building:
+                distance_note = f"总距离：{total_distance:.2f} 米 (AC直接连廊，未经过B楼)"
+            elif start_building in ['A', 'C'] and end_building in ['A', 'C'] and has_b_building:
+                distance_note = f"总距离：{total_distance:.2f} 米 (经过B楼，建议使用AC直接连廊)"
+            else:
+                distance_note = f"总距离：{total_distance:.2f} 米 (优先走连廊)"
+            
             display_options = {
                 'start_level': start_level,
                 'end_level': end_level,
@@ -772,10 +875,11 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 'start_building': start_building,
                 'end_building': end_building
             }
-            return path, f"总距离：{total_distance:.2f} 单位", full_path_str, display_options
+            return path, distance_note, full_path_str, display_options
         else:
-            return None, "未找到可行路径", None, None
+            return None, "未找到可行路径（请检查连廊连接）", None, None
     except Exception as e:
+        st.error(f"导航错误详情：{str(e)}")
         return None, f"导航错误：{str(e)}", None, None
 
 # --------------------------
@@ -867,6 +971,17 @@ def welcome_page():
             color: #2c3e50;
             margin-bottom: 2rem;
         }
+        .welcome-subtitle {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 3rem;
+        }
+        .ac-note {
+            font-size: 1.2rem;
+            color: #e67e22;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
         .enter-button {
             font-size: 1.5rem;
             padding: 1rem 3rem;
@@ -883,7 +998,8 @@ def welcome_page():
     # 页面内容
     st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
     st.markdown('<h1 class="welcome-title">SCIS 校园导航系统</h1>', unsafe_allow_html=True)
-    st.markdown('<h3>3D可视化 · 跨建筑路径规划 · A/B/C/Gate全覆盖</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="welcome-subtitle">3D可视化 · 连廊路径规划 · AC楼直接连廊</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ac-note">✨ AC楼1楼/3楼均有直接连廊，导航将优先选择 ✨</div>', unsafe_allow_html=True)
     
     if st.button('进入系统', key='enter_btn', use_container_width=False, 
                 help='点击进入3D导航界面', type='primary'):
@@ -902,11 +1018,28 @@ def main_interface():
         .stApp {padding-top: 1rem !important;}
         .sidebar .sidebar-content {padding: 1rem;}
         .block-container {padding: 1rem;}
+        .stAlert {padding: 0.5rem; margin: 0.5rem 0;}
+        .ac-highlight {
+            background-color: #fff3e0;
+            padding: 1rem;
+            border-left: 5px solid #e67e22;
+            margin: 1rem 0;
+        }
         </style>
     """, unsafe_allow_html=True)
     
     st.title("🏫 SCIS 校园3D导航系统")
-    st.markdown("### 支持A/B/C/Gate建筑互导航 · ABC楼优先内部连接")
+    st.markdown("### 🛤️ 连廊路径规划 · AC楼优先直接连廊")
+    
+    # AC连廊提示
+    st.markdown("""
+    <div class="ac-highlight">
+    <strong>📌 AC连廊信息：</strong><br>
+    • A↔C 1楼连廊：8米（直达）<br>
+    • A↔C 3楼连廊：7.5米（更短，优先）<br>
+    • A↔B↔C 路径：10米（仅当AC连廊不可用时选择）
+    </div>
+    """, unsafe_allow_html=True)
 
     # 初始化状态
     if 'display_options' not in st.session_state:
@@ -917,10 +1050,10 @@ def main_interface():
     if not school_data:
         return
     
-    # 构建导航图（根据是否需要Gate动态调整）
+    # 构建导航图（包含AC直接连廊）
     if 'graph' not in st.session_state or st.session_state['graph'] is None:
-        # 默认不包含Gate连接
-        st.session_state['graph'] = build_navigation_graph(school_data, include_gate_connections=False)
+        with st.spinner("正在构建连廊导航网络（包含AC直接连廊）..."):
+            st.session_state['graph'] = build_navigation_graph(school_data)
     
     global graph
     graph = st.session_state['graph']
@@ -931,6 +1064,15 @@ def main_interface():
     # 侧边栏导航控制
     with st.sidebar:
         st.header("📍 导航设置")
+        
+        # 显示连廊信息
+        st.info("""📌 连廊连接（按距离排序）：
+• A↔C (3楼)：7.5m 🥇
+• A↔C (1楼)：8.0m 🥈
+• A↔B/B↔C：5.0m
+• B↔Gate：7.0m
+• A↔Gate：8.0m
+• C↔Gate：9.0m""")
         
         # 起点设置
         st.subheader("起点")
@@ -959,36 +1101,32 @@ def main_interface():
         with col1:
             if st.button("🧭 开始导航", type='primary'):
                 try:
-                    # 重新构建图（根据是否需要Gate）
-                    need_gate = (start_building == 'Gate') or (end_building == 'Gate')
-                    graph = build_navigation_graph(school_data, include_gate_connections=need_gate)
-                    st.session_state['graph'] = graph
-                    
-                    path, msg, path_str, display_options = navigate(
-                        graph,
-                        start_building,
-                        start_classroom,
-                        start_level,
-                        end_building,
-                        end_classroom,
-                        end_level
-                    )
+                    with st.spinner("正在规划最优连廊路径..."):
+                        path, msg, path_str, display_options = navigate(
+                            graph,
+                            start_building,
+                            start_classroom,
+                            start_level,
+                            end_building,
+                            end_classroom,
+                            end_level
+                        )
                     if path:
                         st.session_state['current_path'] = path
                         st.session_state['display_options'] = display_options
                         st.session_state['path_result'] = (msg, path_str)
-                        st.success(f"导航成功！{msg}")
+                        st.success(f"✅ 导航成功！{msg}")
                     else:
-                        st.error(msg)
+                        st.error(f"❌ {msg}")
                         reset_app_state()
                 except Exception as e:
-                    st.error(f"导航失败：{str(e)}")
+                    st.error(f"❌ 导航失败：{str(e)}")
                     reset_app_state()
         
         with col2:
             if st.button("🗺️ 显示全图"):
                 reset_app_state()
-                st.success("已切换到全图视图")
+                st.success("已切换到全图视图（AC连廊橙色高亮）")
         
         # 重置按钮
         if st.button("🔄 重置"):
@@ -998,14 +1136,19 @@ def main_interface():
     # 显示路径信息
     if 'path_result' in st.session_state:
         msg, path_str = st.session_state['path_result']
-        st.markdown("### 📝 导航路径")
-        st.info(f"{path_str}")
+        st.markdown("### 📝 导航路径（AC优先直接连廊）")
+        st.info(f"""
+        <div style="font-size: 16px; line-height: 1.8;">
+        {path_str}
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(f"### 📏 {msg}")
     
     # 绘制3D地图
-    st.markdown("### 3D校园地图")
-    fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-    st.pyplot(fig, use_container_width=True)
+    st.markdown("### 3D校园地图（AC连廊橙色高亮）")
+    with st.spinner("正在绘制3D地图和导航路径..."):
+        fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+        st.pyplot(fig, use_container_width=True)
 
 # --------------------------
 # 应用入口
