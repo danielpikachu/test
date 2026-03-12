@@ -665,51 +665,62 @@ def build_navigation_graph(school_data):
     else:
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
     
-    # 添加 Gate 与 A/B/C 的连接
+    # ========================
+    # 核心更新：通过JSON中的三条brown corridors直接连接Gate与A/B/C
+    # ========================
     gate_building_id = 'gate'
     gate_level = 'level1'
     
-    # Gate-A 连接
-    gate_a_corr_name = 'gateToA-p1'
-    gate_a_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_a_corr_name, gate_level))
-    a_gate_corr_name = 'gateToA-p1'
-    a_gate_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_gate_corr_name, connect_level1))
+    # 1. Gate to A (gateToA 棕色走廊)
+    # Gate端的gateToA最后一个点
+    gate_to_a_end = 'gateToA-p1'
+    gate_to_a_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_a_end, gate_level))
+    # A端的gateToA第一个点
+    a_from_gate_start = 'gateToA-p0'
+    a_from_gate_node = graph.node_id_map.get((a_building_id, 'corridor', a_from_gate_start, connect_level1))
     
-    if gate_a_node_id and a_gate_node_id:
-        coords_gate = graph.nodes[gate_a_node_id]['coordinates']
-        coords_a = graph.nodes[a_gate_node_id]['coordinates']
+    if gate_to_a_node and a_from_gate_node:
+        coords_gate = graph.nodes[gate_to_a_node]['coordinates']
+        coords_a = graph.nodes[a_from_gate_node]['coordinates']
         distance = euclidean_distance(coords_gate, coords_a)
-        graph.add_edge(gate_a_node_id, a_gate_node_id, distance)
+        graph.add_edge(gate_to_a_node, a_from_gate_node, distance)
+        st.success(f"✅ Gate-A brown corridor connected (distance: {distance:.2f})")
     else:
-        st.warning("Could not find Gate-A inter-building corridor connection nodes")
+        st.warning("❌ Could not find Gate-A brown corridor connection nodes")
     
-    # Gate-B 连接
-    gate_b_corr_name = 'gateToB-p1'
-    gate_b_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_b_corr_name, gate_level))
-    b_gate_corr_name = 'gateToB-p1'
-    b_gate_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_gate_corr_name, bc_connect_level))
+    # 2. Gate to B (gateToB 棕色走廊)
+    # Gate端的gateToB最后一个点
+    gate_to_b_end = 'gateToB-p1'
+    gate_to_b_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_b_end, gate_level))
+    # B端的gateToB第一个点
+    b_from_gate_start = 'gateToB-p0'
+    b_from_gate_node = graph.node_id_map.get((b_building_id, 'corridor', b_from_gate_start, bc_connect_level))
     
-    if gate_b_node_id and b_gate_node_id:
-        coords_gate = graph.nodes[gate_b_node_id]['coordinates']
-        coords_b = graph.nodes[b_gate_node_id]['coordinates']
+    if gate_to_b_node and b_from_gate_node:
+        coords_gate = graph.nodes[gate_to_b_node]['coordinates']
+        coords_b = graph.nodes[b_from_gate_node]['coordinates']
         distance = euclidean_distance(coords_gate, coords_b)
-        graph.add_edge(gate_b_node_id, b_gate_node_id, distance)
+        graph.add_edge(gate_to_b_node, b_from_gate_node, distance)
+        st.success(f"✅ Gate-B brown corridor connected (distance: {distance:.2f})")
     else:
-        st.warning("Could not find Gate-B inter-building corridor connection nodes")
+        st.warning("❌ Could not find Gate-B brown corridor connection nodes")
     
-    # Gate-C 连接
-    gate_c_corr_name = 'gateToC-p1'
-    gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_c_corr_name, gate_level))
-    c_gate_corr_name = 'gateToC-p1'
-    c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_gate_corr_name, connect_level1))
+    # 3. Gate to C (gateToC 棕色走廊)
+    # Gate端的gateToC最后一个点
+    gate_to_c_end = 'gateToC-p1'
+    gate_to_c_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_c_end, gate_level))
+    # C端的gateToC第一个点
+    c_from_gate_start = 'gateToC-p0'
+    c_from_gate_node = graph.node_id_map.get((c_building_id, 'corridor', c_from_gate_start, connect_level1))
     
-    if gate_c_node_id and c_gate_node_id:
-        coords_gate = graph.nodes[gate_c_node_id]['coordinates']
-        coords_c = graph.nodes[c_gate_node_id]['coordinates']
+    if gate_to_c_node and c_from_gate_node:
+        coords_gate = graph.nodes[gate_to_c_node]['coordinates']
+        coords_c = graph.nodes[c_from_gate_node]['coordinates']
         distance = euclidean_distance(coords_gate, coords_c)
-        graph.add_edge(gate_c_node_id, c_gate_node_id, distance)
+        graph.add_edge(gate_to_c_node, c_from_gate_node, distance)
+        st.success(f"✅ Gate-C brown corridor connected (distance: {distance:.2f})")
     else:
-        st.warning("Could not find Gate-C inter-building corridor connection nodes")
+        st.warning("❌ Could not find Gate-C brown corridor connection nodes")
 
     return graph
 
