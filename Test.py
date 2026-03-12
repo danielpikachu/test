@@ -419,7 +419,7 @@ def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b) ** 2 for a, b in zip(coords1, coords2)))
 
 def build_navigation_graph(school_data):
-    """构建导航图"""
+    """构建导航图（优化跨建筑连接逻辑）"""
     graph = Graph()
     # 建筑映射
     building_mapping = {
@@ -573,50 +573,58 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # 第三步：处理跨建筑连接（Gate与A/B/C）
-    # Gate到A/B/C的连接
-    gate_corridor_nodes = [
-        node_id for node_id, node_info in graph.nodes.items()
-        if node_info['building'] == 'Gate' 
-        and node_info['type'] == 'corridor' 
-        and node_info['level'] == 'level1'
-    ]
+    # 第三步：优化跨建筑连接逻辑
+    # 1. AB建筑直接连接（外部连廊）
+    a_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'A' and info['type'] == 'corridor' and info['level'] == 'level1']
+    b_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'B' and info['type'] == 'corridor' and info['level'] == 'level1']
+    if a_level1_corr and b_level1_corr:
+        a_node = min(a_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        b_node = min(b_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        graph.add_edge(a_node, b_node, euclidean_distance(graph.nodes[a_node]['coordinates'], graph.nodes[b_node]['coordinates']))
     
-    # Gate到A的连接
-    a_corridor_nodes = [
-        node_id for node_id, node_info in graph.nodes.items()
-        if node_info['building'] == 'A' 
-        and node_info['type'] == 'corridor' 
-        and node_info['level'] == 'level1'
-    ]
-    if gate_corridor_nodes and a_corridor_nodes:
-        gate_node = gate_corridor_nodes[0]
-        a_node = min(a_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, a_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[a_node]['coordinates']))
+    # 2. BC建筑直接连接（外部连廊）
+    b_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'B' and info['type'] == 'corridor' and info['level'] == 'level1']
+    c_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'C' and info['type'] == 'corridor' and info['level'] == 'level1']
+    if b_level1_corr and c_level1_corr:
+        b_node = min(b_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        c_node = min(c_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        graph.add_edge(b_node, c_node, euclidean_distance(graph.nodes[b_node]['coordinates'], graph.nodes[c_node]['coordinates']))
     
-    # Gate到B的连接
-    b_corridor_nodes = [
-        node_id for node_id, node_info in graph.nodes.items()
-        if node_info['building'] == 'B' 
-        and node_info['type'] == 'corridor' 
-        and node_info['level'] == 'level1'
-    ]
-    if gate_corridor_nodes and b_corridor_nodes:
-        gate_node = gate_corridor_nodes[0]
-        b_node = min(b_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, b_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[b_node]['coordinates']))
+    # 3. AC建筑双楼层连接（1楼和3楼）
+    # 3.1 AC 1楼连廊
+    a_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'A' and info['type'] == 'corridor' and info['level'] == 'level1']
+    c_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'C' and info['type'] == 'corridor' and info['level'] == 'level1']
+    if a_level1_corr and c_level1_corr:
+        a_node1 = min(a_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        c_node1 = min(c_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        graph.add_edge(a_node1, c_node1, euclidean_distance(graph.nodes[a_node1]['coordinates'], graph.nodes[c_node1]['coordinates']))
     
-    # Gate到C的连接
-    c_corridor_nodes = [
-        node_id for node_id, node_info in graph.nodes.items()
-        if node_info['building'] == 'C' 
-        and node_info['type'] == 'corridor' 
-        and node_info['level'] == 'level1'
-    ]
-    if gate_corridor_nodes and c_corridor_nodes:
-        gate_node = gate_corridor_nodes[0]
-        c_node = min(c_corridor_nodes, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
-        graph.add_edge(gate_node, c_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[c_node]['coordinates']))
+    # 3.2 AC 3楼连廊
+    a_level3_corr = [n for n, info in graph.nodes.items() if info['building'] == 'A' and info['type'] == 'corridor' and info['level'] == 'level3']
+    c_level3_corr = [n for n, info in graph.nodes.items() if info['building'] == 'C' and info['type'] == 'corridor' and info['level'] == 'level3']
+    if a_level3_corr and c_level3_corr:
+        a_node3 = min(a_level3_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        c_node3 = min(c_level3_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], (0,0,0)))
+        graph.add_edge(a_node3, c_node3, euclidean_distance(graph.nodes[a_node3]['coordinates'], graph.nodes[c_node3]['coordinates']))
+    
+    # 4. Gate仅在显式包含时连接
+    gate_corr = [n for n, info in graph.nodes.items() if info['building'] == 'Gate' and info['type'] == 'corridor']
+    if gate_corr:
+        gate_node = gate_corr[0]
+        # Gate仅连接到A/B/C的1楼（仅当需要经过Gate时使用）
+        a_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'A' and info['type'] == 'corridor' and info['level'] == 'level1']
+        b_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'B' and info['type'] == 'corridor' and info['level'] == 'level1']
+        c_level1_corr = [n for n, info in graph.nodes.items() if info['building'] == 'C' and info['type'] == 'corridor' and info['level'] == 'level1']
+        
+        if a_level1_corr:
+            a_node = min(a_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, a_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[a_node]['coordinates']))
+        if b_level1_corr:
+            b_node = min(b_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, b_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[b_node]['coordinates']))
+        if c_level1_corr:
+            c_node = min(c_level1_corr, key=lambda x: euclidean_distance(graph.nodes[x]['coordinates'], graph.nodes[gate_node]['coordinates']))
+            graph.add_edge(gate_node, c_node, euclidean_distance(graph.nodes[gate_node]['coordinates'], graph.nodes[c_node]['coordinates']))
 
     return graph
 
@@ -654,7 +662,7 @@ def construct_path(previous_nodes, end_node):
     return path if len(path) > 1 else None
 
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
-    """导航核心逻辑"""
+    """导航核心逻辑（优化路径选择）"""
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
         return None, "无效的建筑选择！仅支持A/B/C/Gate", None, None
@@ -695,9 +703,17 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
                 elif node_type == 'classroom':
                     simplified_path.append(f"{node_building}楼{node_name}({node_level})")
-                elif node_type == 'corridor' and ('connectToBuilding' in node_name or 'gateTo' in node_name):
+                elif node_type == 'corridor':
+                    # 识别跨建筑连廊
                     if prev_building and prev_building != node_building:
-                        simplified_path.append(f"从{prev_building}楼走廊前往{node_building}楼({node_level})")
+                        if (prev_building == 'A' and node_building == 'B') or (prev_building == 'B' and node_building == 'A'):
+                            simplified_path.append(f"通过AB外部连廊从{prev_building}楼前往{node_building}楼({node_level})")
+                        elif (prev_building == 'B' and node_building == 'C') or (prev_building == 'C' and node_building == 'B'):
+                            simplified_path.append(f"通过BC外部连廊从{prev_building}楼前往{node_building}楼({node_level})")
+                        elif (prev_building == 'A' and node_building == 'C') or (prev_building == 'C' and node_building == 'A'):
+                            simplified_path.append(f"通过AC{node_level}连廊从{prev_building}楼前往{node_building}楼")
+                        elif node_building == 'Gate' or prev_building == 'Gate':
+                            simplified_path.append(f"通过Gate从{prev_building}楼前往{node_building}楼({node_level})")
                 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
