@@ -453,17 +453,37 @@ def get_direction(from_coords, to_coords):
     if dz != 0:
         return "向上" if dz > 0 else "向下"
     
-    # 平面方位判断
-    if abs(dx) > abs(dy):
-        if dx > 0:
-            return "向右"
+    # 平面方位判断（优化阈值，避免微小偏移导致错误）
+    threshold = 0.1  # 最小偏移阈值
+    if abs(dx) > threshold or abs(dy) > threshold:
+        if abs(dx) > abs(dy):
+            return "向右" if dx > 0 else "向左"
         else:
-            return "向左"
+            return "向前" if dy > 0 else "向后"
     else:
-        if dy > 0:
-            return "向前"
-        else:
-            return "向后"
+        return ""  # 无明显偏移
+
+def filter_important_nodes(path, graph):
+    """
+    过滤路径中的重要节点（只保留教室、楼梯、跨建筑走廊）
+    """
+    important_nodes = []
+    
+    for node_id in path:
+        node_info = graph.nodes[node_id]
+        node_type = node_info['type']
+        node_name = node_info['name']
+        
+        # 保留教室和楼梯节点
+        if node_type in ['classroom', 'stair']:
+            important_nodes.append(node_id)
+        # 保留跨建筑走廊节点
+        elif node_type == 'corridor' and ('connectToBuilding' in node_name or 'gateTo' in node_name):
+            # 去重：避免连续的相同类型跨建筑走廊节点
+            if not important_nodes or graph.nodes[important_nodes[-1]]['type'] != 'corridor':
+                important_nodes.append(node_id)
+    
+    return important_nodes
 
 def build_navigation_graph(school_data):
     graph = Graph()
@@ -797,58 +817,64 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
         if path:
             total_distance = distances[end_node]
+            
+            # 过滤出重要节点（去除普通走廊节点）
+            important_nodes = filter_important_nodes(path, graph)
+            
             simplified_path = []
             path_stairs = set()
-            prev_building = None
             
-            # 遍历路径，添加方位信息
-            for i in range(len(path)):
-                node_id = path[i]
-                node_type = graph.nodes[node_id]['type']
-                node_name = graph.nodes[node_id]['name']
-                node_level = graph.nodes[node_id]['level']
-                node_building = graph.nodes[node_id]['building']
+            # 为重要节点构建带方位的路径描述
+            for i in range(len(important_nodes)):
+                node_id = important_nodes[i]
+                node_info = graph.nodes[node_id]
+                node_type = node_info['type']
+                node_name = node_info['name']
+                node_level = node_info['level']
+                node_building = node_info['building']
                 
-                # 获取当前节点描述
+                # 构建节点描述
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'classroom':
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
-                    if 'connectToBuilding' in node_name or 'gateTo' in node_name:
-                        if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
-                            connected_building = 'A'
-                        elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
-                            connected_building = 'B'
-                        elif 'connectToBuildingC' in node_name or 'gateToC' in node_name:
-                            connected_building = 'C'
-                        elif 'gateTo' in node_name:
-                            connected_building = 'Gate'
-                        else:
-                            connected_building = 'Other'
-                            
-                        if prev_building and prev_building != node_building:
-                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                    # 跨建筑走廊描述
+                    if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
+                        connected_building = 'A'
+                    elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
+                        connected_building = 'B'
+                    elif 'connectToBuildingC' in node_name or 'gateToC' in node_name:
+                        connected_building = 'C'
+                    elif 'gateTo' in node_name:
+                        connected_building = 'Gate'
                     else:
-                        node_desc = ""
+                        connected_building = 'Other'
+                    
+                    # 获取上一个建筑（如果有）
+                    if i > 0:
+                        prev_node_info = graph.nodes[important_nodes[i-1]]
+                        prev_building = prev_node_info['building']
+                        node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                    else:
+                        node_desc = f"Cross corridor to Building {connected_building}({node_level})"
                 else:
                     node_desc = ""
                 
-                # 如果不是最后一个节点，计算方位
-                if i < len(path) - 1 and node_desc:
-                    current_coords = graph.nodes[node_id]['coordinates']
-                    next_node_id = path[i + 1]
+                # 计算方位（仅为重要节点添加）
+                if i < len(important_nodes) - 1 and node_desc:
+                    current_coords = node_info['coordinates']
+                    next_node_id = important_nodes[i + 1]
                     next_coords = graph.nodes[next_node_id]['coordinates']
                     direction = get_direction(current_coords, next_coords)
-                    node_desc += f"（{direction}）"
+                    
+                    if direction:  # 只有有效方位才添加
+                        node_desc += f"（{direction}）"
                 
-                # 只添加非空描述
+                # 添加到简化路径
                 if node_desc:
                     simplified_path.append(node_desc)
-                
-                if node_type in ['classroom', 'stair', 'corridor']:
-                    prev_building = node_building
             
             full_path_str = " → ".join(simplified_path)
             display_options = {
