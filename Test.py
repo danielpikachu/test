@@ -437,100 +437,185 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
 
-def get_walking_direction(prev_coords, curr_coords, next_coords):
+def calculate_relative_direction(from_point, to_point, facing_direction):
     """
-    调整后的第一人称方向判断：
-    1. 楼梯优先：向上/向下
-    2. 平面移动：只返回左转/右转/向左/向右（取消向前/向后/直行）
-    3. 模拟用户面朝走廊时的左右判断
+    通用化相对方向计算：
+    - from_point: 当前位置 (x,y)
+    - to_point: 目标位置 (x,y)
+    - facing_direction: 当前面朝方向向量 (dx, dy)
+    - 返回: 向左/向右/直行
     """
-    # 先判断上下（楼梯优先）
-    dz = next_coords[2] - curr_coords[2]
-    if abs(dz) > 0.1:
-        return "向上" if dz > 0 else "向下"
-    
-    # 只看平面XY
-    x1, y1, _ = prev_coords
-    x2, y2, _ = curr_coords
-    x3, y3, _ = next_coords
-
-    # 计算来向和去向向量
-    dx_in = x2 - x1
-    dy_in = y2 - y1
-    dx_out = x3 - x2
-    dy_out = y3 - y2
-
-    # 极小位移视为无方向
-    eps = 1e-6
-    if (abs(dx_in) < eps and abs(dy_in) < eps) or (abs(dx_out) < eps and abs(dy_out) < eps):
+    # 计算目标方向向量
+    target_vec = np.array([to_point[0] - from_point[0], to_point[1] - from_point[1]])
+    len_target = np.linalg.norm(target_vec)
+    if len_target < 1e-6:
         return ""
-
-    # 单位向量（归一化，只保留方向）
-    len_in = np.hypot(dx_in, dy_in)
-    ux_in = dx_in / len_in
-    uy_in = dy_in / len_in
-
-    len_out = np.hypot(dx_out, dy_out)
-    ux_out = dx_out / len_out
-    uy_out = dy_out / len_out
-
-    # 计算夹角（弧度）
-    dot = ux_in * ux_out + uy_in * uy_out
-    cross = ux_in * uy_out - uy_in * ux_out
+    target_vec = target_vec / len_target
     
-    # 转换为角度
-    angle = np.arccos(np.clip(dot, -1.0, 1.0)) * 180 / np.pi
-    
-    # 调整逻辑：取消直行，全部用左/右描述
-    if cross > 0:
-        # 左侧转向
-        if angle < 30:
-            return "向左"  # 小角度左转 → 向左
-        else:
-            return "左转"  # 大角度左转 → 左转
-    else:
-        # 右侧转向
-        if angle < 30:
-            return "向右"  # 小角度右转 → 向右
-        else:
-            return "右转"  # 大角度右转 → 右转
-
-def get_real_world_start_direction(classroom_coords, corridor_coords):
-    """
-    结合实际场景的起点方向判断：
-    1. 计算从教室到走廊的向量（出门方向）
-    2. 模拟用户出门后自然"面朝走廊延伸方向"
-    3. 基于这个真实朝向判断左右
-    """
-    # 提取平面坐标
-    cx, cy, _ = classroom_coords
-    cor_x, cor_y, _ = corridor_coords
-    
-    # 步骤1：计算从教室到走廊的向量（出门向量）
-    exit_vec = np.array([cor_x - cx, cor_y - cy])
-    len_exit = np.hypot(exit_vec[0], exit_vec[1])
-    if len_exit < 1e-6:
+    # 归一化面朝方向
+    len_facing = np.linalg.norm(facing_direction)
+    if len_facing < 1e-6:
         return ""
-    exit_vec = exit_vec / len_exit
+    facing_vec = facing_direction / len_facing
     
-    # 步骤2：模拟走廊的延伸方向（实际场景：用户出门后面朝走廊深处）
-    # 假设走廊是直线，这里取垂直于出门方向的向量作为走廊延伸方向
-    # 真实场景可根据走廊实际走向调整，这里用90度旋转模拟
-    corridor_forward = np.array([-exit_vec[1], exit_vec[0]])  # 左转90度 = 走廊延伸方向
+    # 计算叉积（判断左右）
+    cross = np.cross(np.append(facing_vec, 0), np.append(target_vec, 0))[2]
     
-    # 步骤3：计算目标方向（走廊节点）相对于走廊延伸方向的左右
-    target_vec = exit_vec  # 目标是走到走廊节点
-    cross = corridor_forward[0] * target_vec[1] - corridor_forward[1] * target_vec[0]
+    # 计算点积（判断前后）
+    dot = np.dot(facing_vec, target_vec)
     
-    # 步骤4：根据实际场景校准左右（可根据校园实际布局调整符号）
-    if cross > 0.01:
+    # 角度阈值（可调整）
+    angle_threshold = np.cos(np.radians(15))  # 15度以内视为直行
+    
+    if dot > angle_threshold:
+        return "直行"
+    elif cross > 0.01:
         return "向左"
     elif cross < -0.01:
         return "向右"
     else:
-        # 如果正对走廊，根据实际场景返回合理方向
-        # 针对AA303场景，强制返回"向左"（可根据实际需要调整）
-        return "向左"
+        return "直行"
+
+def get_corridor_main_direction(corridor_points):
+    """
+    计算走廊的主延伸方向：
+    - corridor_points: 走廊的坐标点列表
+    - 返回: 走廊主方向向量 (dx, dy)
+    """
+    if len(corridor_points) < 2:
+        return np.array([0, 1])  # 默认Y轴正方向
+    
+    # 计算走廊的首尾点向量（主方向）
+    start = np.array([corridor_points[0][0], corridor_points[0][1]])
+    end = np.array([corridor_points[-1][0], corridor_points[-1][1]])
+    main_dir = end - start
+    
+    # 如果长度过短，取中间段
+    if np.linalg.norm(main_dir) < 1e-6 and len(corridor_points) > 2:
+        mid_idx = len(corridor_points) // 2
+        start = np.array([corridor_points[mid_idx-1][0], corridor_points[mid_idx-1][1]])
+        end = np.array([corridor_points[mid_idx+1][0], corridor_points[mid_idx+1][1]])
+        main_dir = end - start
+    
+    return main_dir
+
+def get_real_world_direction(graph, current_node_id, next_node_id, prev_node_id=None):
+    """
+    真实场景的方向判断主函数（适配所有场景）：
+    1. 教室→走廊：面朝走廊主方向，判断左右
+    2. 走廊→走廊：面朝当前行走方向，判断左右转
+    3. 走廊→楼梯/教室：基于走廊主方向判断左右
+    """
+    current_node = graph.nodes[current_node_id]
+    next_node = graph.nodes[next_node_id]
+    
+    # 提取平面坐标
+    curr_x, curr_y, _ = current_node['coordinates']
+    next_x, next_y, _ = next_node['coordinates']
+    
+    # 场景1：教室→走廊（起点）
+    if current_node['type'] == 'classroom' and next_node['type'] == 'corridor':
+        # 找到该走廊的所有坐标点
+        corridor_name = next_node['name'].split('-p')[0]
+        building_level = f"{next_node['building']}_{next_node['level']}"
+        
+        # 遍历所有节点找同走廊的点
+        corridor_points = []
+        for node_id, node in graph.nodes.items():
+            if (node['type'] == 'corridor' and 
+                node['building'] == next_node['building'] and 
+                node['level'] == next_node['level'] and 
+                node['name'].startswith(corridor_name)):
+                corridor_points.append(node['coordinates'])
+        
+        # 计算走廊主方向
+        corridor_dir = get_corridor_main_direction(corridor_points)
+        
+        # 计算从教室到走廊入口的向量
+        exit_vec = np.array([next_x - curr_x, next_y - curr_y])
+        
+        # 计算相对方向
+        direction = calculate_relative_direction(
+            (curr_x, curr_y), 
+            (next_x, next_y), 
+            corridor_dir
+        )
+        
+        # 直行时按实际场景调整为左/右（避免显示直行）
+        if direction == "直行":
+            # 计算exit_vec与corridor_dir的夹角
+            angle = np.arccos(np.clip(np.dot(exit_vec, corridor_dir)/(np.linalg.norm(exit_vec)*np.linalg.norm(corridor_dir)), -1.0, 1.0))
+            if angle < np.radians(10):
+                # 正对走廊，默认向左（可根据实际布局调整）
+                direction = "向左"
+            else:
+                # 重新计算叉积判断
+                cross = np.cross(np.append(corridor_dir, 0), np.append(exit_vec, 0))[2]
+                direction = "向左" if cross > 0 else "向右"
+        
+        return direction
+    
+    # 场景2：走廊→其他节点（走廊/楼梯/教室）
+    elif current_node['type'] == 'corridor':
+        if prev_node_id is None:
+            # 走廊起点（少见）
+            facing_dir = np.array([next_x - curr_x, next_y - curr_y])
+        else:
+            # 基于上一段路径确定面朝方向
+            prev_node = graph.nodes[prev_node_id]
+            prev_x, prev_y, _ = prev_node['coordinates']
+            facing_dir = np.array([curr_x - prev_x, curr_y - prev_y])
+        
+        direction = calculate_relative_direction(
+            (curr_x, curr_y), 
+            (next_x, next_y), 
+            facing_dir
+        )
+        
+        # 调整表述（左转/右转 vs 向左/向右）
+        if direction == "直行":
+            # 小角度视为向左/向右
+            direction = "向左"  # 默认，可根据实际调整
+        elif direction == "向左":
+            # 大角度转左转，小角度向左
+            target_vec = np.array([next_x - curr_x, next_y - curr_y])
+            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
+            if angle > np.radians(30):
+                direction = "左转"
+            else:
+                direction = "向左"
+        elif direction == "向右":
+            target_vec = np.array([next_x - curr_x, next_y - curr_y])
+            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
+            if angle > np.radians(30):
+                direction = "右转"
+            else:
+                direction = "向右"
+        
+        return direction
+    
+    # 场景3：楼梯→其他节点
+    elif current_node['type'] == 'stair':
+        # 楼梯上下优先
+        if abs(next_node['coordinates'][2] - current_node['coordinates'][2]) > 0.1:
+            return "向上" if next_node['coordinates'][2] > current_node['coordinates'][2] else "向下"
+        else:
+            # 同层移动，按走廊逻辑
+            if prev_node_id:
+                prev_node = graph.nodes[prev_node_id]
+                facing_dir = np.array([curr_x - prev_node['coordinates'][0], curr_y - prev_node['coordinates'][1]])
+            else:
+                facing_dir = np.array([next_x - curr_x, next_y - curr_y])
+            
+            direction = calculate_relative_direction(
+                (curr_x, curr_y), 
+                (next_x, next_y), 
+                facing_dir
+            )
+            return direction if direction != "直行" else "向左"
+    
+    # 默认返回
+    return ""
 
 def filter_important_nodes(path, graph):
     """
@@ -934,25 +1019,21 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 # 计算方向
                 direction = ""
                 if i < len(important_nodes) - 1 and node_desc:
-                    if i == 0:
-                        # 起点：使用真实场景的方向判断
-                        current_coords = node_info['coordinates']
-                        next_node_id = important_nodes[i + 1]
-                        next_coords = graph.nodes[next_node_id]['coordinates']
-                        dz = next_coords[2] - current_coords[2]
-                        if abs(dz) > 0.1:
-                            direction = "向上" if dz > 0 else "向下"
-                        else:
-                            # 调用真实场景的方向判断函数
-                            direction = get_real_world_start_direction(current_coords, next_coords)
-                    else:
-                        # 后续节点：用调整后的第一人称视角
-                        prev_node_id = important_nodes[i-1]
-                        prev_coords = graph.nodes[prev_node_id]['coordinates']
-                        current_coords = node_info['coordinates']
-                        next_node_id = important_nodes[i + 1]
-                        next_coords = graph.nodes[next_node_id]['coordinates']
-                        direction = get_walking_direction(prev_coords, current_coords, next_coords)
+                    # 获取前一个节点ID（用于计算面朝方向）
+                    prev_node_id = important_nodes[i-1] if i > 0 else None
+                    # 调用通用化的真实场景方向判断函数
+                    direction = get_real_world_direction(
+                        graph, 
+                        node_id, 
+                        important_nodes[i+1], 
+                        prev_node_id
+                    )
+                    
+                    # 特殊处理：楼梯的上下方向优先
+                    if node_type == 'stair':
+                        next_node = graph.nodes[important_nodes[i+1]]
+                        if abs(next_node['coordinates'][2] - node_info['coordinates'][2]) > 0.1:
+                            direction = "向上" if next_node['coordinates'][2] > node_info['coordinates'][2] else "向下"
                 
                 # 添加方向描述
                 if direction:
@@ -1250,7 +1331,7 @@ def main_interface():
             st.rerun()
 
     with col2:
-        st.markdown("#### 🗺️ 3D Campus Map")
+        st.markdown("#### 🗺️ 3D Map")
         
         if nav_button:
             try:
