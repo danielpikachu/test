@@ -116,7 +116,7 @@ def get_total_accesses(worksheet):
         return 0
 
 # --------------------------
-# 地图与导航核心逻辑（修复Gate-C直接连接）
+# 地图与导航核心逻辑（彻底修复Gate-C连接）
 # --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
@@ -207,13 +207,17 @@ def plot_3d_map(school_data, display_options=None):
             if not show_all:
                 # Gate建筑特殊处理
                 if building_name == 'Gate':
-                    show_level = (level_name == start_level) or (level_name == end_level)
+                    show_level = (level_name == start_level) or (level_name == end_level) or any(
+                        (building_name, s_name, level_name) in path_stairs for s_name in ['GateStairs']
+                    )
                 elif building_name == 'B':
                     show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
                     if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C','Gate'] and end_building in ['A','C','Gate'] and 'B' in [start_building, end_building]):
                         show_level = show_level or (level_name == 'level1')
                 else:
-                    show_level = (level_name == start_level) or (level_name == end_level)
+                    show_level = (level_name == start_level) or (level_name == end_level) or any(
+                        (building_name, s_name, level_name) in path_stairs for s_name in ['Stairs1','Stairs2','Stairs3','Stairs4','Stairs5']
+                    )
             
             if show_level:
                 displayed_levels.append(level)
@@ -271,6 +275,13 @@ def plot_3d_map(school_data, display_options=None):
                         corr_line_style = '-'
                         corr_line_width = 12
                         corr_label = f"Connecting Corridor ({building_name}-{level_name})"
+                    
+                    elif 'name' in corridor and ('gateTo' in corridor['name']):
+                        # 高亮Gate直接连接走廊
+                        corr_line_color = 'brown'
+                        corr_line_style = '-'
+                        corr_line_width = 15
+                        corr_label = f"Gate Direct Corridor ({building_name}-{corridor['name']})"
                     
                     else:
                         corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
@@ -433,6 +444,13 @@ class Graph:
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
+            
+    def remove_edge(self, node1_id, node2_id):
+        """移除指定边，避免绕路"""
+        if node1_id in self.nodes and node2_id in self.nodes[node1_id]['neighbors']:
+            del self.nodes[node1_id]['neighbors'][node2_id]
+        if node2_id in self.nodes and node1_id in self.nodes[node2_id]['neighbors']:
+            del self.nodes[node2_id]['neighbors'][node1_id]
 
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
@@ -525,7 +543,7 @@ def build_navigation_graph(school_data):
                             distance = euclidean_distance(coords1, coords2)
                             graph.add_edge(current_node_id, next_node_id, distance)
 
-                # 连接相邻走廊节点（增加距离阈值，避免不必要的连接）
+                # 连接相邻走廊节点（仅连接同建筑同楼层）
                 for i in range(len(corr_nodes)):
                     node1_id = corr_nodes[i]
                     coords1 = graph.nodes[node1_id]['coordinates']
@@ -534,8 +552,8 @@ def build_navigation_graph(school_data):
                         coords2 = graph.nodes[node2_id]['coordinates']
                         distance = euclidean_distance(coords1, coords2)
                         
-                        # 缩小相邻走廊连接的距离阈值，避免跨建筑误连
-                        if distance < 2.0:
+                        # 仅连接同建筑内极近距离的走廊点
+                        if distance < 1.0:
                             graph.add_edge(node1_id, node2_id, distance)
 
                 # 连接教室到最近走廊
@@ -584,7 +602,7 @@ def build_navigation_graph(school_data):
                     if nearest_corr_node_id:
                         graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
-            # 添加建筑内部连接
+            # 添加建筑内部楼梯连接（跨楼层）
             for connection in building_data['connections']:
                 from_obj_name, from_level = connection['from']
                 to_obj_name, to_level = connection['to']
@@ -601,7 +619,8 @@ def build_navigation_graph(school_data):
                 to_node_id = graph.node_id_map.get((building_id, to_obj_type, to_obj_name, to_level))
                 
                 if from_node_id and to_node_id:
-                    graph.add_edge(from_node_id, to_node_id, 5.0)
+                    # 楼梯连接权重设为固定值，确保跨楼层导航可行
+                    graph.add_edge(from_node_id, to_node_id, 1.0)
 
     # A-B 连接
     a_building_id = 'buildingA'
@@ -636,23 +655,17 @@ def build_navigation_graph(school_data):
     else:
         st.warning("Could not find B-C level1 inter-building corridor connection nodes")
     
-    # A-C level1 连接（保留但设置较高权重，避免优先选择）
-    connect_level1 = 'level1'
-    a_corr1_name = 'connectToBuildingC-p3'
-    a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
-    c_corr1_name = 'connectToBuildingA-p0'
-    c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
+    # ========================
+    # 核心修复1：彻底移除A-C level1直接连接，强制走Gate-C
+    # ========================
+    # 注释掉A-C level1连接，避免绕路
+    # connect_level1 = 'level1'
+    # a_corr1_name = 'connectToBuildingC-p3'
+    # a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
+    # c_corr1_name = 'connectToBuildingA-p0'
+    # c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
     
-    if a_connect1_node_id and c_connect1_node_id:
-        coords_a = graph.nodes[a_connect1_node_id]['coordinates']
-        coords_c = graph.nodes[c_connect1_node_id]['coordinates']
-        distance = euclidean_distance(coords_a, coords_c)
-        # 增加权重，让算法优先选择Gate-C直接连接
-        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance * 5)
-    else:
-        st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
-    
-    # A-C level3 连接
+    # A-C level3 连接保留
     connect_level3 = 'level3'
     a_corr3_name = 'connectToBuildingC-p2'
     a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
@@ -668,59 +681,85 @@ def build_navigation_graph(school_data):
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
     
     # ========================
-    # 核心修复：Gate与A/B/C直接连接（设置最低权重确保优先选择）
+    # 核心修复2：Gate与A/B/C建立直接连接（所有楼层）
     # ========================
     gate_building_id = 'gate'
-    gate_level = 'level1'
+    # 获取Gate的所有楼层
+    gate_levels = [level['name'] for level in school_data[gate_building_id]['levels']]
     
-    # 1. Gate to A (gateToA 棕色走廊) - 设置最低权重
-    gate_to_a_end = 'gateToA-p1'
-    gate_to_a_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_a_end, gate_level))
-    a_from_gate_start = 'gateToA-p0'
-    a_from_gate_node = graph.node_id_map.get((a_building_id, 'corridor', a_from_gate_start, connect_level1))
+    # 为每个楼层建立Gate与A/B/C的直接连接
+    for gate_level in gate_levels:
+        # 1. Gate to A (gateToA 棕色走廊)
+        gate_to_a_end = 'gateToA-p1'
+        gate_to_a_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_a_end, gate_level))
+        a_from_gate_start = 'gateToA-p0'
+        a_from_gate_node = graph.node_id_map.get((a_building_id, 'corridor', a_from_gate_start, gate_level))
+        
+        if gate_to_a_node and a_from_gate_node:
+            coords_gate = graph.nodes[gate_to_a_node]['coordinates']
+            coords_a = graph.nodes[a_from_gate_node]['coordinates']
+            distance = euclidean_distance(coords_gate, coords_a)
+            # 极低权重确保优先选择
+            graph.add_edge(gate_to_a_node, a_from_gate_node, 0.1)
+            st.success(f"✅ Gate-A {gate_level} brown corridor connected (weight: 0.1)")
+        else:
+            st.warning(f"❌ Could not find Gate-A {gate_level} brown corridor connection nodes")
+        
+        # 2. Gate to B (gateToB 棕色走廊)
+        gate_to_b_end = 'gateToB-p1'
+        gate_to_b_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_b_end, gate_level))
+        b_from_gate_start = 'gateToB-p0'
+        b_from_gate_node = graph.node_id_map.get((b_building_id, 'corridor', b_from_gate_start, gate_level))
+        
+        if gate_to_b_node and b_from_gate_node:
+            coords_gate = graph.nodes[gate_to_b_node]['coordinates']
+            coords_b = graph.nodes[b_from_gate_node]['coordinates']
+            distance = euclidean_distance(coords_gate, coords_b)
+            graph.add_edge(gate_to_b_node, b_from_gate_node, 0.1)
+            st.success(f"✅ Gate-B {gate_level} brown corridor connected (weight: 0.1)")
+        else:
+            st.warning(f"❌ Could not find Gate-B {gate_level} brown corridor connection nodes")
+        
+        # 3. Gate to C (gateToC 棕色走廊) - 核心修复
+        gate_to_c_end = 'gateToC-p1'
+        gate_to_c_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_c_end, gate_level))
+        c_from_gate_start = 'gateToC-p0'
+        c_from_gate_node = graph.node_id_map.get((c_building_id, 'corridor', c_from_gate_start, gate_level))
+        
+        if gate_to_c_node and c_from_gate_node:
+            coords_gate = graph.nodes[gate_to_c_node]['coordinates']
+            coords_c = graph.nodes[c_from_gate_node]['coordinates']
+            distance = euclidean_distance(coords_gate, coords_c)
+            # 强制最低权重（0.1），确保绝对优先
+            graph.add_edge(gate_to_c_node, c_from_gate_node, 0.1)
+            st.success(f"✅ Gate-C {gate_level} brown corridor connected (weight: 0.1) - 直接连接已生效")
+        else:
+            st.warning(f"❌ Could not find Gate-C {gate_level} brown corridor connection nodes")
     
-    if gate_to_a_node and a_from_gate_node:
-        coords_gate = graph.nodes[gate_to_a_node]['coordinates']
-        coords_a = graph.nodes[a_from_gate_node]['coordinates']
-        distance = euclidean_distance(coords_gate, coords_a)
-        # 设置最低权重，确保优先选择
-        graph.add_edge(gate_to_a_node, a_from_gate_node, distance * 0.1)
-        st.success(f"✅ Gate-A brown corridor connected (distance: {distance:.2f})")
-    else:
-        st.warning("❌ Could not find Gate-A brown corridor connection nodes")
+    # ========================
+    # 核心修复3：确保Gate楼梯连接所有楼层
+    # ========================
+    # 手动检查并修复Gate楼梯连接
+    gate_stairs_levels = []
+    for level in school_data[gate_building_id]['levels']:
+        level_name = level['name']
+        for stair in level['stairs']:
+            if stair['name'] == 'GateStairs':
+                gate_stairs_levels.append(level_name)
     
-    # 2. Gate to B (gateToB 棕色走廊) - 设置最低权重
-    gate_to_b_end = 'gateToB-p1'
-    gate_to_b_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_b_end, gate_level))
-    b_from_gate_start = 'gateToB-p0'
-    b_from_gate_node = graph.node_id_map.get((b_building_id, 'corridor', b_from_gate_start, bc_connect_level))
+    # 确保Gate楼梯连接所有楼层
+    if len(gate_stairs_levels) > 1:
+        for i in range(len(gate_stairs_levels)-1):
+            level1 = gate_stairs_levels[i]
+            level2 = gate_stairs_levels[i+1]
+            
+            stair1_id = graph.node_id_map.get((gate_building_id, 'stair', 'GateStairs', level1))
+            stair2_id = graph.node_id_map.get((gate_building_id, 'stair', 'GateStairs', level2))
+            
+            if stair1_id and stair2_id:
+                graph.add_edge(stair1_id, stair2_id, 1.0)
+                st.success(f"✅ GateStairs connected {level1} ↔ {level2}")
     
-    if gate_to_b_node and b_from_gate_node:
-        coords_gate = graph.nodes[gate_to_b_node]['coordinates']
-        coords_b = graph.nodes[b_from_gate_node]['coordinates']
-        distance = euclidean_distance(coords_gate, coords_b)
-        # 设置最低权重，确保优先选择
-        graph.add_edge(gate_to_b_node, b_from_gate_node, distance * 0.1)
-        st.success(f"✅ Gate-B brown corridor connected (distance: {distance:.2f})")
-    else:
-        st.warning("❌ Could not find Gate-B brown corridor connection nodes")
-    
-    # 3. Gate to C (gateToC 棕色走廊) - 核心修复：直接连接且设置最低权重
-    gate_to_c_end = 'gateToC-p1'
-    gate_to_c_node = graph.node_id_map.get((gate_building_id, 'corridor', gate_to_c_end, gate_level))
-    c_from_gate_start = 'gateToC-p0'
-    c_from_gate_node = graph.node_id_map.get((c_building_id, 'corridor', c_from_gate_start, connect_level1))
-    
-    if gate_to_c_node and c_from_gate_node:
-        coords_gate = graph.nodes[gate_to_c_node]['coordinates']
-        coords_c = graph.nodes[c_from_gate_node]['coordinates']
-        distance = euclidean_distance(coords_gate, coords_c)
-        # 设置极低权重（0.1倍），确保导航算法优先选择这条直接连接
-        graph.add_edge(gate_to_c_node, c_from_gate_node, distance * 0.1)
-        st.success(f"✅ Gate-C brown corridor connected (distance: {distance:.2f}) - 直接连接已生效")
-    else:
-        st.warning("❌ Could not find Gate-C brown corridor connection nodes")
-
     return graph
 
 def dijkstra(graph, start_node):
@@ -782,6 +821,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             path_stairs = set()
             prev_building = None
+            prev_level = None
             
             for node_id in path:
                 node_type = graph.nodes[node_id]['type']
@@ -791,7 +831,10 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
+                    if prev_level and prev_level != node_level:
+                        simplified_path.append(f"Take {node_building}{node_name} from {prev_level} to {node_level}")
+                    else:
+                        simplified_path.append(f"Building {node_building}{node_name}({node_level})")
                 
                 elif node_type == 'classroom':
                     simplified_path.append(f"Building {node_building}{node_name}({node_level})")
@@ -818,8 +861,8 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                         if prev_building and prev_building != node_building:
                             simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
                 
-                if node_type in ['classroom', 'stair', 'corridor']:
-                    prev_building = node_building
+                prev_building = node_building
+                prev_level = node_level
             
             full_path_str = " → ".join(simplified_path)
             display_options = {
@@ -833,8 +876,16 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             }
             return path, f"Total distance: {total_distance:.2f} units", full_path_str, display_options
         else:
+            # 调试信息：帮助定位无路径问题
+            st.warning(f"Debug: No path found from {start_node} to {end_node}")
+            # 尝试查找可达节点
+            reachable_nodes = [n for n, d in distances.items() if d < float('inf')]
+            st.info(f"Debug: Reachable nodes count: {len(reachable_nodes)}")
             return None, "No available path between the two classrooms", None, None
     except Exception as e:
+        st.error(f"Navigation error: {str(e)}")
+        import traceback
+        st.error(f"Traceback: {traceback.format_exc()}")
         return None, f"Navigation error: {str(e)}", None, None
 
 def plot_path(ax, graph, path):
@@ -1061,6 +1112,8 @@ def main_interface():
         st.success("✅ Campus data loaded successfully! Initial state shows A/B/C/Gate buildings")
     except Exception as e:
         st.error(f"Initialization error: {str(e)}")
+        import traceback
+        st.error(f"Traceback: {traceback.format_exc()}")
         return
 
     col1, col2 = st.columns([1, 6])
@@ -1130,6 +1183,8 @@ def main_interface():
                     st.error(f"❌ {message}")
             except Exception as e:
                 st.error(f"Navigation process error: {str(e)}")
+                import traceback
+                st.error(f"Traceback: {traceback.format_exc()}")
         
         try:
             if st.session_state['current_path'] is not None:
@@ -1141,6 +1196,8 @@ def main_interface():
             st.pyplot(fig)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
+            import traceback
+            st.error(f"Traceback: {traceback.format_exc()}")
 
 def main():
     # 初始化会话状态，控制显示哪个页面
