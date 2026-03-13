@@ -437,6 +437,34 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
 
+def get_direction(from_coords, to_coords):
+    """
+    根据坐标计算方位
+    from_coords: 前一个节点坐标 (x, y, z)
+    to_coords: 后一个节点坐标 (x, y, z)
+    返回方位描述
+    """
+    # 提取坐标差值
+    dx = to_coords[0] - from_coords[0]
+    dy = to_coords[1] - from_coords[1]
+    dz = to_coords[2] - from_coords[2]
+    
+    # 楼梯间只返回上下
+    if dz != 0:
+        return "向上" if dz > 0 else "向下"
+    
+    # 平面方位判断
+    if abs(dx) > abs(dy):
+        if dx > 0:
+            return "向右"
+        else:
+            return "向左"
+    else:
+        if dy > 0:
+            return "向前"
+        else:
+            return "向后"
+
 def build_navigation_graph(school_data):
     graph = Graph()
 
@@ -773,19 +801,20 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             path_stairs = set()
             prev_building = None
             
-            for node_id in path:
+            # 遍历路径，添加方位信息
+            for i in range(len(path)):
+                node_id = path[i]
                 node_type = graph.nodes[node_id]['type']
                 node_name = graph.nodes[node_id]['name']
                 node_level = graph.nodes[node_id]['level']
                 node_building = graph.nodes[node_id]['building']
                 
+                # 获取当前节点描述
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
-                
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'classroom':
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
-                
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name or 'gateTo' in node_name:
                         if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
@@ -800,7 +829,23 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                             connected_building = 'Other'
                             
                         if prev_building and prev_building != node_building:
-                            simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
+                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                    else:
+                        node_desc = ""
+                else:
+                    node_desc = ""
+                
+                # 如果不是最后一个节点，计算方位
+                if i < len(path) - 1 and node_desc:
+                    current_coords = graph.nodes[node_id]['coordinates']
+                    next_node_id = path[i + 1]
+                    next_coords = graph.nodes[next_node_id]['coordinates']
+                    direction = get_direction(current_coords, next_coords)
+                    node_desc += f"（{direction}）"
+                
+                # 只添加非空描述
+                if node_desc:
+                    simplified_path.append(node_desc)
                 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
