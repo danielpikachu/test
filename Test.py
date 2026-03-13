@@ -437,31 +437,93 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
 
-def get_direction(from_coords, to_coords):
+def get_walking_direction(prev_coords, curr_coords, next_coords):
     """
-    根据坐标计算方位
-    from_coords: 前一个节点坐标 (x, y, z)
-    to_coords: 后一个节点坐标 (x, y, z)
-    返回方位描述
+    调整后的第一人称方向判断：
+    1. 楼梯优先：向上/向下
+    2. 平面移动：只返回左转/右转/向左/向右（取消向前/向后/直行）
+    3. 模拟用户面朝走廊时的左右判断
     """
-    # 提取坐标差值
-    dx = to_coords[0] - from_coords[0]
-    dy = to_coords[1] - from_coords[1]
-    dz = to_coords[2] - from_coords[2]
-    
-    # 楼梯间只返回上下
-    if dz != 0:
+    # 先判断上下（楼梯优先）
+    dz = next_coords[2] - curr_coords[2]
+    if abs(dz) > 0.1:
         return "向上" if dz > 0 else "向下"
     
-    # 平面方位判断（优化阈值，避免微小偏移导致错误）
-    threshold = 0.1  # 最小偏移阈值
-    if abs(dx) > threshold or abs(dy) > threshold:
-        if abs(dx) > abs(dy):
-            return "向右" if dx > 0 else "向左"
+    # 只看平面XY
+    x1, y1, _ = prev_coords
+    x2, y2, _ = curr_coords
+    x3, y3, _ = next_coords
+
+    # 计算来向和去向向量
+    dx_in = x2 - x1
+    dy_in = y2 - y1
+    dx_out = x3 - x2
+    dy_out = y3 - y2
+
+    # 极小位移视为无方向
+    eps = 1e-6
+    if (abs(dx_in) < eps and abs(dy_in) < eps) or (abs(dx_out) < eps and abs(dy_out) < eps):
+        return ""
+
+    # 单位向量（归一化，只保留方向）
+    len_in = np.hypot(dx_in, dy_in)
+    ux_in = dx_in / len_in
+    uy_in = dy_in / len_in
+
+    len_out = np.hypot(dx_out, dy_out)
+    ux_out = dx_out / len_out
+    uy_out = dy_out / len_out
+
+    # 计算夹角（弧度）
+    dot = ux_in * ux_out + uy_in * uy_out
+    cross = ux_in * uy_out - uy_in * ux_out
+    
+    # 转换为角度
+    angle = np.arccos(np.clip(dot, -1.0, 1.0)) * 180 / np.pi
+    
+    # 调整逻辑：取消直行，全部用左/右描述
+    if cross > 0:
+        # 左侧转向
+        if angle < 30:
+            return "向左"  # 小角度左转 → 向左
         else:
-            return "向前" if dy > 0 else "向后"
+            return "左转"  # 大角度左转 → 左转
     else:
-        return ""  # 无明显偏移
+        # 右侧转向
+        if angle < 30:
+            return "向右"  # 小角度右转 → 向右
+        else:
+            return "右转"  # 大角度右转 → 右转
+
+def get_start_direction(from_coords, to_coords):
+    """
+    起点方向判断：教室到走廊，直接返回向左/向右（模拟用户面朝走廊的左右）
+    """
+    # 忽略Z轴，只看平面
+    dx = to_coords[0] - from_coords[0]
+    dy = to_coords[1] - from_coords[1]
+    
+    # 计算与Y轴（前向）的夹角
+    # 假设用户初始面朝走廊方向（Y轴正方向），判断左右
+    forward_vec = np.array([0, 1])  # Y轴正方向为默认面朝方向
+    target_vec = np.array([dx, dy])
+    
+    # 归一化
+    len_target = np.hypot(dx, dy)
+    if len_target < 1e-6:
+        return ""
+    target_vec = target_vec / len_target
+    
+    # 计算叉积判断左右
+    cross = forward_vec[0] * target_vec[1] - forward_vec[1] * target_vec[0]
+    
+    if cross > 0.1:
+        return "向左"
+    elif cross < -0.1:
+        return "向右"
+    else:
+        # 正对走廊时，默认返回"向左"或"向右"（可根据实际场景调整）
+        return "向左" if dx < 0 else "向右"
 
 def filter_important_nodes(path, graph):
     """
@@ -824,7 +886,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             path_stairs = set()
             
-            # 为重要节点构建带方位的路径描述
+            # 为重要节点构建带第一人称视角的路径描述
             for i in range(len(important_nodes)):
                 node_id = important_nodes[i]
                 node_info = graph.nodes[node_id]
@@ -862,15 +924,31 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 else:
                     node_desc = ""
                 
-                # 计算方位（仅为重要节点添加）
+                # 计算方向
+                direction = ""
                 if i < len(important_nodes) - 1 and node_desc:
-                    current_coords = node_info['coordinates']
-                    next_node_id = important_nodes[i + 1]
-                    next_coords = graph.nodes[next_node_id]['coordinates']
-                    direction = get_direction(current_coords, next_coords)
-                    
-                    if direction:  # 只有有效方位才添加
-                        node_desc += f"（{direction}）"
+                    if i == 0:
+                        # 起点：教室到走廊，用自定义的start方向判断（向左/向右）
+                        current_coords = node_info['coordinates']
+                        next_node_id = important_nodes[i + 1]
+                        next_coords = graph.nodes[next_node_id]['coordinates']
+                        dz = next_coords[2] - current_coords[2]
+                        if abs(dz) > 0.1:
+                            direction = "向上" if dz > 0 else "向下"
+                        else:
+                            direction = get_start_direction(current_coords, next_coords)
+                    else:
+                        # 后续节点：用调整后的第一人称视角（左转/右转/向左/向右/向上/向下）
+                        prev_node_id = important_nodes[i-1]
+                        prev_coords = graph.nodes[prev_node_id]['coordinates']
+                        current_coords = node_info['coordinates']
+                        next_node_id = important_nodes[i + 1]
+                        next_coords = graph.nodes[next_node_id]['coordinates']
+                        direction = get_walking_direction(prev_coords, current_coords, next_coords)
+                
+                # 添加方向描述
+                if direction:
+                    node_desc += f"（{direction}）"
                 
                 # 添加到简化路径
                 if node_desc:
