@@ -94,7 +94,7 @@
             "name": "gateToA",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
@@ -372,7 +372,7 @@
             "name": "gateToB",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
@@ -590,7 +590,7 @@
             "name": "gateToC",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
@@ -785,7 +785,7 @@
             "name": "gateToA",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
@@ -797,7 +797,7 @@
             "name": "gateToB",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
@@ -809,7 +809,7 @@
             "name": "gateToC",
             "type": "external",
             "style": {
-              "color": "brown",
+              "color": "gray",
               "lineType": "dashed"
             },
             "points": [
