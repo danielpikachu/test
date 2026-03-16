@@ -804,7 +804,7 @@ def build_navigation_graph(school_data):
                 if from_node_id and to_node_id:
                     graph.add_edge(from_node_id, to_node_id, 5.0)
 
-    # A-B 连接（增加权重，降低优先级）
+    # A-B 连接
     a_building_id = 'buildingA'
     b_building_id = 'buildingB'
     ab_connect_level = 'level1'
@@ -817,11 +817,11 @@ def build_navigation_graph(school_data):
         coords_a = graph.nodes[a_b_node_id]['coordinates']
         coords_b = graph.nodes[b_a_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_b)
-        graph.add_edge(a_b_node_id, b_a_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(a_b_node_id, b_a_node_id, distance)
     else:
         st.warning("Could not find A-B level1 inter-building corridor connection nodes")
     
-    # B-C 连接（增加权重，降低优先级）
+    # B-C 连接
     bc_connect_level = 'level1'
     b_c_corr_name = 'connectToBuildingAAndC-p0'
     b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
@@ -833,11 +833,11 @@ def build_navigation_graph(school_data):
         coords_b = graph.nodes[b_c_node_id]['coordinates']
         coords_c = graph.nodes[c_b_node_id]['coordinates']
         distance = euclidean_distance(coords_b, coords_c)
-        graph.add_edge(b_c_node_id, c_b_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(b_c_node_id, c_b_node_id, distance)
     else:
         st.warning("Could not find B-C level1 inter-building corridor connection nodes")
     
-    # A-C level1 连接（增加权重，降低优先级）
+    # A-C level1 连接
     connect_level1 = 'level1'
     a_corr1_name = 'connectToBuildingC-p3'
     a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
@@ -848,11 +848,11 @@ def build_navigation_graph(school_data):
         coords_a = graph.nodes[a_connect1_node_id]['coordinates']
         coords_c = graph.nodes[c_connect1_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_c)
-        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
         st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
     
-    # A-C level3 连接（增加权重，降低优先级）
+    # A-C level3 连接
     connect_level3 = 'level3'
     a_corr3_name = 'connectToBuildingC-p2'
     a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
@@ -863,7 +863,7 @@ def build_navigation_graph(school_data):
         coords_a = graph.nodes[a_connect3_node_id]['coordinates']
         coords_c = graph.nodes[c_connect3_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_c)
-        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
     
@@ -871,7 +871,7 @@ def build_navigation_graph(school_data):
     gate_building_id = 'gate'
     gate_level = 'level1'
     
-    # Gate-A 连接（增加权重，降低优先级）
+    # Gate-A 连接
     gate_a_corr_name = 'gateToA-p1'
     gate_a_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_a_corr_name, gate_level))
     a_gate_corr_name = 'gateToA-p1'
@@ -881,11 +881,11 @@ def build_navigation_graph(school_data):
         coords_gate = graph.nodes[gate_a_node_id]['coordinates']
         coords_a = graph.nodes[a_gate_node_id]['coordinates']
         distance = euclidean_distance(coords_gate, coords_a)
-        graph.add_edge(gate_a_node_id, a_gate_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(gate_a_node_id, a_gate_node_id, distance)
     else:
         st.warning("Could not find Gate-A inter-building corridor connection nodes")
     
-    # Gate-B 连接（增加权重，降低优先级）
+    # Gate-B 连接
     gate_b_corr_name = 'gateToB-p1'
     gate_b_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_b_corr_name, gate_level))
     b_gate_corr_name = 'gateToB-p1'
@@ -895,18 +895,18 @@ def build_navigation_graph(school_data):
         coords_gate = graph.nodes[gate_b_node_id]['coordinates']
         coords_b = graph.nodes[b_gate_node_id]['coordinates']
         distance = euclidean_distance(coords_gate, coords_b)
-        graph.add_edge(gate_b_node_id, b_gate_node_id, distance * 5.0)  # 增加5倍权重
+        graph.add_edge(gate_b_node_id, b_gate_node_id, distance)
     else:
         st.warning("Could not find Gate-B inter-building corridor connection nodes")
     
-    # Gate-C 连接（核心修复：最低权重 + 强制优先）
+    # Gate-C 连接（核心修复：修正节点名称 + 容错逻辑）
     gate_c_corr_name = 'gateToC-p1'
     gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_c_corr_name, gate_level))
-    # 优先找p0，容错找所有gateToC节点
+    # 修正：C楼侧找p0节点
     c_gate_corr_name = 'gateToC-p0'
     c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_gate_corr_name, connect_level1))
 
-    # 容错：遍历所有C楼gateToC节点
+    # 容错：如果p0不存在，遍历C楼所有gateToC相关节点
     if not c_gate_node_id:
         for node_id, node_info in graph.nodes.items():
             if (node_info['building'] == 'C' and 
@@ -919,8 +919,8 @@ def build_navigation_graph(school_data):
     if gate_c_node_id and c_gate_node_id:
         coords_gate = graph.nodes[gate_c_node_id]['coordinates']
         coords_c = graph.nodes[c_gate_node_id]['coordinates']
-        # 极低权重（0.1倍），确保绝对优先
-        distance = euclidean_distance(coords_gate, coords_c) * 0.1
+        # 降低直接连廊权重，优先选择
+        distance = euclidean_distance(coords_gate, coords_c) * 0.8
         graph.add_edge(gate_c_node_id, c_gate_node_id, distance)
     else:
         st.warning("Could not find Gate-C inter-building corridor connection nodes")
