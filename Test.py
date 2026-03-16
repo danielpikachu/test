@@ -147,7 +147,7 @@ COLORS = {
 
 def load_school_data_detailed(filename):
     try:
-        with open(filename, 'r', encoding='utf-8') as f:
+        with open(filename, 'r') as f:
             return json.load(f)
     except Exception as e:
         st.error(f"Failed to load data file: {str(e)}")
@@ -356,7 +356,6 @@ def plot_3d_map(school_data, display_options=None):
             bbox=bbox_props
         )
 
-    # 绘制导航路径（只在plot_3d_map中绘制一次）
     if path and not show_all:
         try:
             x = []
@@ -365,27 +364,24 @@ def plot_3d_map(school_data, display_options=None):
             labels = []
 
             for node_id in path:
-                # 确保graph变量已定义
-                if 'graph' in globals() and node_id in graph.nodes:
-                    coords = graph.nodes[node_id]['coordinates']
-                    x.append(coords[0])
-                    y.append(coords[1])
-                    z.append(coords[2])
-                    
-                    node_type = graph.nodes[node_id]['type']
-                    if node_type == 'classroom':
-                        labels.append(graph.nodes[node_id]['name'])
-                    elif node_type == 'stair':
-                        labels.append(graph.nodes[node_id]['name'])
-                    else:
-                        labels.append("")
+                coords = graph.nodes[node_id]['coordinates']
+                x.append(coords[0])
+                y.append(coords[1])
+                z.append(coords[2])
+                
+                node_type = graph.nodes[node_id]['type']
+                if node_type == 'classroom':
+                    labels.append(graph.nodes[node_id]['name'])
+                elif node_type == 'stair':
+                    labels.append(graph.nodes[node_id]['name'])
+                else:
+                    labels.append("")
 
-            if x and y and z:
-                ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='Navigation Path')
-                ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
-                ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
-                ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
-                ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
+            ax.plot(x, y, z, color=COLORS['path'], linewidth=6, linestyle='-', marker='o', markersize=10, label='Navigation Path')
+            ax.scatter(x[0], y[0], z[0], color=COLORS['start_marker'], s=1000, marker='*', label='Start', edgecolors='black')
+            ax.scatter(x[-1], y[-1], z[-1], color=COLORS['end_marker'], s=1000, marker='*', label='End', edgecolors='black')
+            ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
+            ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
         except Exception as e:
             st.warning(f"Path drawing warning: {str(e)}")
 
@@ -510,129 +506,116 @@ def get_real_world_direction(graph, current_node_id, next_node_id, prev_node_id=
     2. 走廊→走廊：面朝当前行走方向，判断左右转
     3. 走廊→楼梯/教室：基于走廊主方向判断左右
     """
-    try:
-        current_node = graph.nodes[current_node_id]
-        next_node = graph.nodes[next_node_id]
+    current_node = graph.nodes[current_node_id]
+    next_node = graph.nodes[next_node_id]
+    
+    # 提取平面坐标
+    curr_x, curr_y, _ = current_node['coordinates']
+    next_x, next_y, _ = next_node['coordinates']
+    
+    # 场景1：教室→走廊（起点）
+    if current_node['type'] == 'classroom' and next_node['type'] == 'corridor':
+        # 找到该走廊的所有坐标点
+        corridor_name = next_node['name'].split('-p')[0]
+        building_level = f"{next_node['building']}_{next_node['level']}"
         
-        # 提取平面坐标
-        curr_x, curr_y, _ = current_node['coordinates']
-        next_x, next_y, _ = next_node['coordinates']
+        # 遍历所有节点找同走廊的点
+        corridor_points = []
+        for node_id, node in graph.nodes.items():
+            if (node['type'] == 'corridor' and 
+                node['building'] == next_node['building'] and 
+                node['level'] == next_node['level'] and 
+                node['name'].startswith(corridor_name)):
+                corridor_points.append(node['coordinates'])
         
-        # 场景1：教室→走廊（起点）
-        if current_node['type'] == 'classroom' and next_node['type'] == 'corridor':
-            # 找到该走廊的所有坐标点
-            corridor_name = next_node['name'].split('-p')[0]
-            building_id = f"building{current_node['building']}" if current_node['building'] != 'Gate' else 'gate'
-            
-            # 遍历所有节点找同走廊的点
-            corridor_points = []
-            for node_id, node in graph.nodes.items():
-                if (node['type'] == 'corridor' and 
-                    node['building'] == next_node['building'] and 
-                    node['level'] == next_node['level'] and 
-                    node['name'].startswith(corridor_name)):
-                    corridor_points.append(node['coordinates'])
-            
-            # 计算走廊主方向
-            corridor_dir = get_corridor_main_direction(corridor_points)
-            
-            # 计算从教室到走廊入口的向量
-            exit_vec = np.array([next_x - curr_x, next_y - curr_y])
-            
-            # 计算相对方向
-            direction = calculate_relative_direction(
-                (curr_x, curr_y), 
-                (next_x, next_y), 
-                corridor_dir
-            )
-            
-            # 直行时按实际场景调整为左/右（避免显示直行）
-            if direction == "直行":
-                # 计算exit_vec与corridor_dir的夹角
-                if np.linalg.norm(exit_vec) > 1e-6 and np.linalg.norm(corridor_dir) > 1e-6:
-                    angle = np.arccos(np.clip(np.dot(exit_vec, corridor_dir)/(np.linalg.norm(exit_vec)*np.linalg.norm(corridor_dir)), -1.0, 1.0))
-                    if angle < np.radians(10):
-                        # 正对走廊，默认向左（可根据实际布局调整）
-                        direction = "向左"
-                    else:
-                        # 重新计算叉积判断
-                        cross = np.cross(np.append(corridor_dir, 0), np.append(exit_vec, 0))[2]
-                        direction = "向左" if cross > 0 else "向右"
-                else:
-                    direction = "向左"
-            
-            return direction
+        # 计算走廊主方向
+        corridor_dir = get_corridor_main_direction(corridor_points)
         
-        # 场景2：走廊→其他节点（走廊/楼梯/教室）
-        elif current_node['type'] == 'corridor':
-            if prev_node_id is None:
-                # 走廊起点（少见）
-                facing_dir = np.array([next_x - curr_x, next_y - curr_y])
+        # 计算从教室到走廊入口的向量
+        exit_vec = np.array([next_x - curr_x, next_y - curr_y])
+        
+        # 计算相对方向
+        direction = calculate_relative_direction(
+            (curr_x, curr_y), 
+            (next_x, next_y), 
+            corridor_dir
+        )
+        
+        # 直行时按实际场景调整为左/右（避免显示直行）
+        if direction == "直行":
+            # 计算exit_vec与corridor_dir的夹角
+            angle = np.arccos(np.clip(np.dot(exit_vec, corridor_dir)/(np.linalg.norm(exit_vec)*np.linalg.norm(corridor_dir)), -1.0, 1.0))
+            if angle < np.radians(10):
+                # 正对走廊，默认向左（可根据实际布局调整）
+                direction = "向左"
             else:
-                # 基于上一段路径确定面朝方向
+                # 重新计算叉积判断
+                cross = np.cross(np.append(corridor_dir, 0), np.append(exit_vec, 0))[2]
+                direction = "向左" if cross > 0 else "向右"
+        
+        return direction
+    
+    # 场景2：走廊→其他节点（走廊/楼梯/教室）
+    elif current_node['type'] == 'corridor':
+        if prev_node_id is None:
+            # 走廊起点（少见）
+            facing_dir = np.array([next_x - curr_x, next_y - curr_y])
+        else:
+            # 基于上一段路径确定面朝方向
+            prev_node = graph.nodes[prev_node_id]
+            prev_x, prev_y, _ = prev_node['coordinates']
+            facing_dir = np.array([curr_x - prev_x, curr_y - prev_y])
+        
+        direction = calculate_relative_direction(
+            (curr_x, curr_y), 
+            (next_x, next_y), 
+            facing_dir
+        )
+        
+        # 调整表述（左转/右转 vs 向左/向右）
+        if direction == "直行":
+            # 小角度视为向左/向右
+            direction = "向左"  # 默认，可根据实际调整
+        elif direction == "向左":
+            # 大角度转左转，小角度向左
+            target_vec = np.array([next_x - curr_x, next_y - curr_y])
+            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
+            if angle > np.radians(30):
+                direction = "左转"
+            else:
+                direction = "向左"
+        elif direction == "向右":
+            target_vec = np.array([next_x - curr_x, next_y - curr_y])
+            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
+            if angle > np.radians(30):
+                direction = "右转"
+            else:
+                direction = "向右"
+        
+        return direction
+    
+    # 场景3：楼梯→其他节点
+    elif current_node['type'] == 'stair':
+        # 楼梯上下优先
+        if abs(next_node['coordinates'][2] - current_node['coordinates'][2]) > 0.1:
+            return "向上" if next_node['coordinates'][2] > current_node['coordinates'][2] else "向下"
+        else:
+            # 同层移动，按走廊逻辑
+            if prev_node_id:
                 prev_node = graph.nodes[prev_node_id]
-                prev_x, prev_y, _ = prev_node['coordinates']
-                facing_dir = np.array([curr_x - prev_x, curr_y - prev_y])
+                facing_dir = np.array([curr_x - prev_node['coordinates'][0], curr_y - prev_node['coordinates'][1]])
+            else:
+                facing_dir = np.array([next_x - curr_x, next_y - curr_y])
             
             direction = calculate_relative_direction(
                 (curr_x, curr_y), 
                 (next_x, next_y), 
                 facing_dir
             )
-            
-            # 调整表述（左转/右转 vs 向左/向右）
-            if direction == "直行":
-                # 小角度视为向左/向右
-                direction = "向左"  # 默认，可根据实际调整
-            elif direction == "向左":
-                # 大角度转左转，小角度向左
-                target_vec = np.array([next_x - curr_x, next_y - curr_y])
-                if np.linalg.norm(facing_dir) > 1e-6 and np.linalg.norm(target_vec) > 1e-6:
-                    angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
-                    if angle > np.radians(30):
-                        direction = "左转"
-                    else:
-                        direction = "向左"
-                else:
-                    direction = "向左"
-            elif direction == "向右":
-                target_vec = np.array([next_x - curr_x, next_y - curr_y])
-                if np.linalg.norm(facing_dir) > 1e-6 and np.linalg.norm(target_vec) > 1e-6:
-                    angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
-                    if angle > np.radians(30):
-                        direction = "右转"
-                    else:
-                        direction = "向右"
-                else:
-                    direction = "向右"
-            
-            return direction
-        
-        # 场景3：楼梯→其他节点
-        elif current_node['type'] == 'stair':
-            # 楼梯上下优先
-            if abs(next_node['coordinates'][2] - current_node['coordinates'][2]) > 0.1:
-                return "向上" if next_node['coordinates'][2] > current_node['coordinates'][2] else "向下"
-            else:
-                # 同层移动，按走廊逻辑
-                if prev_node_id and prev_node_id in graph.nodes:
-                    prev_node = graph.nodes[prev_node_id]
-                    facing_dir = np.array([curr_x - prev_node['coordinates'][0], curr_y - prev_node['coordinates'][1]])
-                else:
-                    facing_dir = np.array([next_x - curr_x, next_y - curr_y])
-                
-                direction = calculate_relative_direction(
-                    (curr_x, curr_y), 
-                    (next_x, next_y), 
-                    facing_dir
-                )
-                return direction if direction != "直行" else "向左"
-        
-        # 默认返回
-        return ""
-    except Exception as e:
-        st.warning(f"Direction calculation error: {str(e)}")
-        return "向前"
+            return direction if direction != "直行" else "向左"
+    
+    # 默认返回
+    return ""
 
 def filter_important_nodes(path, graph):
     """
@@ -919,7 +902,7 @@ def build_navigation_graph(school_data):
     # Gate-C 连接
     gate_c_corr_name = 'gateToC-p1'
     gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_c_corr_name, gate_level))
-    c_gate_corr_name = 'gateToC-p1'
+    c_gate_corr_name = 'gateToC-p0'
     c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_gate_corr_name, connect_level1))
     
     if gate_c_node_id and c_gate_node_id:
@@ -1076,6 +1059,32 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
     except Exception as e:
         return None, f"Navigation error: {str(e)}", None, None
 
+def plot_path(ax, graph, path):
+    try:
+        x = []
+        y = []
+        z = []
+        labels = []
+
+        for node_id in path:
+            coords = graph.nodes[node_id]['coordinates']
+            x.append(coords[0])
+            y.append(coords[1])
+            z.append(coords[2])
+            
+            node_type = graph.nodes[node_id]['type']
+            if node_type == 'classroom':
+                labels.append(graph.nodes[node_id]['name'])
+            elif node_type == 'stair':
+                labels.append(graph.nodes[node_id]['name'])
+            else:
+                labels.append("")
+
+        ax.plot(x, y, z, color=COLORS['path'], linewidth=10, linestyle='-', marker='o', markersize=10)
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
+    except Exception as e:
+        st.error(f"Failed to draw path: {str(e)}")
+
 def get_classroom_info(school_data):
     try:
         # 获取所有建筑（包括Gate）
@@ -1132,9 +1141,6 @@ def reset_app_state():
     st.session_state['current_path'] = None
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
-    # 重置全局graph变量
-    global graph
-    graph = None
 
 def welcome_page():
     # 初始化Google Sheets连接
@@ -1211,7 +1217,6 @@ def welcome_page():
     st.markdown('</div>', unsafe_allow_html=True)
 
 def main_interface():
-    global graph  # 声明使用全局变量
     st.markdown("""
         <style>
         .stApp {
@@ -1272,7 +1277,8 @@ def main_interface():
         if school_data is None:
             return
             
-        graph = build_navigation_graph(school_data)  # 初始化全局graph
+        global graph
+        graph = build_navigation_graph(school_data)
         building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
         st.success("✅ Campus data loaded successfully! Initial state shows A/B/C/Gate buildings")
     except Exception as e:
@@ -1350,6 +1356,7 @@ def main_interface():
         try:
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+                plot_path(ax, graph, st.session_state['current_path'])
             else:
                 fig, ax = plot_3d_map(school_data)
             
@@ -1361,10 +1368,6 @@ def main():
     # 初始化会话状态，控制显示哪个页面
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
-    
-    # 初始化全局graph变量
-    global graph
-    graph = None
     
     # 根据当前页面状态显示不同内容
     if st.session_state['page'] == 'welcome':
