@@ -184,162 +184,161 @@ def plot_3d_map(school_data, display_options=None):
 
     # 遍历所有建筑（包括Gate）
     for building_id in school_data.keys():
-        if building_id == 'gate':
-            building_name = 'Gate'
-        elif building_id.startswith('building'):
-            building_name = building_id.replace('building', '')
-        else:
-            continue
-            
-        building_data = school_data[building_id]
-        
-        displayed_levels = []
-        max_displayed_z = -float('inf')
-        max_displayed_y = -float('inf')
-        corresponding_x = 0
-        level_count = 0
-        
-        for level in building_data['levels']:
-            level_name = level['name']
-            z = level['z']
-            
-            show_level = show_all
-            if not show_all:
-                # Gate建筑特殊处理
-                if building_name == 'Gate':
-                    show_level = (level_name == start_level) or (level_name == end_level)
-                elif building_name == 'B':
-                    show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
-                    if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C','Gate'] and end_building in ['A','C','Gate'] and 'B' in [start_building, end_building]):
-                        show_level = show_level or (level_name == 'level1')
-                else:
-                    show_level = (level_name == start_level) or (level_name == end_level)
-            
-            if show_level:
-                displayed_levels.append(level)
-                if z > max_displayed_z:
-                    max_displayed_z = z
-                
-                fp = level['floorPlane']
-                current_max_y = fp['maxY']
-                if current_max_y > max_displayed_y:
-                    max_displayed_y = current_max_y
-                    corresponding_x = (fp['minX'] + fp['maxX']) / 2
-            
-            level_count += 1
-            
-            floor_border_color = COLORS['floor_z'].get(z, 'gray')
-            building_fill_color = COLORS['building'].get(building_name, 'lightgray')
-
-            if show_level:
-                fp = level['floorPlane']
-                plane_vertices = [
-                    [fp['minX'], fp['minY'], z],
-                    [fp['maxX'], fp['minY'], z],
-                    [fp['maxX'], fp['maxY'], z],
-                    [fp['minX'], fp['maxY'], z],
-                    [fp['minX'], fp['minY'], z]
-                ]
-                x_plane = [p[0] for p in plane_vertices]
-                y_plane = [p[1] for p in plane_vertices]
-                z_plane = [p[2] for p in plane_vertices]
-                
-                legend_label = f"Building {building_name}-{level_name}"
-                if legend_label not in ax.get_legend_handles_labels()[1]:
-                    ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, label=legend_label)
-                else:
-                    ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4)
-                ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
-                                color=building_fill_color, alpha=0.3)
-
-                for corr_idx, corridor in enumerate(level['corridors']):
-                    points = corridor['points']
-                    x = [p[0] for p in points]
-                    y = [p[1] for p in points]
-                    z_coords = [p[2] for p in points]
-                    
-                    is_external = corridor.get('type') == 'external'
-                    if is_external:
-                        ext_style = corridor.get('style', {})
-                        corr_line_color = ext_style.get('color', 'gray')
-                        corr_line_style = ext_style.get('lineType', '--')
-                        corr_line_width = 10
-                        corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
-                    
-                    elif 'name' in corridor and ('connectToBuilding' in corridor['name']):
-                        corr_line_color = COLORS['connect_corridor']
-                        corr_line_style = '-'
-                        corr_line_width = 12
-                        corr_label = f"Connecting Corridor ({building_name}-{level_name})"
-                    
-                    else:
-                        corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
-                        corr_line_style = '-'
-                        corr_line_width = 8
-                        corr_label = None
-                    
-                    if corr_label and corr_label not in ax.get_legend_handles_labels()[1]:
-                        ax.plot(x, y, z_coords, 
-                                color=corr_line_color, 
-                                linestyle=corr_line_style,
-                                linewidth=corr_line_width, 
-                                alpha=0.8, 
-                                label=corr_label)
-                    else:
-                        ax.plot(x, y, z_coords, 
-                                color=corr_line_color, 
-                                linestyle=corr_line_style,
-                                linewidth=corr_line_width, 
-                                alpha=0.8)
-                    
-                    for px, py, pz in points:
-                        ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
-
-                for classroom in level['classrooms']:
-                    x, y, _ = classroom['coordinates']
-                    width, depth = classroom['size']
-                    class_name = classroom['name']
-
-                    ax.text(x, y, z, class_name, color=COLORS['classroom_label'], fontweight='bold', fontsize=14)
-                    ax.scatter(x, y, z, color=building_fill_color, s=160, edgecolors=floor_border_color)
-                    ax.plot([x, x + width, x + width, x, x],
-                            [y, y, y + depth, y + depth, y],
-                            [z, z, z, z, z],
-                            color=floor_border_color, linestyle='--', alpha=0.6, linewidth=2)
-
-            for stair in level['stairs']:
-                stair_name = stair['name']
-                is_path_stair = (building_name, stair_name, level_name) in path_stairs
-                
-                if show_all or show_level or is_path_stair:
-                    x, y, _ = stair['coordinates']
-                    stair_label = f"Building {building_name}-{stair_name}"
-                    
-                    stair_color = COLORS['stair'].get(stair_name, 'red')
-                    
-                    marker_size = 800 if is_path_stair else 600
-                    marker_edge_width = 3 if is_path_stair else 1
-                    
-                    if stair_label not in ax.get_legend_handles_labels()[1]:
-                        ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^', 
-                                  label=stair_label, edgecolors='black', linewidths=marker_edge_width)
-                    else:
-                        ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^',
-                                  edgecolors='black', linewidths=marker_edge_width)
-                    
-                    ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
-        
-        if level_count > 0 and len(displayed_levels) > 0:
-            if building_name == 'B':
-                label_y = max_displayed_y - 2.0
-            elif building_name == 'Gate':
-                label_y = max_displayed_y + 3.0
+        if building_id == 'gate' or building_id.startswith('building'):
+            if building_id == 'gate':
+                building_name = 'Gate'
             else:
-                label_y = max_displayed_y + 2.0
-            label_z = max_displayed_z + 1.0
-            center_x = corresponding_x
+                building_name = building_id.replace('building', '')
             
-            building_label_positions[building_name] = (center_x, label_y, label_z)
+            building_data = school_data[building_id]
+            
+            displayed_levels = []
+            max_displayed_z = -float('inf')
+            max_displayed_y = -float('inf')
+            corresponding_x = 0
+            level_count = 0
+            
+            for level in building_data['levels']:
+                level_name = level['name']
+                z = level['z']
+                
+                show_level = show_all
+                if not show_all:
+                    # Gate建筑特殊处理
+                    if building_name == 'Gate':
+                        show_level = (level_name == start_level) or (level_name == end_level)
+                    elif building_name == 'B':
+                        show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
+                        if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C','Gate'] and end_building in ['A','C','Gate'] and 'B' in [start_building, end_building]):
+                            show_level = show_level or (level_name == 'level1')
+                    else:
+                        show_level = (level_name == start_level) or (level_name == end_level)
+                
+                if show_level:
+                    displayed_levels.append(level)
+                    if z > max_displayed_z:
+                        max_displayed_z = z
+                    
+                    fp = level['floorPlane']
+                    current_max_y = fp['maxY']
+                    if current_max_y > max_displayed_y:
+                        max_displayed_y = current_max_y
+                        corresponding_x = (fp['minX'] + fp['maxX']) / 2
+                
+                level_count += 1
+                
+                floor_border_color = COLORS['floor_z'].get(z, 'gray')
+                building_fill_color = COLORS['building'].get(building_name, 'lightgray')
+
+                if show_level:
+                    fp = level['floorPlane']
+                    plane_vertices = [
+                        [fp['minX'], fp['minY'], z],
+                        [fp['maxX'], fp['minY'], z],
+                        [fp['maxX'], fp['maxY'], z],
+                        [fp['minX'], fp['maxY'], z],
+                        [fp['minX'], fp['minY'], z]
+                    ]
+                    x_plane = [p[0] for p in plane_vertices]
+                    y_plane = [p[1] for p in plane_vertices]
+                    z_plane = [p[2] for p in plane_vertices]
+                    
+                    legend_label = f"Building {building_name}-{level_name}"
+                    if legend_label not in ax.get_legend_handles_labels()[1]:
+                        ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4, label=legend_label)
+                    else:
+                        ax.plot(x_plane, y_plane, z_plane, color=floor_border_color, linewidth=4)
+                    ax.plot_trisurf(x_plane[:-1], y_plane[:-1], z_plane[:-1], 
+                                    color=building_fill_color, alpha=0.3)
+
+                    for corr_idx, corridor in enumerate(level['corridors']):
+                        points = corridor['points']
+                        x = [p[0] for p in points]
+                        y = [p[1] for p in points]
+                        z_coords = [p[2] for p in points]
+                        
+                        is_external = corridor.get('type') == 'external'
+                        if is_external:
+                            ext_style = corridor.get('style', {})
+                            corr_line_color = ext_style.get('color', 'gray')
+                            corr_line_style = ext_style.get('lineType', '--')
+                            corr_line_width = 10
+                            corr_label = f"External Corridor ({building_name}-{corridor.get('name', f'corr{corr_idx}')})"
+                        
+                        elif 'name' in corridor and ('connectToBuilding' in corridor['name']):
+                            corr_line_color = COLORS['connect_corridor']
+                            corr_line_style = '-'
+                            corr_line_width = 12
+                            corr_label = f"Connecting Corridor ({building_name}-{level_name})"
+                        
+                        else:
+                            corr_line_color = COLORS['corridor_line'].get(building_name, 'gray')
+                            corr_line_style = '-'
+                            corr_line_width = 8
+                            corr_label = None
+                        
+                        if corr_label and corr_label not in ax.get_legend_handles_labels()[1]:
+                            ax.plot(x, y, z_coords, 
+                                    color=corr_line_color, 
+                                    linestyle=corr_line_style,
+                                    linewidth=corr_line_width, 
+                                    alpha=0.8, 
+                                    label=corr_label)
+                        else:
+                            ax.plot(x, y, z_coords, 
+                                    color=corr_line_color, 
+                                    linestyle=corr_line_style,
+                                    linewidth=corr_line_width, 
+                                    alpha=0.8)
+                        
+                        for px, py, pz in points:
+                            ax.scatter(px, py, pz, color=COLORS['corridor_node'], s=40, marker='s', alpha=0.9)
+
+                    for classroom in level['classrooms']:
+                        x, y, _ = classroom['coordinates']
+                        width, depth = classroom['size']
+                        class_name = classroom['name']
+
+                        ax.text(x, y, z, class_name, color=COLORS['classroom_label'], fontweight='bold', fontsize=14)
+                        ax.scatter(x, y, z, color=building_fill_color, s=160, edgecolors=floor_border_color)
+                        ax.plot([x, x + width, x + width, x, x],
+                                [y, y, y + depth, y + depth, y],
+                                [z, z, z, z, z],
+                                color=floor_border_color, linestyle='--', alpha=0.6, linewidth=2)
+
+                for stair in level['stairs']:
+                    stair_name = stair['name']
+                    is_path_stair = (building_name, stair_name, level_name) in path_stairs
+                    
+                    if show_all or show_level or is_path_stair:
+                        x, y, _ = stair['coordinates']
+                        stair_label = f"Building {building_name}-{stair_name}"
+                        
+                        stair_color = COLORS['stair'].get(stair_name, 'red')
+                        
+                        marker_size = 800 if is_path_stair else 600
+                        marker_edge_width = 3 if is_path_stair else 1
+                        
+                        if stair_label not in ax.get_legend_handles_labels()[1]:
+                            ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^', 
+                                      label=stair_label, edgecolors='black', linewidths=marker_edge_width)
+                        else:
+                            ax.scatter(x, y, z, color=stair_color, s=marker_size, marker='^',
+                                      edgecolors='black', linewidths=marker_edge_width)
+                        
+                        ax.text(x, y, z, stair_name, color=COLORS['stair_label'], fontweight='bold', fontsize=14)
+            
+            if level_count > 0 and len(displayed_levels) > 0:
+                if building_name == 'B':
+                    label_y = max_displayed_y - 2.0
+                elif building_name == 'Gate':
+                    label_y = max_displayed_y + 3.0
+                else:
+                    label_y = max_displayed_y + 2.0
+                label_z = max_displayed_z + 1.0
+                center_x = corresponding_x
+                
+                building_label_positions[building_name] = (center_x, label_y, label_z)
 
     # 添加建筑标签
     for building_name, (x, y, z) in building_label_positions.items():
@@ -919,11 +918,8 @@ def build_navigation_graph(school_data):
         st.warning("Could not find Gate-B inter-building corridor connection nodes")
     
     # Gate-C 连接（核心修复：强制优先选择直接连廊）
-    gate_c_corr_name = 'gateToC-p1'
-    gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_c_corr_name, gate_level))
-    # 修正：C楼侧找p0节点
-    c_gate_corr_name = 'gateToC-p0'
-    c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_gate_corr_name, connect_level1))
+    gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', 'gateToC-p0', gate_level))
+    c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', 'gateToC-p0', connect_level1))
 
     # 容错：如果p0不存在，遍历C楼所有gateToC相关节点
     if not c_gate_node_id:
@@ -936,22 +932,29 @@ def build_navigation_graph(school_data):
                 st.success(f"找到C楼Gate-C连廊节点: {node_info['name']}")
                 break
 
+    # 强制建立Gate-C直接连接，权重设为极小值确保优先选择
     if gate_c_node_id and c_gate_node_id:
-        coords_gate = graph.nodes[gate_c_node_id]['coordinates']
-        coords_c = graph.nodes[c_gate_node_id]['coordinates']
-        # 核心修复：大幅降低Gate-C直接连廊权重（×0.1），确保优先选择
-        distance = euclidean_distance(coords_gate, coords_c) * 0.1
-        graph.add_edge(gate_c_node_id, c_gate_node_id, distance)
-        st.success(f"✅ Gate-C直接连廊已连接，权重: {distance:.2f}")
+        graph.add_edge(gate_c_node_id, c_gate_node_id, 0.1)
+        st.success(f"✅ Gate-C直接连廊已连接，权重: 0.1")
     else:
-        st.warning("Could not find Gate-C inter-building corridor connection nodes")
-        # 调试输出：显示所有C楼level1的走廊节点
-        st.info("C楼level1走廊节点列表：")
-        for node_id, node_info in graph.nodes.items():
-            if (node_info['building'] == 'C' and 
-                node_info['type'] == 'corridor' and 
-                node_info['level'] == connect_level1):
-                st.info(f"- {node_info['name']} (ID: {node_id})")
+        # 终极兜底方案：直接连接Gate教室节点到C楼走廊节点
+        gate_main_gate_node = graph.node_id_map.get(('Gate', 'classroom', 'Main Gate', 'level1'))
+        if gate_main_gate_node:
+            # 找到C楼level1任意走廊节点
+            c_corridor_node = None
+            for node_id, node_info in graph.nodes.items():
+                if (node_info['building'] == 'C' and 
+                    node_info['type'] == 'corridor' and 
+                    node_info['level'] == connect_level1):
+                    c_corridor_node = node_id
+                    break
+            if c_corridor_node:
+                graph.add_edge(gate_main_gate_node, c_corridor_node, 0.01)
+                st.success(f"✅ 兜底方案生效：Gate Main Gate 直接连接到 C 楼走廊，权重: 0.01")
+            else:
+                st.warning("Could not find Gate-C inter-building corridor connection nodes")
+        else:
+            st.warning("Could not find Gate-C inter-building corridor connection nodes")
 
     return graph
 
@@ -990,6 +993,29 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         return None, "Invalid building selection, only Buildings A, B, C and Gate are supported", None, None
         
     try:
+        # 强制直连保险：Gate <-> C
+        if start_building == "Gate" and end_building == "C":
+            gate_node = graph.node_id_map.get(('Gate', 'classroom', 'Main Gate', 'level1'))
+            if gate_node:
+                # 找到C楼目标楼层的任意走廊节点
+                c_corridor_node = None
+                for nid, info in graph.nodes.items():
+                    if info['building'] == 'C' and info['level'] == end_level and info['type'] == 'corridor':
+                        c_corridor_node = nid
+                        break
+                if c_corridor_node:
+                    graph.add_edge(gate_node, c_corridor_node, 0.01)
+        
+        if end_building == "Gate" and start_building == "C":
+            c_node = None
+            for nid, info in graph.nodes.items():
+                if info['building'] == 'C' and info['level'] == start_level and info['type'] == 'corridor':
+                    c_node = nid
+                    break
+            gate_node = graph.node_id_map.get(('Gate', 'classroom', 'Main Gate', 'level1'))
+            if c_node and gate_node:
+                graph.add_edge(c_node, gate_node, 0.01)
+
         start_key = (start_building, start_classroom, start_level)
         end_key = (end_building, end_classroom, end_level)
         
