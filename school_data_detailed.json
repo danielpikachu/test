@@ -588,11 +588,6 @@
           },
           {
             "name": "gateToC",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
             "points": [
               [-30, -30, -3],
               [66, 26, -3]
@@ -807,11 +802,6 @@
           },
           {
             "name": "gateToC",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
             "points": [
               [-30, -30, -3],
               [66, 26, -3]
@@ -826,7 +816,7 @@
     "connections": [
       {"from": ["gateToA", "level1"], "to": ["ENTRANCE", "level1"]},
       {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
+      {"from": ["gateToC", "level1"], "to": ["gateToC", "level1"]}
     ]
   }
 }
