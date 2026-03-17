@@ -437,221 +437,52 @@ class Graph:
 def euclidean_distance(coords1, coords2):
     return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
 
-def calculate_relative_direction(from_point, to_point, facing_direction):
+def get_direction(from_coords, to_coords):
     """
-    通用化相对方向计算：
-    - from_point: 当前位置 (x,y)
-    - to_point: 目标位置 (x,y)
-    - facing_direction: 当前面朝方向向量 (dx, dy)
-    - 返回: 向左/向右/直行
+    根据坐标计算方位
+    from_coords: 前一个节点坐标 (x, y, z)
+    to_coords: 后一个节点坐标 (x, y, z)
+    返回方位描述
     """
-    # 计算目标方向向量
-    target_vec = np.array([to_point[0] - from_point[0], to_point[1] - from_point[1]])
-    len_target = np.linalg.norm(target_vec)
-    if len_target < 1e-6:
-        return ""
-    target_vec = target_vec / len_target
+    # 提取坐标差值
+    dx = to_coords[0] - from_coords[0]
+    dy = to_coords[1] - from_coords[1]
+    dz = to_coords[2] - from_coords[2]
     
-    # 归一化面朝方向
-    len_facing = np.linalg.norm(facing_direction)
-    if len_facing < 1e-6:
-        return ""
-    facing_vec = facing_direction / len_facing
+    # 楼梯间只返回上下
+    if dz != 0:
+        return "向上" if dz > 0 else "向下"
     
-    # 计算叉积（判断左右）
-    cross = np.cross(np.append(facing_vec, 0), np.append(target_vec, 0))[2]
-    
-    # 计算点积（判断前后）
-    dot = np.dot(facing_vec, target_vec)
-    
-    # 角度阈值（可调整）
-    angle_threshold = np.cos(np.radians(15))  # 15度以内视为直行
-    
-    if dot > angle_threshold:
-        return "直行"
-    elif cross > 0.01:
-        return "向左"
-    elif cross < -0.01:
-        return "向右"
+    # 平面方位判断（优化阈值，避免微小偏移导致错误）
+    threshold = 0.1  # 最小偏移阈值
+    if abs(dx) > threshold or abs(dy) > threshold:
+        if abs(dx) > abs(dy):
+            return "向右" if dx > 0 else "向左"
+        else:
+            return "向前" if dy > 0 else "向后"
     else:
-        return "直行"
-
-def get_corridor_main_direction(corridor_points):
-    """
-    计算走廊的主延伸方向：
-    - corridor_points: 走廊的坐标点列表
-    - 返回: 走廊主方向向量 (dx, dy)
-    """
-    if len(corridor_points) < 2:
-        return np.array([0, 1])  # 默认Y轴正方向
-    
-    # 计算走廊的首尾点向量（主方向）
-    start = np.array([corridor_points[0][0], corridor_points[0][1]])
-    end = np.array([corridor_points[-1][0], corridor_points[-1][1]])
-    main_dir = end - start
-    
-    # 如果长度过短，取中间段
-    if np.linalg.norm(main_dir) < 1e-6 and len(corridor_points) > 2:
-        mid_idx = len(corridor_points) // 2
-        start = np.array([corridor_points[mid_idx-1][0], corridor_points[mid_idx-1][1]])
-        end = np.array([corridor_points[mid_idx+1][0], corridor_points[mid_idx+1][1]])
-        main_dir = end - start
-    
-    return main_dir
-
-def get_real_world_direction(graph, current_node_id, next_node_id, prev_node_id=None):
-    """
-    真实场景的方向判断主函数（适配所有场景）：
-    1. 教室→走廊：面朝走廊主方向，判断左右
-    2. 走廊→走廊：面朝当前行走方向，判断左右转
-    3. 走廊→楼梯/教室：基于走廊主方向判断左右
-    """
-    current_node = graph.nodes[current_node_id]
-    next_node = graph.nodes[next_node_id]
-    
-    # 提取平面坐标
-    curr_x, curr_y, _ = current_node['coordinates']
-    next_x, next_y, _ = next_node['coordinates']
-    
-    # 场景1：教室→走廊（起点）
-    if current_node['type'] == 'classroom' and next_node['type'] == 'corridor':
-        # 找到该走廊的所有坐标点
-        corridor_name = next_node['name'].split('-p')[0]
-        building_level = f"{next_node['building']}_{next_node['level']}"
-        
-        # 遍历所有节点找同走廊的点
-        corridor_points = []
-        for node_id, node in graph.nodes.items():
-            if (node['type'] == 'corridor' and 
-                node['building'] == next_node['building'] and 
-                node['level'] == next_node['level'] and 
-                node['name'].startswith(corridor_name)):
-                corridor_points.append(node['coordinates'])
-        
-        # 计算走廊主方向
-        corridor_dir = get_corridor_main_direction(corridor_points)
-        
-        # 计算从教室到走廊入口的向量
-        exit_vec = np.array([next_x - curr_x, next_y - curr_y])
-        
-        # 计算相对方向
-        direction = calculate_relative_direction(
-            (curr_x, curr_y), 
-            (next_x, next_y), 
-            corridor_dir
-        )
-        
-        # 直行时按实际场景调整为左/右（避免显示直行）
-        if direction == "直行":
-            # 计算exit_vec与corridor_dir的夹角
-            angle = np.arccos(np.clip(np.dot(exit_vec, corridor_dir)/(np.linalg.norm(exit_vec)*np.linalg.norm(corridor_dir)), -1.0, 1.0))
-            if angle < np.radians(10):
-                # 正对走廊，默认向左（可根据实际布局调整）
-                direction = "向左"
-            else:
-                # 重新计算叉积判断
-                cross = np.cross(np.append(corridor_dir, 0), np.append(exit_vec, 0))[2]
-                direction = "向左" if cross > 0 else "向右"
-        
-        return direction
-    
-    # 场景2：走廊→其他节点（走廊/楼梯/教室）
-    elif current_node['type'] == 'corridor':
-        if prev_node_id is None:
-            # 走廊起点（少见）
-            facing_dir = np.array([next_x - curr_x, next_y - curr_y])
-        else:
-            # 基于上一段路径确定面朝方向
-            prev_node = graph.nodes[prev_node_id]
-            prev_x, prev_y, _ = prev_node['coordinates']
-            facing_dir = np.array([curr_x - prev_x, curr_y - prev_y])
-        
-        direction = calculate_relative_direction(
-            (curr_x, curr_y), 
-            (next_x, next_y), 
-            facing_dir
-        )
-        
-        # 调整表述（左转/右转 vs 向左/向右）
-        if direction == "直行":
-            # 小角度视为向左/向右
-            direction = "向左"  # 默认，可根据实际调整
-        elif direction == "向左":
-            # 大角度转左转，小角度向左
-            target_vec = np.array([next_x - curr_x, next_y - curr_y])
-            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
-            if angle > np.radians(30):
-                direction = "左转"
-            else:
-                direction = "向左"
-        elif direction == "向右":
-            target_vec = np.array([next_x - curr_x, next_y - curr_y])
-            angle = np.arccos(np.clip(np.dot(facing_dir, target_vec)/(np.linalg.norm(facing_dir)*np.linalg.norm(target_vec)), -1.0, 1.0))
-            if angle > np.radians(30):
-                direction = "右转"
-            else:
-                direction = "向右"
-        
-        return direction
-    
-    # 场景3：楼梯→其他节点
-    elif current_node['type'] == 'stair':
-        # 楼梯上下优先
-        if abs(next_node['coordinates'][2] - current_node['coordinates'][2]) > 0.1:
-            return "向上" if next_node['coordinates'][2] > current_node['coordinates'][2] else "向下"
-        else:
-            # 同层移动，按走廊逻辑
-            if prev_node_id:
-                prev_node = graph.nodes[prev_node_id]
-                facing_dir = np.array([curr_x - prev_node['coordinates'][0], curr_y - prev_node['coordinates'][1]])
-            else:
-                facing_dir = np.array([next_x - curr_x, next_y - curr_y])
-            
-            direction = calculate_relative_direction(
-                (curr_x, curr_y), 
-                (next_x, next_y), 
-                facing_dir
-            )
-            return direction if direction != "直行" else "向左"
-    
-    # 默认返回
-    return ""
+        return ""  # 无明显偏移
 
 def filter_important_nodes(path, graph):
     """
     过滤路径中的重要节点（只保留教室、楼梯、跨建筑走廊）
     """
     important_nodes = []
-    # 记录上一个节点的建筑，用于判断跨建筑走廊
-    prev_building = None
     
     for node_id in path:
         node_info = graph.nodes[node_id]
         node_type = node_info['type']
         node_name = node_info['name']
-        current_building = node_info['building']
         
         # 保留教室和楼梯节点
         if node_type in ['classroom', 'stair']:
             important_nodes.append(node_id)
-            prev_building = current_building
-        # 保留跨建筑走廊节点（修复：识别gateToX类型的跨建筑走廊）
-        elif node_type == 'corridor':
-            # 判断是否为跨建筑走廊
-            is_cross_building = (
-                'connectToBuilding' in node_name or 
-                ('gateTo' in node_name and any(char in node_name for char in ['A', 'B', 'C']))
-            )
-            
-            # 判断是否跨建筑（当前节点建筑 != 上一个节点建筑）
-            is_actual_cross = prev_building is not None and current_building != prev_building
-            
-            if is_cross_building or is_actual_cross:
-                # 去重：避免连续的相同类型跨建筑走廊节点
-                if not important_nodes or graph.nodes[important_nodes[-1]]['type'] != 'corridor':
-                    important_nodes.append(node_id)
-                    prev_building = current_building
-
+        # 保留跨建筑走廊节点
+        elif node_type == 'corridor' and ('connectToBuilding' in node_name or 'gateTo' in node_name):
+            # 去重：避免连续的相同类型跨建筑走廊节点
+            if not important_nodes or graph.nodes[important_nodes[-1]]['type'] != 'corridor':
+                important_nodes.append(node_id)
+    
     return important_nodes
 
 def build_navigation_graph(school_data):
@@ -863,8 +694,7 @@ def build_navigation_graph(school_data):
         coords_a = graph.nodes[a_connect1_node_id]['coordinates']
         coords_c = graph.nodes[c_connect1_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_c)
-        # 提高A-C绕行路径的权重，降低优先级
-        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance * 5.0)
+        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
         st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
     
@@ -879,8 +709,7 @@ def build_navigation_graph(school_data):
         coords_a = graph.nodes[a_connect3_node_id]['coordinates']
         coords_c = graph.nodes[c_connect3_node_id]['coordinates']
         distance = euclidean_distance(coords_a, coords_c)
-        # 提高A-C绕行路径的权重，降低优先级
-        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance * 5.0)
+        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
     
@@ -898,8 +727,7 @@ def build_navigation_graph(school_data):
         coords_gate = graph.nodes[gate_a_node_id]['coordinates']
         coords_a = graph.nodes[a_gate_node_id]['coordinates']
         distance = euclidean_distance(coords_gate, coords_a)
-        # 提高Gate-A路径权重，降低优先级
-        graph.add_edge(gate_a_node_id, a_gate_node_id, distance * 3.0)
+        graph.add_edge(gate_a_node_id, a_gate_node_id, distance)
     else:
         st.warning("Could not find Gate-A inter-building corridor connection nodes")
     
@@ -913,45 +741,23 @@ def build_navigation_graph(school_data):
         coords_gate = graph.nodes[gate_b_node_id]['coordinates']
         coords_b = graph.nodes[b_gate_node_id]['coordinates']
         distance = euclidean_distance(coords_gate, coords_b)
-        # 提高Gate-B路径权重，降低优先级
-        graph.add_edge(gate_b_node_id, b_gate_node_id, distance * 3.0)
+        graph.add_edge(gate_b_node_id, b_gate_node_id, distance)
     else:
         st.warning("Could not find Gate-B inter-building corridor connection nodes")
     
-    # Gate-C 连接（核心修复：强制优先选择直接连廊）
+    # Gate-C 连接
     gate_c_corr_name = 'gateToC-p1'
     gate_c_node_id = graph.node_id_map.get((gate_building_id, 'corridor', gate_c_corr_name, gate_level))
-    # 修正：C楼侧找p0节点
-    c_gate_corr_name = 'gateToC-p0'
+    c_gate_corr_name = 'gateToC-p1'
     c_gate_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_gate_corr_name, connect_level1))
-
-    # 容错：如果p0不存在，遍历C楼所有gateToC相关节点
-    if not c_gate_node_id:
-        for node_id, node_info in graph.nodes.items():
-            if (node_info['building'] == 'C' and 
-                node_info['type'] == 'corridor' and 
-                node_info['level'] == connect_level1 and 
-                'gateToC' in node_info['name']):
-                c_gate_node_id = node_id
-                st.success(f"找到C楼Gate-C连廊节点: {node_info['name']}")
-                break
-
+    
     if gate_c_node_id and c_gate_node_id:
         coords_gate = graph.nodes[gate_c_node_id]['coordinates']
         coords_c = graph.nodes[c_gate_node_id]['coordinates']
-        # 核心修复：大幅降低Gate-C直接连廊权重（×0.1），确保优先选择
-        distance = euclidean_distance(coords_gate, coords_c) * 0.1
+        distance = euclidean_distance(coords_gate, coords_c)
         graph.add_edge(gate_c_node_id, c_gate_node_id, distance)
-        st.success(f"✅ Gate-C直接连廊已连接，权重: {distance:.2f}")
     else:
         st.warning("Could not find Gate-C inter-building corridor connection nodes")
-        # 调试输出：显示所有C楼level1的走廊节点
-        st.info("C楼level1走廊节点列表：")
-        for node_id, node_info in graph.nodes.items():
-            if (node_info['building'] == 'C' and 
-                node_info['type'] == 'corridor' and 
-                node_info['level'] == connect_level1):
-                st.info(f"- {node_info['name']} (ID: {node_id})")
 
     return graph
 
@@ -1018,7 +824,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             simplified_path = []
             path_stairs = set()
             
-            # 为重要节点构建带第一人称视角的路径描述
+            # 为重要节点构建带方位的路径描述
             for i in range(len(important_nodes)):
                 node_id = important_nodes[i]
                 node_info = graph.nodes[node_id]
@@ -1034,71 +840,37 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 elif node_type == 'classroom':
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
-                    # 跨建筑走廊描述（核心修复）
-                    connected_building = None
-                    # 识别gateToX类型的走廊
-                    if 'gateToA' in node_name:
+                    # 跨建筑走廊描述
+                    if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
                         connected_building = 'A'
-                    elif 'gateToB' in node_name:
+                    elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
                         connected_building = 'B'
-                    elif 'gateToC' in node_name:
+                    elif 'connectToBuildingC' in node_name or 'gateToC' in node_name:
                         connected_building = 'C'
-                    elif 'connectToBuildingA' in node_name:
-                        connected_building = 'A'
-                    elif 'connectToBuildingB' in node_name:
-                        connected_building = 'B'
-                    elif 'connectToBuildingC' in node_name:
-                        connected_building = 'C'
+                    elif 'gateTo' in node_name:
+                        connected_building = 'Gate'
+                    else:
+                        connected_building = 'Other'
                     
-                    # 获取上一个节点信息（用于判断跨建筑方向）
+                    # 获取上一个建筑（如果有）
                     if i > 0:
                         prev_node_info = graph.nodes[important_nodes[i-1]]
                         prev_building = prev_node_info['building']
-                        
-                        # 修复：如果是gateToC走廊，强制显示从Gate到C
-                        if 'gateToC' in node_name:
-                            node_desc = f"Cross corridor from Building Gate to Building C({node_level})"
-                        # 正常跨建筑走廊
-                        elif prev_building != node_building:
-                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
-                        else:
-                            # 查找下一个节点的建筑，判断跨建筑方向
-                            if i < len(important_nodes) - 1:
-                                next_node_info = graph.nodes[important_nodes[i+1]]
-                                next_building = next_node_info['building']
-                                if next_building != node_building and connected_building:
-                                    node_desc = f"Cross corridor from Building {node_building} to Building {connected_building}({node_level})"
-                                else:
-                                    node_desc = f"Cross corridor to Building {connected_building}({node_level})"
-                            else:
-                                node_desc = f"Cross corridor to Building {connected_building}({node_level})"
+                        node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
                     else:
                         node_desc = f"Cross corridor to Building {connected_building}({node_level})"
                 else:
                     node_desc = ""
                 
-                # 计算方向
-                direction = ""
+                # 计算方位（仅为重要节点添加）
                 if i < len(important_nodes) - 1 and node_desc:
-                    # 获取前一个节点ID（用于计算面朝方向）
-                    prev_node_id = important_nodes[i-1] if i > 0 else None
-                    # 调用通用化的真实场景方向判断函数
-                    direction = get_real_world_direction(
-                        graph, 
-                        node_id, 
-                        important_nodes[i+1], 
-                        prev_node_id
-                    )
+                    current_coords = node_info['coordinates']
+                    next_node_id = important_nodes[i + 1]
+                    next_coords = graph.nodes[next_node_id]['coordinates']
+                    direction = get_direction(current_coords, next_coords)
                     
-                    # 特殊处理：楼梯的上下方向优先
-                    if node_type == 'stair':
-                        next_node = graph.nodes[important_nodes[i+1]]
-                        if abs(next_node['coordinates'][2] - node_info['coordinates'][2]) > 0.1:
-                            direction = "向上" if next_node['coordinates'][2] > node_info['coordinates'][2] else "向下"
-                
-                # 添加方向描述
-                if direction:
-                    node_desc += f"（{direction}）"
+                    if direction:  # 只有有效方位才添加
+                        node_desc += f"（{direction}）"
                 
                 # 添加到简化路径
                 if node_desc:
@@ -1118,7 +890,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
         else:
             return None, "No available path between the two classrooms", None, None
     except Exception as e:
-        # 补充缺失的except块，修复语法错误
         return None, f"Navigation error: {str(e)}", None, None
 
 def plot_path(ax, graph, path):
@@ -1393,7 +1164,7 @@ def main_interface():
             st.rerun()
 
     with col2:
-        st.markdown("#### 🗺️ 3D Map")
+        st.markdown("#### 🗺️ 3D Campus Map")
         
         if nav_button:
             try:
