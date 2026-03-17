@@ -500,9 +500,9 @@
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
       {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      // ========== 关键修改1：新增 SCHOOL CLINIC 到 corridor3 的直接连接 ==========
+    
       {"from": ["SCHOOL CLINIC", "level1"], "to": ["corridor3", "level1"]},
-      // ========== 关键修改2：修正 gateToC → SCHOOL CLINIC 的连接指向 ==========
+      
       {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
     ]
   },
@@ -535,7 +535,7 @@
             "name": "gateToC",
             "type": "external",
             "style": {"color": "gray","lineType": "dashed"},
-            // ========== 关键修改3：确保 gateToC 的坐标直接指向 SCHOOL CLINIC ==========
+           
             "points": [[-30, -30, -3],[66, 26, -3]]
           }
         ],
@@ -545,7 +545,7 @@
     "connections": [
       {"from": ["gateToA", "level1"], "to": ["ENTRANCE", "level1"]},
       {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      // ========== 关键修改4：明确 gateToC 直接连接到 SCHOOL CLINIC ==========
+     
       {"from": ["gateToC", "level1"], "to": ["SCHOOL CLINIC", "level1"]}
     ]
   }
