@@ -622,21 +622,36 @@ def filter_important_nodes(path, graph):
     过滤路径中的重要节点（只保留教室、楼梯、跨建筑走廊）
     """
     important_nodes = []
+    # 记录上一个节点的建筑，用于判断跨建筑走廊
+    prev_building = None
     
     for node_id in path:
         node_info = graph.nodes[node_id]
         node_type = node_info['type']
         node_name = node_info['name']
+        current_building = node_info['building']
         
         # 保留教室和楼梯节点
         if node_type in ['classroom', 'stair']:
             important_nodes.append(node_id)
-        # 保留跨建筑走廊节点
-        elif node_type == 'corridor' and ('connectToBuilding' in node_name or 'gateTo' in node_name):
-            # 去重：避免连续的相同类型跨建筑走廊节点
-            if not important_nodes or graph.nodes[important_nodes[-1]]['type'] != 'corridor':
-                important_nodes.append(node_id)
-    
+            prev_building = current_building
+        # 保留跨建筑走廊节点（修复：识别gateToX类型的跨建筑走廊）
+        elif node_type == 'corridor':
+            # 判断是否为跨建筑走廊
+            is_cross_building = (
+                'connectToBuilding' in node_name or 
+                ('gateTo' in node_name and any(char in node_name for char in ['A', 'B', 'C']))
+            )
+            
+            # 判断是否跨建筑（当前节点建筑 != 上一个节点建筑）
+            is_actual_cross = prev_building is not None and current_building != prev_building
+            
+            if is_cross_building or is_actual_cross:
+                # 去重：避免连续的相同类型跨建筑走廊节点
+                if not important_nodes or graph.nodes[important_nodes[-1]]['type'] != 'corridor':
+                    important_nodes.append(node_id)
+                    prev_building = current_building
+
     return important_nodes
 
 def build_navigation_graph(school_data):
@@ -1019,23 +1034,44 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 elif node_type == 'classroom':
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
-                    # 跨建筑走廊描述
-                    if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
+                    # 跨建筑走廊描述（核心修复）
+                    connected_building = None
+                    # 识别gateToX类型的走廊
+                    if 'gateToA' in node_name:
                         connected_building = 'A'
-                    elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
+                    elif 'gateToB' in node_name:
                         connected_building = 'B'
-                    elif 'connectToBuildingC' in node_name or 'gateToC' in node_name:
+                    elif 'gateToC' in node_name:
                         connected_building = 'C'
-                    elif 'gateTo' in node_name:
-                        connected_building = 'Gate'
-                    else:
-                        connected_building = 'Other'
+                    elif 'connectToBuildingA' in node_name:
+                        connected_building = 'A'
+                    elif 'connectToBuildingB' in node_name:
+                        connected_building = 'B'
+                    elif 'connectToBuildingC' in node_name:
+                        connected_building = 'C'
                     
-                    # 获取上一个建筑（如果有）
+                    # 获取上一个节点信息（用于判断跨建筑方向）
                     if i > 0:
                         prev_node_info = graph.nodes[important_nodes[i-1]]
                         prev_building = prev_node_info['building']
-                        node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                        
+                        # 修复：如果是gateToC走廊，强制显示从Gate到C
+                        if 'gateToC' in node_name:
+                            node_desc = f"Cross corridor from Building Gate to Building C({node_level})"
+                        # 正常跨建筑走廊
+                        elif prev_building != node_building:
+                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                        else:
+                            # 查找下一个节点的建筑，判断跨建筑方向
+                            if i < len(important_nodes) - 1:
+                                next_node_info = graph.nodes[important_nodes[i+1]]
+                                next_building = next_node_info['building']
+                                if next_building != node_building and connected_building:
+                                    node_desc = f"Cross corridor from Building {node_building} to Building {connected_building}({node_level})"
+                                else:
+                                    node_desc = f"Cross corridor to Building {connected_building}({node_level})"
+                            else:
+                                node_desc = f"Cross corridor to Building {connected_building}({node_level})"
                     else:
                         node_desc = f"Cross corridor to Building {connected_building}({node_level})"
                 else:
@@ -1081,8 +1117,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             return path, f"Total distance: {total_distance:.2f} units", full_path_str, display_options
         else:
             return None, "No available path between the two classrooms", None, None
-    except Exception as e:
-        return None, f"Navigation error: {str(e)}", None, None
 
 def plot_path(ax, graph, path):
     try:
