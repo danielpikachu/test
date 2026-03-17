@@ -18,6 +18,7 @@
         ],
         "corridors": [
           {
+            "name": "verticalCorridor1",
             "points": [
               [22, 15, -6],   
               [22, 20, -6],  
@@ -30,6 +31,7 @@
             ]
           },
           {
+            "name": "horizontalCorridor1",
             "points": [
               [10, 45, -6],  
               [15, 45, -6],   
@@ -87,19 +89,8 @@
             },
             "points": [
               [22, 18, -3],
+              [22, -10, -3],
               [22, -30, -3]
-            ]
-          },
-          {
-            "name": "gateToA",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, 18, -3]
             ]
           }
         ],
@@ -128,6 +119,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridor2",
             "points": [
               [10, 45, 2],   
               [15, 45, 2],  
@@ -138,6 +130,7 @@
             ]
           },
           {
+            "name": "verticalCorridor2",
             "points": [
               [22, 50, 2],   
               [22, 45, 2],   
@@ -186,6 +179,7 @@
             ]
           },
           {
+            "name": "verticalCorridor3",
             "points": [
               [25, 60, 7],  
               [25, 55, 7], 
@@ -236,6 +230,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridor4",
             "points": [
               [10, 55, 12],  
               [15, 55, 12],  
@@ -247,6 +242,7 @@
             ]
           },
           {
+            "name": "verticalCorridor4",
             "points": [
               [27, 60, 12],  
               [27, 55, 12],  
@@ -276,6 +272,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridor5",
             "points": [
               [10, 55, 17],  
               [15, 55, 17],  
@@ -301,7 +298,7 @@
       {"from": ["mainCorridor", "level3"], "to": ["connectToBuildingC", "level3"]},
       {"from": ["mainCorridor", "level1"], "to": ["connectToBuildingC", "level1"]},
       {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToA", "level1"], "to": ["mainCorridor", "level1"]}
+      {"from": ["ENTRANCE", "level1"], "to": ["mainCorridor", "level1"]}
     ]
   },
   "buildingB": {
@@ -320,6 +317,7 @@
         ],
         "corridors": [
           {
+            "name": "verticalCorridorB1",
             "points": [
               [22, -70, -9],
               [22, -65, -9],
@@ -348,6 +346,7 @@
         ],
         "corridors": [
           {
+            "name": "verticalCorridorB2",
             "points": [
               [22, -70, -3],
               [22, -65, -3],
@@ -365,19 +364,8 @@
             },
             "points": [
               [22, -30, -3],
+              [22, -40, -3],
               [22, -50, -3]
-            ]
-          },
-          {
-            "name": "gateToB",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [22, -30, -3]
             ]
           }
         ],
@@ -400,6 +388,7 @@
         ],
         "corridors": [
           {
+            "name": "verticalCorridorB3",
             "points": [
               [22, -70, 2],
               [22, -65, 2],
@@ -420,8 +409,7 @@
       {"from": ["StairsB1", "level1"], "to": ["StairsB1", "level3"]},
       {"from": ["StairsB2", "lowerLevel"], "to": ["StairsB2", "level1"]},
       {"from": ["StairsB2", "level1"], "to": ["StairsB2", "level3"]},
-      {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]},
-      {"from": ["gateToB", "level1"], "to": ["connectToBuildingAAndC", "level1"]}
+      {"from": ["connectToBuildingAAndC", "level1"], "to": ["connectToBuildingB", "level1"]}
     ]
   },
   "buildingC": {
@@ -444,7 +432,7 @@
           {"name": "C019AB", "coordinates": [100, 60, -9], "size": [5, 8]},
           {"name": "C021", "coordinates": [100, 48, -9], "size": [5, 8]},
           {"name": "C025", "coordinates": [100, 34, -9], "size": [5, 10]},
-          {"name": "C020", "coordinates": [90, 48, -9], "size": [5, 8]},
+          {"name": "C020", "coordinates": [95, 48, -9], "size": [5, 8]},
           {"name": "C024", "coordinates": [90, 34, -9], "size": [5, 8]},
           {"name": "C007", "coordinates": [66, 48, -9], "size": [5, 8]},
           {"name": "C005", "coordinates": [66, 42, -9], "size": [5, 8]},
@@ -458,6 +446,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridorC1",
             "points": [
               [66, 58, -9],  
               [70, 58, -9], 
@@ -470,6 +459,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC1-1",
             "points": [
               [97, 60, -9],  
               [97, 55, -9], 
@@ -481,6 +471,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC1-2",
             "points": [
               [68, 60, -9],  
               [68, 55, -9], 
@@ -530,6 +521,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridorC2",
             "points": [
               [66, 58, -3],  
               [70, 58, -3], 
@@ -542,6 +534,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC2-1",
             "points": [
               [97, 60, -3],  
               [97, 55, -3], 
@@ -553,6 +546,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC2-2",
             "points": [
               [68, 60, -3],  
               [68, 55, -3], 
@@ -583,19 +577,8 @@
             },
             "points": [
               [66, 26, -3],
+              [40, 0, -3],
               [22, -30, -3]
-            ]
-          },
-          {
-            "name": "gateToC",
-            "type": "external",
-            "style": {
-              "color": "gray",
-              "lineType": "dashed"
-            },
-            "points": [
-              [-30, -30, -3],
-              [66, 26, -3]
             ]
           }
         ],
@@ -640,6 +623,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridorC3",
             "points": [
               [66, 58, 2],  
               [70, 58, 2], 
@@ -652,6 +636,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC3-1",
             "points": [
               [97, 60, 2],  
               [97, 55, 2], 
@@ -663,6 +648,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC3-2",
             "points": [
               [68, 60, 2],  
               [68, 55, 2], 
@@ -707,6 +693,7 @@
         ],
         "corridors": [
           {
+            "name": "horizontalCorridorC4",
             "points": [
               [65, 55, 7],  
               [70, 55, 7], 
@@ -719,6 +706,7 @@
             ]
           },
           {
+            "name": "verticalCorridorC4-1",
             "points": [
               [97, 60, 7],  
               [97, 55, 7], 
@@ -762,8 +750,7 @@
       {"from": ["Stairs5", "level2"], "to": ["Stairs5", "level3"]},
       {"from": ["connectToBuildingA", "level1"], "to": ["mainCorridor", "level1"]},
       {"from": ["connectToBuildingA", "level3"], "to": ["mainCorridor", "level3"]},
-      {"from": ["connectToBuildingB", "level1"], "to": ["connectToBuildingAAndC", "level1"]},
-      {"from": ["gateToC", "level1"], "to": ["connectToBuildingB", "level1"]}
+      {"from": ["SCHOOL CLINIC", "level1"], "to": ["connectToBuildingB", "level1"]}
     ]
   },
   "gate": {
@@ -790,6 +777,8 @@
             },
             "points": [
               [-30, -30, -3],
+              [-10, -10, -3],
+              [10, 0, -3],
               [22, 18, -3]
             ]
           },
@@ -802,6 +791,8 @@
             },
             "points": [
               [-30, -30, -3],
+              [-10, -30, -3],
+              [10, -30, -3],
               [22, -30, -3]
             ]
           },
@@ -814,6 +805,8 @@
             },
             "points": [
               [-30, -30, -3],
+              [0, 0, -3],
+              [30, 10, -3],
               [66, 26, -3]
             ]
           }
