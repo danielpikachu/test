@@ -1117,6 +1117,9 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             return path, f"Total distance: {total_distance:.2f} units", full_path_str, display_options
         else:
             return None, "No available path between the two classrooms", None, None
+    except Exception as e:
+        # 补充缺失的except块，修复语法错误
+        return None, f"Navigation error: {str(e)}", None, None
 
 def plot_path(ax, graph, path):
     try:
