@@ -145,6 +145,9 @@ COLORS = {
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}  # 新增Gate标签配色
 }
 
+# 核心修改：定义楼梯权重（提高楼梯代价，让算法优先少上下楼）
+STAIR_WEIGHT = 20.0  # 原先是5.0，现在改为20.0，上下楼代价更高
+
 def load_school_data_detailed(filename):
     try:
         with open(filename, 'r') as f:
@@ -584,6 +587,26 @@ def build_navigation_graph(school_data):
                 
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
+
+        # 连接同一楼梯的不同楼层（核心修改：使用更高的楼梯权重）
+        # 先收集所有楼梯节点
+        stair_nodes_by_name = {}
+        for node_id, node_info in graph.nodes.items():
+            if node_info['building'] == building_name and node_info['type'] == 'stair':
+                stair_name = node_info['name']
+                if stair_name not in stair_nodes_by_name:
+                    stair_nodes_by_name[stair_name] = []
+                stair_nodes_by_name[stair_name].append((node_info['level'], node_id))
+        
+        # 按楼层排序并连接（使用STAIR_WEIGHT）
+        for stair_name, level_node_list in stair_nodes_by_name.items():
+            # 按楼层名称排序（level1 < level2 < level3...）
+            level_node_list.sort(key=lambda x: int(x[0].replace('level', '')))
+            # 连接相邻楼层的楼梯节点
+            for i in range(len(level_node_list) - 1):
+                _, node1_id = level_node_list[i]
+                _, node2_id = level_node_list[i+1]
+                graph.add_edge(node1_id, node2_id, STAIR_WEIGHT)
 
         # 处理建筑内部/跨建筑连接（支持 Gate ↔ A/B/C 自动连接）
         for connection in building_data['connections']:
