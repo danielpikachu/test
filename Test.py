@@ -431,6 +431,13 @@ class Graph:
             
         return node_id
 
+    # 🔥 核心修复：补全缺失的 add_edge 方法
+    def add_edge(self, node1_id, node2_id, weight):
+        """添加节点间的边（双向）"""
+        if node1_id in self.nodes and node2_id in self.nodes:
+            self.nodes[node1_id]['neighbors'][node2_id] = weight
+            self.nodes[node2_id]['neighbors'][node1_id] = weight
+
 # 🔥 核心修改1：新增楼层差惩罚的距离计算函数
 def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     """
