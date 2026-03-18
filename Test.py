@@ -145,9 +145,6 @@ COLORS = {
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}  # 新增Gate标签配色
 }
 
-# 核心修改：定义楼梯权重（提高楼梯代价，让算法优先少上下楼）
-STAIR_WEIGHT = 20.0  # 原先是5.0，现在改为20.0，上下楼代价更高
-
 def load_school_data_detailed(filename):
     try:
         with open(filename, 'r') as f:
@@ -434,13 +431,25 @@ class Graph:
             
         return node_id
 
-    def add_edge(self, node1_id, node2_id, weight):
-        if node1_id in self.nodes and node2_id in self.nodes:
-            self.nodes[node1_id]['neighbors'][node2_id] = weight
-            self.nodes[node2_id]['neighbors'][node1_id] = weight
-
-def euclidean_distance(coords1, coords2):
-    return np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
+# 🔥 核心修改1：新增楼层差惩罚的距离计算函数
+def euclidean_distance(coords1, coords2, floor_penalty=15.0):
+    """
+    计算欧式距离，新增楼层差惩罚（鼓励少上下楼）
+    floor_penalty: 每跨一层楼的惩罚值（越大越不想爬楼梯）
+    """
+    # 基础欧式距离（x,y,z）
+    base_dist = np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
+    
+    # 提取z坐标（楼层高度），计算楼层差
+    z1, z2 = coords1[2], coords2[2]
+    floor_diff = abs(z1 - z2)
+    
+    # 楼层差惩罚：每跨1层楼，额外加 floor_penalty 的成本
+    penalty = floor_diff * floor_penalty
+    
+    # 总距离 = 基础距离 + 楼层惩罚
+    total_dist = base_dist + penalty
+    return total_dist
 
 def build_navigation_graph(school_data):
     graph = Graph()
@@ -527,7 +536,8 @@ def build_navigation_graph(school_data):
                     if current_node_id and next_node_id:
                         coords1 = graph.nodes[current_node_id]['coordinates']
                         coords2 = graph.nodes[next_node_id]['coordinates']
-                        distance = euclidean_distance(coords1, coords2)
+                        # 同走廊无楼层惩罚
+                        distance = euclidean_distance(coords1, coords2, floor_penalty=0)
                         graph.add_edge(current_node_id, next_node_id, distance)
 
             # 连接近距离的走廊节点
@@ -537,7 +547,8 @@ def build_navigation_graph(school_data):
                 for j in range(i + 1, len(corr_nodes)):
                     node2_id = corr_nodes[j]
                     coords2 = graph.nodes[node2_id]['coordinates']
-                    distance = euclidean_distance(coords1, coords2)
+                    # 同层走廊无惩罚
+                    distance = euclidean_distance(coords1, coords2, floor_penalty=0)
                     
                     if distance < 3.0:
                         graph.add_edge(node1_id, node2_id, distance)
@@ -556,7 +567,8 @@ def build_navigation_graph(school_data):
                 
                 for corr_node_id in corr_nodes:
                     corr_coords = graph.nodes[corr_node_id]['coordinates']
-                    dist = euclidean_distance(class_coords, corr_coords)
+                    # 同层教室到走廊无惩罚
+                    dist = euclidean_distance(class_coords, corr_coords, floor_penalty=0)
                     if dist < min_dist:
                         min_dist = dist
                         nearest_corr_node_id = corr_node_id
@@ -580,7 +592,8 @@ def build_navigation_graph(school_data):
                 
                 for corr_node_id in corr_nodes:
                     corr_coords = graph.nodes[corr_node_id]['coordinates']
-                    dist = euclidean_distance(stair_coords, corr_coords)
+                    # 🔥 修改1：楼梯到走廊用基础距离（同层无惩罚）
+                    dist = euclidean_distance(stair_coords, corr_coords, floor_penalty=0)
                     if dist < min_dist:
                         min_dist = dist
                         nearest_corr_node_id = corr_node_id
@@ -588,25 +601,33 @@ def build_navigation_graph(school_data):
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
-        # 连接同一楼梯的不同楼层（核心修改：使用更高的楼梯权重）
-        # 先收集所有楼梯节点
-        stair_nodes_by_name = {}
+        # 🔥 修改2：同一楼梯不同楼层连接时，增加楼层惩罚
+        # 新增：连接同一楼梯的不同楼层（核心！少上下楼的关键）
+        stair_names = set()
+        # 先收集所有楼梯名称
         for node_id, node_info in graph.nodes.items():
-            if node_info['building'] == building_name and node_info['type'] == 'stair':
-                stair_name = node_info['name']
-                if stair_name not in stair_nodes_by_name:
-                    stair_nodes_by_name[stair_name] = []
-                stair_nodes_by_name[stair_name].append((node_info['level'], node_id))
-        
-        # 按楼层排序并连接（使用STAIR_WEIGHT）
-        for stair_name, level_node_list in stair_nodes_by_name.items():
-            # 按楼层名称排序（level1 < level2 < level3...）
-            level_node_list.sort(key=lambda x: int(x[0].replace('level', '')))
-            # 连接相邻楼层的楼梯节点
-            for i in range(len(level_node_list) - 1):
-                _, node1_id = level_node_list[i]
-                _, node2_id = level_node_list[i+1]
-                graph.add_edge(node1_id, node2_id, STAIR_WEIGHT)
+            if node_info['type'] == 'stair':
+                stair_names.add((node_info['building'], node_info['name']))
+
+        # 对每个楼梯，连接不同楼层的节点（加惩罚）
+        for (building, stair_name) in stair_names:
+            # 找到该楼梯所有楼层的节点
+            stair_level_nodes = []
+            for node_id, node_info in graph.nodes.items():
+                if (node_info['building'] == building and 
+                    node_info['type'] == 'stair' and 
+                    node_info['name'] == stair_name):
+                    stair_level_nodes.append((node_id, node_info['coordinates'], node_info['level']))
+            
+            # 按楼层排序，依次连接（加惩罚）
+            stair_level_nodes.sort(key=lambda x: x[1][2])  # 按z坐标排序
+            for i in range(len(stair_level_nodes)-1):
+                node1_id, coords1, _ = stair_level_nodes[i]
+                node2_id, coords2, _ = stair_level_nodes[i+1]
+                
+                # 🔥 楼梯跨层连接：加楼层惩罚（每跨1层加15）
+                dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
+                graph.add_edge(node1_id, node2_id, dist)
 
         # 处理建筑内部/跨建筑连接（支持 Gate ↔ A/B/C 自动连接）
         for connection in building_data['connections']:
@@ -674,10 +695,14 @@ def build_navigation_graph(school_data):
             # 第三步：建立连接（自动计算距离）
             # ------------------------------
             if from_node_id and to_node_id:
-                # 计算两点间欧式距离（替代硬编码的 5.0）
+                # 🔥 跨楼连接：无楼层惩罚（鼓励同层跨楼）
                 from_coords = graph.nodes[from_node_id]['coordinates']
                 to_coords = graph.nodes[to_node_id]['coordinates']
-                distance = euclidean_distance(from_coords, to_coords)
+                # 判断是否跨楼：跨楼则无惩罚，内部则有惩罚
+                if building_id != to_building_id:
+                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=0)
+                else:
+                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=15.0)
                 graph.add_edge(from_node_id, to_node_id, distance)
             else:
                 # 调试日志（方便排查）
@@ -687,7 +712,7 @@ def build_navigation_graph(school_data):
                     f"目标节点：({to_building_id}, {to_obj_type}, {to_node_name}, {to_level}) → {to_node_id}"
                 )
 
-    # A/B/C楼之间的原有连接（保持不变）
+    # A/B/C楼之间的原有连接（保持不变，跨楼连廊无楼层惩罚）
     a_building_id = 'buildingA'
     b_building_id = 'buildingB'
     c_building_id = 'buildingC'
@@ -701,7 +726,8 @@ def build_navigation_graph(school_data):
     if a_b_node_id and b_a_node_id:
         coords_a = graph.nodes[a_b_node_id]['coordinates']
         coords_b = graph.nodes[b_a_node_id]['coordinates']
-        distance = euclidean_distance(coords_a, coords_b)
+        # 🔥 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
+        distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
         graph.add_edge(a_b_node_id, b_a_node_id, distance)
     else:
         st.warning("Could not find A-B level1 inter-building corridor connection nodes")
@@ -715,7 +741,8 @@ def build_navigation_graph(school_data):
     if b_c_node_id and c_b_node_id:
         coords_b = graph.nodes[b_c_node_id]['coordinates']
         coords_c = graph.nodes[c_b_node_id]['coordinates']
-        distance = euclidean_distance(coords_b, coords_c)
+        # 🔥 跨楼连廊：无楼层惩罚
+        distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
         graph.add_edge(b_c_node_id, c_b_node_id, distance)
     else:
         st.warning("Could not find B-C level1 inter-building corridor connection nodes")
@@ -729,7 +756,8 @@ def build_navigation_graph(school_data):
     if a_connect1_node_id and c_connect1_node_id:
         coords_a = graph.nodes[a_connect1_node_id]['coordinates']
         coords_c = graph.nodes[c_connect1_node_id]['coordinates']
-        distance = euclidean_distance(coords_a, coords_c)
+        # 🔥 跨楼连廊：无楼层惩罚
+        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
         graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
         st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
@@ -743,7 +771,8 @@ def build_navigation_graph(school_data):
     if a_connect3_node_id and c_connect3_node_id:
         coords_a = graph.nodes[a_connect3_node_id]['coordinates']
         coords_c = graph.nodes[c_connect3_node_id]['coordinates']
-        distance = euclidean_distance(coords_a, coords_c)
+        # 🔥 跨楼连廊：无楼层惩罚（优先3楼跨楼）
+        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
         graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
         st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
