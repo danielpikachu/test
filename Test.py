@@ -431,14 +431,13 @@ class Graph:
             
         return node_id
 
-    # 🔥 核心修复：补全缺失的 add_edge 方法
+    # 核心方法：添加节点间的边（双向）
     def add_edge(self, node1_id, node2_id, weight):
-        """添加节点间的边（双向）"""
         if node1_id in self.nodes and node2_id in self.nodes:
             self.nodes[node1_id]['neighbors'][node2_id] = weight
             self.nodes[node2_id]['neighbors'][node1_id] = weight
 
-# 🔥 核心修改1：新增楼层差惩罚的距离计算函数
+# 核心修改1：新增楼层差惩罚的距离计算函数
 def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     """
     计算欧式距离，新增楼层差惩罚（鼓励少上下楼）
@@ -457,6 +456,57 @@ def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     # 总距离 = 基础距离 + 楼层惩罚
     total_dist = base_dist + penalty
     return total_dist
+
+# 核心新增：计算两个节点之间的方向词
+def get_direction_between_nodes(graph, current_node_id, next_node_id):
+    """
+    计算当前节点到下一个节点的方向词
+    规则：
+    1. 楼梯之间：仅用 往上/往下
+    2. 其他节点：基于x/y坐标（x+→右，x-→左，y+→前，y-→后）
+    """
+    # 获取节点信息
+    current_node = graph.nodes[current_node_id]
+    next_node = graph.nodes[next_node_id]
+    
+    # 提取坐标
+    curr_x, curr_y, curr_z = current_node['coordinates']
+    next_x, next_y, next_z = next_node['coordinates']
+    
+    # 判断是否是楼梯节点
+    curr_is_stair = current_node['type'] == 'stair'
+    next_is_stair = next_node['type'] == 'stair'
+    
+    # 楼梯之间：只判断上下
+    if curr_is_stair and next_is_stair:
+        if next_z > curr_z:
+            return "往上"
+        elif next_z < curr_z:
+            return "往下"
+        else:
+            return ""  # 同层楼梯，无方向
+    
+    # 非楼梯节点：判断平面方向
+    x_diff = next_x - curr_x
+    y_diff = next_y - curr_y
+    
+    # 阈值：避免微小坐标差导致方向错误
+    threshold = 0.1
+    
+    if abs(x_diff) > threshold or abs(y_diff) > threshold:
+        # 优先判断y轴（前后）
+        if y_diff > threshold:
+            return "向前"
+        elif y_diff < -threshold:
+            return "向后"
+        # 再判断x轴（左右）
+        elif x_diff > threshold:
+            return "向右"
+        elif x_diff < -threshold:
+            return "向左"
+    
+    # 无明显位移
+    return ""
 
 def build_navigation_graph(school_data):
     graph = Graph()
@@ -599,7 +649,7 @@ def build_navigation_graph(school_data):
                 
                 for corr_node_id in corr_nodes:
                     corr_coords = graph.nodes[corr_node_id]['coordinates']
-                    # 🔥 修改1：楼梯到走廊用基础距离（同层无惩罚）
+                    # 修改1：楼梯到走廊用基础距离（同层无惩罚）
                     dist = euclidean_distance(stair_coords, corr_coords, floor_penalty=0)
                     if dist < min_dist:
                         min_dist = dist
@@ -608,7 +658,7 @@ def build_navigation_graph(school_data):
                 if nearest_corr_node_id:
                     graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
 
-        # 🔥 修改2：同一楼梯不同楼层连接时，增加楼层惩罚
+        # 修改2：同一楼梯不同楼层连接时，增加楼层惩罚
         # 新增：连接同一楼梯的不同楼层（核心！少上下楼的关键）
         stair_names = set()
         # 先收集所有楼梯名称
@@ -632,7 +682,7 @@ def build_navigation_graph(school_data):
                 node1_id, coords1, _ = stair_level_nodes[i]
                 node2_id, coords2, _ = stair_level_nodes[i+1]
                 
-                # 🔥 楼梯跨层连接：加楼层惩罚（每跨1层加15）
+                # 楼梯跨层连接：加楼层惩罚（每跨1层加15）
                 dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
                 graph.add_edge(node1_id, node2_id, dist)
 
@@ -702,7 +752,7 @@ def build_navigation_graph(school_data):
             # 第三步：建立连接（自动计算距离）
             # ------------------------------
             if from_node_id and to_node_id:
-                # 🔥 跨楼连接：无楼层惩罚（鼓励同层跨楼）
+                # 跨楼连接：无楼层惩罚（鼓励同层跨楼）
                 from_coords = graph.nodes[from_node_id]['coordinates']
                 to_coords = graph.nodes[to_node_id]['coordinates']
                 # 判断是否跨楼：跨楼则无惩罚，内部则有惩罚
@@ -733,7 +783,7 @@ def build_navigation_graph(school_data):
     if a_b_node_id and b_a_node_id:
         coords_a = graph.nodes[a_b_node_id]['coordinates']
         coords_b = graph.nodes[b_a_node_id]['coordinates']
-        # 🔥 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
+        # 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
         distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
         graph.add_edge(a_b_node_id, b_a_node_id, distance)
     else:
@@ -748,7 +798,7 @@ def build_navigation_graph(school_data):
     if b_c_node_id and c_b_node_id:
         coords_b = graph.nodes[b_c_node_id]['coordinates']
         coords_c = graph.nodes[c_b_node_id]['coordinates']
-        # 🔥 跨楼连廊：无楼层惩罚
+        # 跨楼连廊：无楼层惩罚
         distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
         graph.add_edge(b_c_node_id, c_b_node_id, distance)
     else:
@@ -763,7 +813,7 @@ def build_navigation_graph(school_data):
     if a_connect1_node_id and c_connect1_node_id:
         coords_a = graph.nodes[a_connect1_node_id]['coordinates']
         coords_c = graph.nodes[c_connect1_node_id]['coordinates']
-        # 🔥 跨楼连廊：无楼层惩罚
+        # 跨楼连廊：无楼层惩罚
         distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
         graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
     else:
@@ -778,7 +828,7 @@ def build_navigation_graph(school_data):
     if a_connect3_node_id and c_connect3_node_id:
         coords_a = graph.nodes[a_connect3_node_id]['coordinates']
         coords_c = graph.nodes[c_connect3_node_id]['coordinates']
-        # 🔥 跨楼连廊：无楼层惩罚（优先3楼跨楼）
+        # 跨楼连廊：无楼层惩罚（优先3楼跨楼）
         distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
         graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
     else:
@@ -847,19 +897,22 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
             path_stairs = set()
             prev_building = None
             
-            for node_id in path:
-                node_type = graph.nodes[node_id]['type']
-                node_name = graph.nodes[node_id]['name']
-                node_level = graph.nodes[node_id]['level']
-                node_building = graph.nodes[node_id]['building']
+            # 遍历路径，添加方向词
+            for i in range(len(path)):
+                node_id = path[i]
+                node_info = graph.nodes[node_id]
+                node_type = node_info['type']
+                node_name = node_info['name']
+                node_level = node_info['level']
+                node_building = node_info['building']
                 
+                # 基础节点描述
+                node_desc = ""
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
-                
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'classroom':
-                    simplified_path.append(f"Building {node_building}{node_name}({node_level})")
-                
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name or 'gateTo' in node_name:
                         if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
@@ -874,7 +927,17 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                             connected_building = 'Other'
                             
                         if prev_building and prev_building != node_building:
-                            simplified_path.append(f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})")
+                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                
+                if node_desc:
+                    # 计算当前节点到下一个节点的方向
+                    if i < len(path) - 1:
+                        next_node_id = path[i+1]
+                        direction = get_direction_between_nodes(graph, node_id, next_node_id)
+                        if direction:
+                            node_desc += f" {direction}"
+                    
+                    simplified_path.append(node_desc)
                 
                 if node_type in ['classroom', 'stair', 'corridor']:
                     prev_building = node_building
