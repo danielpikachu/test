@@ -1106,6 +1106,7 @@ def main():
             st.rerun()
         
         st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
+        st.image("welcome_image.jpg",use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
     # 主页面（原生sidebar + 宽布局）
