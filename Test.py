@@ -1079,7 +1079,7 @@ def main():
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                height: 50vh;
+                height: 20vh;
                 text-align: center;
             }
             .welcome-title {
