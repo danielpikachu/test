@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
 
-# 核心配置：开启宽布局 + 原生侧边栏配置
+# 核心修改1：开启宽布局 + 原生侧边栏配置
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",  # 宽布局
@@ -691,9 +691,7 @@ def build_navigation_graph(school_data):
                 dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
                 graph.add_edge(node1_id, node2_id, dist)
 
-        # --------------------------
-        # 核心优化：修正自动连接逻辑（消除警告+确保生效）
-        # --------------------------
+        # 处理建筑内部/跨建筑连接（支持 Gate ↔ A/B/C 自动连接）
         for connection in building_data['connections']:
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
@@ -704,8 +702,6 @@ def build_navigation_graph(school_data):
             # 判断来源节点类型（走廊/楼梯/教室）
             if from_obj_name.startswith(('Stairs', 'GateStairs')):
                 from_obj_type = 'stair'
-                # 楼梯节点无-p后缀
-                from_node_name = from_obj_name
             # 检查是否是当前建筑的教室（比如 Gate 的 Main Gate）
             elif any(
                 from_obj_name == cls['name'] 
@@ -713,31 +709,28 @@ def build_navigation_graph(school_data):
                 for cls in level.get('classrooms', [])
             ):
                 from_obj_type = 'classroom'
-                from_node_name = from_obj_name
             else:
                 from_obj_type = 'corridor'  # 默认是走廊
-                # 走廊节点保留完整名称（去掉错误的-p0拼接）
-                from_node_name = from_obj_name
             
-            # 获取来源节点ID（精准匹配）
+            # 走廊节点要加 -p0 后缀（和建节点时一致）
+            from_node_name = f"{from_obj_name}-p0" if from_obj_type == 'corridor' else from_obj_name
             from_node_id = graph.node_id_map.get((building_id, from_obj_type, from_node_name, from_level))
 
             # ------------------------------
             # 第二步：确定「目标节点」的信息（可能是跨建筑）
             # ------------------------------
-            # 精准的目标建筑映射（根据JSON实际命名）
+            # 先尝试：目标节点是否在当前建筑？（内部连接）
+            to_building_id = building_id
+            # 检查目标节点是否属于其他建筑（核心：自动识别跨建筑）
             target_building_map = {
+                # 关键词 → 目标建筑ID
+                'ENTRANCE': 'buildingA',          # 指向A楼
+                'connectToBuildingAAndC': 'buildingB',  # 指向B楼
+                'SCHOOL CLINIC': 'buildingC',     # 指向C楼
                 'connectToBuildingB': 'buildingB',
-                'connectToBuildingAAndC': 'buildingB',
-                'connectToBuildingA': 'buildingA',
-                'connectToBuildingC': 'buildingC',
-                'gateToC': 'buildingC',
-                'ENTRANCE': 'buildingA',
-                'SCHOOL CLINIC': 'buildingC'
+                'connectToBuildingC': 'buildingC'
             }
-            
-            # 确定目标建筑ID
-            to_building_id = building_id  # 默认当前建筑
+            # 匹配目标节点对应的建筑
             for keyword, target_building in target_building_map.items():
                 if keyword in to_obj_name:
                     to_building_id = target_building
@@ -746,47 +739,42 @@ def build_navigation_graph(school_data):
             # 判断目标节点类型
             if to_obj_name.startswith(('Stairs', 'GateStairs')):
                 to_obj_type = 'stair'
-                to_node_name = to_obj_name
-            # 检查是否是目标建筑的教室
-            elif to_building_id in school_data:
+            # 检查是否是目标建筑的教室（比如 C 楼的 SCHOOL CLINIC）
+            elif to_building_id in school_data:  # 目标建筑存在
                 to_obj_type = 'classroom' if any(
                     to_obj_name == cls['name']
                     for level in school_data[to_building_id]['levels']
                     for cls in level.get('classrooms', [])
                 ) else 'corridor'
-                # 教室节点无-p后缀，走廊节点保留完整名称
-                to_node_name = to_obj_name if to_obj_type == 'classroom' else to_obj_name
             else:
                 to_obj_type = 'corridor'
-                to_node_name = to_obj_name
             
-            # 获取目标节点ID（精准匹配）
+            # 走廊节点加 -p0 后缀
+            to_node_name = f"{to_obj_name}-p0" if to_obj_type == 'corridor' else to_obj_name
             to_node_id = graph.node_id_map.get((to_building_id, to_obj_type, to_node_name, to_level))
 
             # ------------------------------
-            # 第三步：建立连接（仅在节点存在时执行，避免警告）
+            # 第三步：建立连接（自动计算距离）
             # ------------------------------
             if from_node_id and to_node_id:
-                # 计算距离（跨楼无惩罚，内部有惩罚）
+                # 跨楼连接：无楼层惩罚（鼓励同层跨楼）
                 from_coords = graph.nodes[from_node_id]['coordinates']
                 to_coords = graph.nodes[to_node_id]['coordinates']
-                
+                # 判断是否跨楼：跨楼则无惩罚，内部则有惩罚
                 if building_id != to_building_id:
                     distance = euclidean_distance(from_coords, to_coords, floor_penalty=0)
                 else:
                     distance = euclidean_distance(from_coords, to_coords, floor_penalty=15.0)
-                
-                # 避免重复添加边（核心：防止自动连接和硬编码冲突）
-                if to_node_id not in graph.nodes[from_node_id]['neighbors']:
-                    graph.add_edge(from_node_id, to_node_id, distance)
-            # 仅对核心跨楼节点缺失时警告（非核心节点静默跳过）
-            elif any(keyword in from_obj_name or keyword in to_obj_name 
-                   for keyword in ['connectToBuilding', 'gateTo']):
-                st.debug(f"核心节点连接失败（可忽略）：{building_id} → {to_building_id} | {from_obj_name} → {to_obj_name}")
+                graph.add_edge(from_node_id, to_node_id, distance)
+            else:
+                # 调试日志（方便排查）
+                st.warning(
+                    f"连接失败：{building_id} → {to_building_id}\n"
+                    f"来源节点：({building_id}, {from_obj_type}, {from_node_name}, {from_level}) → {from_node_id}\n"
+                    f"目标节点：({to_building_id}, {to_obj_type}, {to_node_name}, {to_level}) → {to_node_id}"
+                )
 
-    # --------------------------
-    # 保留硬编码连接（作为兜底，无冲突）
-    # --------------------------
+    # A/B/C楼之间的原有连接（保持不变，跨楼连廊无楼层惩罚）
     a_building_id = 'buildingA'
     b_building_id = 'buildingB'
     c_building_id = 'buildingC'
@@ -800,10 +788,11 @@ def build_navigation_graph(school_data):
     if a_b_node_id and b_a_node_id:
         coords_a = graph.nodes[a_b_node_id]['coordinates']
         coords_b = graph.nodes[b_a_node_id]['coordinates']
+        # 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
         distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
-        # 避免重复添加
-        if b_a_node_id not in graph.nodes[a_b_node_id]['neighbors']:
-            graph.add_edge(a_b_node_id, b_a_node_id, distance)
+        graph.add_edge(a_b_node_id, b_a_node_id, distance)
+    else:
+        st.warning("Could not find A-B level1 inter-building corridor connection nodes")
     
     bc_connect_level = 'level1'
     b_c_corr_name = 'connectToBuildingAAndC-p0'
@@ -814,9 +803,11 @@ def build_navigation_graph(school_data):
     if b_c_node_id and c_b_node_id:
         coords_b = graph.nodes[b_c_node_id]['coordinates']
         coords_c = graph.nodes[c_b_node_id]['coordinates']
+        # 跨楼连廊：无楼层惩罚
         distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
-        if c_b_node_id not in graph.nodes[b_c_node_id]['neighbors']:
-            graph.add_edge(b_c_node_id, c_b_node_id, distance)
+        graph.add_edge(b_c_node_id, c_b_node_id, distance)
+    else:
+        st.warning("Could not find B-C level1 inter-building corridor connection nodes")
     
     connect_level1 = 'level1'
     a_corr1_name = 'connectToBuildingC-p3'
@@ -827,9 +818,11 @@ def build_navigation_graph(school_data):
     if a_connect1_node_id and c_connect1_node_id:
         coords_a = graph.nodes[a_connect1_node_id]['coordinates']
         coords_c = graph.nodes[c_connect1_node_id]['coordinates']
+        # 跨楼连廊：无楼层惩罚
         distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-        if c_connect1_node_id not in graph.nodes[a_connect1_node_id]['neighbors']:
-            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+    else:
+        st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
     
     connect_level3 = 'level3'
     a_corr3_name = 'connectToBuildingC-p2'
@@ -840,9 +833,11 @@ def build_navigation_graph(school_data):
     if a_connect3_node_id and c_connect3_node_id:
         coords_a = graph.nodes[a_connect3_node_id]['coordinates']
         coords_c = graph.nodes[c_connect3_node_id]['coordinates']
+        # 跨楼连廊：无楼层惩罚（优先3楼跨楼）
         distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-        if c_connect3_node_id not in graph.nodes[a_connect3_node_id]['neighbors']:
-            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+    else:
+        st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
 
     return graph
 
@@ -1048,7 +1043,7 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 页面逻辑（原生sidebar + 宽布局）
+# 页面逻辑（核心修改：使用原生sidebar）
 # --------------------------
 def main():
     # 初始化会话状态
