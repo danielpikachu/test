@@ -1182,46 +1182,46 @@ def main_interface():
     with col1:
         with st.expander("📍 Select Locations", expanded=True):
         
-        
-        st.markdown("#### Start Point")
-        start_building = st.selectbox("Building", building_names, key="start_building")
-        start_levels = levels_by_building.get(start_building, [])
-        start_level = st.selectbox("Floor", start_levels, key="start_level")
-        start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-        start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
-
-        st.markdown("#### End Point")
-        end_building = st.selectbox("Building", building_names, key="end_building")
-        end_levels = levels_by_building.get(end_building, [])
-        end_level = st.selectbox("Floor", end_levels, key="end_level")
-        end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-        end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
-
-        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-        
-        reset_button = st.button(
-            "🔄 Reset View", 
-            use_container_width=True,
-            help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
-        )
-        
-        # 添加退出按钮，返回欢迎页面
-        exit_button = st.button(
-            "🚪 Exit to Welcome Page", 
-            use_container_width=True,
-            help="Click to return to the welcome page",
-            type="secondary"  # 使用次要样式区分
-        )
-        
-        if reset_button:
-            reset_app_state()
-            st.rerun()
-        
-        if exit_button:
-            # 重置应用状态并返回欢迎页
-            reset_app_state()
-            st.session_state['page'] = 'welcome'
-            st.rerun()
+            
+            st.markdown("#### Start Point")
+            start_building = st.selectbox("Building", building_names, key="start_building")
+            start_levels = levels_by_building.get(start_building, [])
+            start_level = st.selectbox("Floor", start_levels, key="start_level")
+            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+    
+            st.markdown("#### End Point")
+            end_building = st.selectbox("Building", building_names, key="end_building")
+            end_levels = levels_by_building.get(end_building, [])
+            end_level = st.selectbox("Floor", end_levels, key="end_level")
+            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+    
+            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+            
+            reset_button = st.button(
+                "🔄 Reset View", 
+                use_container_width=True,
+                help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
+            )
+            
+            # 添加退出按钮，返回欢迎页面
+            exit_button = st.button(
+                "🚪 Exit to Welcome Page", 
+                use_container_width=True,
+                help="Click to return to the welcome page",
+                type="secondary"  # 使用次要样式区分
+            )
+            
+            if reset_button:
+                reset_app_state()
+                st.rerun()
+            
+            if exit_button:
+                # 重置应用状态并返回欢迎页
+                reset_app_state()
+                st.session_state['page'] = 'welcome'
+                st.rerun()
 
     with col2:
         st.markdown("#### 🗺️ 3D Campus Map")
