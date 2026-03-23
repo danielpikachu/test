@@ -1129,9 +1129,8 @@ def main_interface():
                 padding-right: 1rem;
                 max-width: 100%;
                 padding-bottom: 80px; 
-                transition: margin-left 0.3s ease !important; /* 平滑过渡 */
             }
-            /* 作者标签 */
+         
             .author-tag {
                 position: fixed; 
                 bottom: 50px;  
@@ -1144,99 +1143,10 @@ def main_interface():
                 border: none;
                 border-radius: 0;
                 z-index: 9999;  
-            }
-            /* 滑动面板核心样式 */
-            .slide-panel {
-                position: fixed !important;
-                top: 0;
-                left: 0;
-                width: 320px;
-                height: 100vh;
-                background: white;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-                padding: 20px;
-                z-index: 9998;
-                transition: transform 0.3s ease; /* 滑动动画 */
-                overflow-y: auto; /* 内容超出滚动 */
-            }
-            /* 隐藏状态：向左滑出视野 */
-            .slide-panel.hidden {
-                transform: translateX(-100%);
-            }
-            /* 展开状态：显示在左侧 */
-            .slide-panel.visible {
-                transform: translateX(0);
-            }
-            /* 切换按钮样式 */
-            .toggle-btn {
-                position: fixed !important;
-                top: 50%;
-                left: 10px;
-                z-index: 9999;
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                border: none;
-                background: #2c3e50;
-                color: white;
-                font-size: 20px;
-                cursor: pointer;
-                transition: left 0.3s ease;
-            }
-            /* 面板隐藏时，按钮右移 */
-            .toggle-btn.hidden {
-                left: 10px;
-            }
-            /* 面板展开时，按钮移到面板右侧 */
-            .toggle-btn.visible {
-                left: 330px;
-            }
-            /* 地图区域适配 */
-            .map-container {
-                margin-left: 0;
-                transition: margin-left 0.3s ease;
-            }
-            .map-container.visible {
-                margin-left: 320px;
-            }
+                
+        }
         </style>
     """, unsafe_allow_html=True)
-    
-    # 初始化面板状态（默认展开）
-    if 'panel_visible' not in st.session_state:
-        st.session_state['panel_visible'] = True
-
-    # 切换面板显示/隐藏的按钮
-    toggle_label = "←" if st.session_state['panel_visible'] else "→"
-    btn_state = "visible" if st.session_state['panel_visible'] else "hidden"
-    
-    # 点击按钮切换状态
-    if st.button(toggle_label, key="toggle_btn", 
-                help="Click to show/hide location panel",
-                on_click=lambda: st.session_state.update(panel_visible=not st.session_state['panel_visible'])):
-        st.rerun()
-
-    # 应用按钮样式
-    st.markdown(f"""
-        <style>
-        button[data-testid="baseButton-secondary-toggle_btn"] {{
-            position: fixed !important;
-            top: 50% !important;
-            left: {"330px" if st.session_state['panel_visible'] else "10px"} !important;
-            z-index: 9999 !important;
-            width: 40px !important;
-            height: 40px !important;
-            border-radius: 50% !important;
-            border: none !important;
-            background: #2c3e50 !important;
-            color: white !important;
-            font-size: 20px !important;
-            cursor: pointer !important;
-            transition: left 0.3s ease !important;
-        }}
-        </style>
-    """, unsafe_allow_html=True)
-
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building + Gate Navigation)")
@@ -1267,87 +1177,85 @@ def main_interface():
         st.error(f"Initialization error: {str(e)}")
         return
 
-    # --------------------------
-    # 滑动面板：Select Locations 区域
-    # --------------------------
-    panel_class = "slide-panel visible" if st.session_state['panel_visible'] else "slide-panel hidden"
-    st.markdown(f'<div class="{panel_class}">', unsafe_allow_html=True)
-    
-    st.markdown("#### 📍 Select Locations")
-    st.markdown("#### Start Point")
-    start_building = st.selectbox("Building", building_names, key="start_building")
-    start_levels = levels_by_building.get(start_building, [])
-    start_level = st.selectbox("Floor", start_levels, key="start_level")
-    start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-    start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+    col1, col2 = st.columns([1, 6])
 
-    st.markdown("#### End Point")
-    end_building = st.selectbox("Building", building_names, key="end_building")
-    end_levels = levels_by_building.get(end_building, [])
-    end_level = st.selectbox("Floor", end_levels, key="end_level")
-    end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-    end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
-
-    nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+    with col1:
+        with st.expander("📍 Select Locations", expanded=True):
+        
+            
+            st.markdown("#### Start Point")
+            start_building = st.selectbox("Building", building_names, key="start_building")
+            start_levels = levels_by_building.get(start_building, [])
+            start_level = st.selectbox("Floor", start_levels, key="start_level")
+            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
     
-    reset_button = st.button(
-        "🔄 Reset View", 
-        use_container_width=True,
-        help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
-    )
+            st.markdown("#### End Point")
+            end_building = st.selectbox("Building", building_names, key="end_building")
+            end_levels = levels_by_building.get(end_building, [])
+            end_level = st.selectbox("Floor", end_levels, key="end_level")
+            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
     
-    exit_button = st.button(
-        "🚪 Exit to Welcome Page", 
-        use_container_width=True,
-        help="Click to return to the welcome page",
-        type="secondary"
-    )
-    
-    if reset_button:
-        reset_app_state()
-        st.rerun()
-    
-    if exit_button:
-        reset_app_state()
-        st.session_state['page'] = 'welcome'
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # --------------------------
-    # 地图区域（适配面板状态）
-    # --------------------------
-    map_class = "map-container visible" if st.session_state['panel_visible'] else "map-container"
-    st.markdown(f'<div class="{map_class}">', unsafe_allow_html=True)
-    st.markdown("#### 🗺️ 3D Campus Map")
-    
-    try:
-        if nav_button:
-            path, message, simplified_path, display_options = navigate(
-                graph, 
-                start_building, start_classroom, start_level,
-                end_building, end_classroom, end_level
+            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+            
+            reset_button = st.button(
+                "🔄 Reset View", 
+                use_container_width=True,
+                help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
             )
             
-            if path and display_options:
-                st.success(f"📊 Navigation result: {message}")
-                st.markdown("##### 🛤️ Path Details")
-                st.info(simplified_path)
+            # 添加退出按钮，返回欢迎页面
+            exit_button = st.button(
+                "🚪 Exit to Welcome Page", 
+                use_container_width=True,
+                help="Click to return to the welcome page",
+                type="secondary"  # 使用次要样式区分
+            )
+            
+            if reset_button:
+                reset_app_state()
+                st.rerun()
+            
+            if exit_button:
+                # 重置应用状态并返回欢迎页
+                reset_app_state()
+                st.session_state['page'] = 'welcome'
+                st.rerun()
+
+    with col2:
+        st.markdown("#### 🗺️ 3D Campus Map")
+        
+        if nav_button:
+            try:
+                path, message, simplified_path, display_options = navigate(
+                    graph, 
+                    start_building, start_classroom, start_level,
+                    end_building, end_classroom, end_level
+                )
                 
-                st.session_state['current_path'] = path
-                st.session_state['display_options'] = display_options
+                if path and display_options:
+                    st.success(f"📊 Navigation result: {message}")
+                    st.markdown("##### 🛤️ Path Details")
+                    st.info(simplified_path)
+                    
+                    st.session_state['current_path'] = path
+                    st.session_state['display_options'] = display_options
+                else:
+                    st.error(f"❌ {message}")
+            except Exception as e:
+                st.error(f"Navigation process error: {str(e)}")
+        
+        try:
+            if st.session_state['current_path'] is not None:
+                fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+                plot_path(ax, graph, st.session_state['current_path'])
             else:
-                st.error(f"❌ {message}")
-        
-        if st.session_state['current_path'] is not None:
-            fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-            plot_path(ax, graph, st.session_state['current_path'])
-        else:
-            fig, ax = plot_3d_map(school_data)
-        
-        st.pyplot(fig, use_container_width=True)
-    except Exception as e:
-        st.error(f"Failed to display map: {str(e)}")
-    st.markdown('</div>', unsafe_allow_html=True)
+                fig, ax = plot_3d_map(school_data)
+            
+            st.pyplot(fig)
+        except Exception as e:
+            st.error(f"Failed to display map: {str(e)}")
 
 def main():
     # 初始化会话状态，控制显示哪个页面
