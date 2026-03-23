@@ -58,8 +58,6 @@ def init_google_sheet():
             sheet = client.open(SHEET_NAME)
         except gspread.exceptions.SpreadsheetNotFound:
             sheet = client.create(SHEET_NAME)
-            # 可选：共享表格给你的邮箱（方便查看）
-            # sheet.share('your-email@gmail.com', perm_type='user', role='writer')
         
         # 尝试获取统计工作表，如果不存在则创建
         try:
@@ -73,7 +71,6 @@ def init_google_sheet():
         
         return stats_worksheet
     except Exception as e:
-        st.warning(f"Google Sheets初始化失败: {str(e)}. 访问次数统计功能暂时不可用。")
         return None
 
 # --------------------------
@@ -101,7 +98,6 @@ def update_access_count(worksheet):
         
         return new_total
     except Exception as e:
-        st.warning(f"更新访问次数失败: {str(e)}")
         return 0
 
 def get_total_accesses(worksheet):
@@ -117,7 +113,6 @@ def get_total_accesses(worksheet):
         last_row = records[-1]
         return int(last_row[2]) if last_row[2].isdigit() else 0
     except Exception as e:
-        st.warning(f"获取总访问次数失败: {str(e)}")
         return 0
 
 # --------------------------
@@ -389,7 +384,7 @@ def plot_3d_map(school_data, display_options=None):
             ax.text(x[0], y[0], z[0], f"Start\n{labels[0]}", color=COLORS['start_label'], fontweight='bold', fontsize=16)
             ax.text(x[-1], y[-1], z[-1], f"End\n{labels[-1]}", color=COLORS['end_label'], fontweight='bold', fontsize=16)
         except Exception as e:
-            st.warning(f"Path drawing warning: {str(e)}")
+            pass
 
     ax.set_xlabel('X Coordinate', fontsize=18, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=18, fontweight='bold')
@@ -637,8 +632,6 @@ def build_navigation_graph(school_data):
                 
                 if nearest_corr_node_id:
                     graph.add_edge(class_node_id, nearest_corr_node_id, min_dist)
-                else:
-                    st.warning(f"Warning: Classroom {graph.nodes[class_node_id]['name']} in Building {building_name}{level_name} has no corridor connection")
 
             # 连接楼梯到最近的走廊
             stair_nodes = [
@@ -766,78 +759,63 @@ def build_navigation_graph(school_data):
                 else:
                     distance = euclidean_distance(from_coords, to_coords, floor_penalty=15.0)
                 graph.add_edge(from_node_id, to_node_id, distance)
-            else:
-                # 调试日志（方便排查）
-                st.warning(
-                    f"连接失败：{building_id} → {to_building_id}\n"
-                    f"来源节点：({building_id}, {from_obj_type}, {from_node_name}, {from_level}) → {from_node_id}\n"
-                    f"目标节点：({to_building_id}, {to_obj_type}, {to_node_name}, {to_level}) → {to_node_id}"
-                )
 
-    # A/B/C楼之间的原有连接（保持不变，跨楼连廊无楼层惩罚）
-    a_building_id = 'buildingA'
-    b_building_id = 'buildingB'
-    c_building_id = 'buildingC'
-    
-    ab_connect_level = 'level1'
-    a_b_corr_name = 'connectToBuildingB-p1'
-    a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
-    b_a_corr_name = 'connectToBuildingAAndC-p1'
-    b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
-    
-    if a_b_node_id and b_a_node_id:
-        coords_a = graph.nodes[a_b_node_id]['coordinates']
-        coords_b = graph.nodes[b_a_node_id]['coordinates']
-        # 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
-        distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
-        graph.add_edge(a_b_node_id, b_a_node_id, distance)
-    else:
-        st.warning("Could not find A-B level1 inter-building corridor connection nodes")
-    
-    bc_connect_level = 'level1'
-    b_c_corr_name = 'connectToBuildingAAndC-p0'
-    b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
-    c_b_corr_name = 'connectToBuildingB-p1'
-    c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
-    
-    if b_c_node_id and c_b_node_id:
-        coords_b = graph.nodes[b_c_node_id]['coordinates']
-        coords_c = graph.nodes[c_b_node_id]['coordinates']
-        # 跨楼连廊：无楼层惩罚
-        distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
-        graph.add_edge(b_c_node_id, c_b_node_id, distance)
-    else:
-        st.warning("Could not find B-C level1 inter-building corridor connection nodes")
-    
-    connect_level1 = 'level1'
-    a_corr1_name = 'connectToBuildingC-p3'
-    a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
-    c_corr1_name = 'connectToBuildingA-p0'
-    c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
-    
-    if a_connect1_node_id and c_connect1_node_id:
-        coords_a = graph.nodes[a_connect1_node_id]['coordinates']
-        coords_c = graph.nodes[c_connect1_node_id]['coordinates']
-        # 跨楼连廊：无楼层惩罚
-        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
-    else:
-        st.warning("Could not find level 1 A-C inter-building corridor connection nodes")
-    
-    connect_level3 = 'level3'
-    a_corr3_name = 'connectToBuildingC-p2'
-    a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
-    c_corr3_name = 'connectToBuildingA-p0'
-    c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
-    
-    if a_connect3_node_id and c_connect3_node_id:
-        coords_a = graph.nodes[a_connect3_node_id]['coordinates']
-        coords_c = graph.nodes[c_connect3_node_id]['coordinates']
-        # 跨楼连廊：无楼层惩罚（优先3楼跨楼）
-        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
-    else:
-        st.warning("Could not find level 3 A-C inter-building corridor connection nodes")
+        # A/B/C楼之间的原有连接（保持不变，跨楼连廊无楼层惩罚）
+        a_building_id = 'buildingA'
+        b_building_id = 'buildingB'
+        c_building_id = 'buildingC'
+        
+        ab_connect_level = 'level1'
+        a_b_corr_name = 'connectToBuildingB-p1'
+        a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
+        b_a_corr_name = 'connectToBuildingAAndC-p1'
+        b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
+        
+        if a_b_node_id and b_a_node_id:
+            coords_a = graph.nodes[a_b_node_id]['coordinates']
+            coords_b = graph.nodes[b_a_node_id]['coordinates']
+            # 跨楼连廊：无楼层惩罚（鼓励同层跨楼）
+            distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
+            graph.add_edge(a_b_node_id, b_a_node_id, distance)
+        
+        bc_connect_level = 'level1'
+        b_c_corr_name = 'connectToBuildingAAndC-p0'
+        b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
+        c_b_corr_name = 'connectToBuildingB-p1'
+        c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
+        
+        if b_c_node_id and c_b_node_id:
+            coords_b = graph.nodes[b_c_node_id]['coordinates']
+            coords_c = graph.nodes[c_b_node_id]['coordinates']
+            # 跨楼连廊：无楼层惩罚
+            distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
+            graph.add_edge(b_c_node_id, c_b_node_id, distance)
+        
+        connect_level1 = 'level1'
+        a_corr1_name = 'connectToBuildingC-p3'
+        a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
+        c_corr1_name = 'connectToBuildingA-p0'
+        c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
+        
+        if a_connect1_node_id and c_connect1_node_id:
+            coords_a = graph.nodes[a_connect1_node_id]['coordinates']
+            coords_c = graph.nodes[c_connect1_node_id]['coordinates']
+            # 跨楼连廊：无楼层惩罚
+            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+        
+        connect_level3 = 'level3'
+        a_corr3_name = 'connectToBuildingC-p2'
+        a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
+        c_corr3_name = 'connectToBuildingA-p0'
+        c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
+        
+        if a_connect3_node_id and c_connect3_node_id:
+            coords_a = graph.nodes[a_connect3_node_id]['coordinates']
+            coords_c = graph.nodes[c_connect3_node_id]['coordinates']
+            # 跨楼连廊：无楼层惩罚（优先3楼跨楼）
+            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
 
     return graph
 
@@ -987,7 +965,7 @@ def plot_path(ax, graph, path):
         ax.plot(x, y, z, color=COLORS['path'], linewidth=10, linestyle='-', marker='o', markersize=10)
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=16)
     except Exception as e:
-        st.error(f"Failed to draw path: {str(e)}")
+        pass
 
 def get_classroom_info(school_data):
     try:
