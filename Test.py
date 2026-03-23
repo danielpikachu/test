@@ -1145,6 +1145,16 @@ def main_interface():
                 z-index: 9999;  
                 
         }
+        /* 新增：侧边栏展开/收起按钮样式 */
+        .sidebar-toggle-btn {
+            position: absolute;
+            left: 10px;
+            top: 100px;
+            z-index: 999;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
         </style>
     """, unsafe_allow_html=True)
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
@@ -1163,6 +1173,9 @@ def main_interface():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
+    # 新增：初始化侧边栏展开状态
+    if 'sidebar_expanded' not in st.session_state:
+        st.session_state['sidebar_expanded'] = True
 
     try:
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1177,56 +1190,70 @@ def main_interface():
         st.error(f"Initialization error: {str(e)}")
         return
 
-    col1, col2 = st.columns([1, 6])
+    # 新增：侧边栏展开/收起按钮
+    toggle_col, _ = st.columns([0.05, 0.95])
+    with toggle_col:
+        if st.button(
+            "◀️" if st.session_state['sidebar_expanded'] else "▶️",
+            key="sidebar_toggle",
+            help="Hide/Show location selector",
+            use_container_width=True
+        ):
+            st.session_state['sidebar_expanded'] = not st.session_state['sidebar_expanded']
+            st.rerun()
+
+    # 修改：根据展开状态设置列宽度
+    sidebar_width = 1 if st.session_state['sidebar_expanded'] else 0.01
+    map_width = 6 if st.session_state['sidebar_expanded'] else 6.99
+    col1, col2 = st.columns([sidebar_width, map_width])
 
     with col1:
-        with st.expander("📍 Select Locations", expanded=True):
+        # 修改：仅在展开状态显示选择器
+        if st.session_state['sidebar_expanded']:
+            with st.expander("📍 Select Locations", expanded=True):
+                st.markdown("#### Start Point")
+                start_building = st.selectbox("Building", building_names, key="start_building")
+                start_levels = levels_by_building.get(start_building, [])
+                start_level = st.selectbox("Floor", start_levels, key="start_level")
+                start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+                start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
         
-            
-            st.markdown("#### Start Point")
-            start_building = st.selectbox("Building", building_names, key="start_building")
-            start_levels = levels_by_building.get(start_building, [])
-            start_level = st.selectbox("Floor", start_levels, key="start_level")
-            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
-    
-            st.markdown("#### End Point")
-            end_building = st.selectbox("Building", building_names, key="end_building")
-            end_levels = levels_by_building.get(end_building, [])
-            end_level = st.selectbox("Floor", end_levels, key="end_level")
-            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
-    
-            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-            
-            reset_button = st.button(
-                "🔄 Reset View", 
-                use_container_width=True,
-                help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
-            )
-            
-            # 添加退出按钮，返回欢迎页面
-            exit_button = st.button(
-                "🚪 Exit to Welcome Page", 
-                use_container_width=True,
-                help="Click to return to the welcome page",
-                type="secondary"  # 使用次要样式区分
-            )
-            
-            if reset_button:
-                reset_app_state()
-                st.rerun()
-            
-            if exit_button:
-                # 重置应用状态并返回欢迎页
-                reset_app_state()
-                st.session_state['page'] = 'welcome'
-                st.rerun()
+                st.markdown("#### End Point")
+                end_building = st.selectbox("Building", building_names, key="end_building")
+                end_levels = levels_by_building.get(end_building, [])
+                end_level = st.selectbox("Floor", end_levels, key="end_level")
+                end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+                end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+        
+                nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+                
+                reset_button = st.button(
+                    "🔄 Reset View", 
+                    use_container_width=True,
+                    help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
+                )
+                
+                exit_button = st.button(
+                    "🚪 Exit to Welcome Page", 
+                    use_container_width=True,
+                    help="Click to return to the welcome page",
+                    type="secondary"
+                )
+                
+                if reset_button:
+                    reset_app_state()
+                    st.rerun()
+                
+                if exit_button:
+                    reset_app_state()
+                    st.session_state['page'] = 'welcome'
+                    st.rerun()
 
     with col2:
         st.markdown("#### 🗺️ 3D Campus Map")
         
-        if nav_button:
+        # 修改：仅在展开状态且点击导航按钮时执行导航逻辑
+        if st.session_state['sidebar_expanded'] and 'nav_button' in locals() and nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
                     graph, 
