@@ -1129,8 +1129,9 @@ def main_interface():
                 padding-right: 1rem;
                 max-width: 100%;
                 padding-bottom: 80px; 
+                transition: margin-left 0.3s ease !important; /* 平滑过渡 */
             }
-         
+            /* 作者标签 */
             .author-tag {
                 position: fixed; 
                 bottom: 50px;  
@@ -1144,51 +1145,101 @@ def main_interface():
                 border-radius: 0;
                 z-index: 9999;  
             }
-            /* ========== 新增：滑动面板样式 ========== */
-            /* 1. 行内箭头按钮样式 */
-            .toggle-btn {
-                display: inline-block;
-                margin-left: 10px;
-                padding: 2px 8px;
-                border: none;
-                background: #f0f2f6;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: bold;
-                color: #2c3e50;
-                transition: all 0.2s ease;
-            }
-            .toggle-btn:hover {
-                background: #e6e9ed;
-            }
-            /* 2. 滑动动画 */
+            /* 滑动面板核心样式 */
             .slide-panel {
-                transition: width 0.3s ease-in-out;
-                overflow: hidden;
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                width: 320px;
+                height: 100vh;
+                background: white;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                padding: 20px;
+                z-index: 9998;
+                transition: transform 0.3s ease; /* 滑动动画 */
+                overflow-y: auto; /* 内容超出滚动 */
             }
-            /* 3. 隐藏状态的宽度（仅留标题） */
+            /* 隐藏状态：向左滑出视野 */
             .slide-panel.hidden {
-                width: 180px !important;
+                transform: translateX(-100%);
             }
-            /* 4. 展开状态的宽度（原有宽度） */
-            .slide-panel.expanded {
-                width: 100% !important;
+            /* 展开状态：显示在左侧 */
+            .slide-panel.visible {
+                transform: translateX(0);
+            }
+            /* 切换按钮样式 */
+            .toggle-btn {
+                position: fixed !important;
+                top: 50%;
+                left: 10px;
+                z-index: 9999;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: none;
+                background: #2c3e50;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                transition: left 0.3s ease;
+            }
+            /* 面板隐藏时，按钮右移 */
+            .toggle-btn.hidden {
+                left: 10px;
+            }
+            /* 面板展开时，按钮移到面板右侧 */
+            .toggle-btn.visible {
+                left: 330px;
+            }
+            /* 地图区域适配 */
+            .map-container {
+                margin-left: 0;
+                transition: margin-left 0.3s ease;
+            }
+            .map-container.visible {
+                margin-left: 320px;
             }
         </style>
     """, unsafe_allow_html=True)
+    
+    # 初始化面板状态（默认展开）
+    if 'panel_visible' not in st.session_state:
+        st.session_state['panel_visible'] = True
+
+    # 切换面板显示/隐藏的按钮
+    toggle_label = "←" if st.session_state['panel_visible'] else "→"
+    btn_state = "visible" if st.session_state['panel_visible'] else "hidden"
+    
+    # 点击按钮切换状态
+    if st.button(toggle_label, key="toggle_btn", 
+                help="Click to show/hide location panel",
+                on_click=lambda: st.session_state.update(panel_visible=not st.session_state['panel_visible'])):
+        st.rerun()
+
+    # 应用按钮样式
+    st.markdown(f"""
+        <style>
+        button[data-testid="baseButton-secondary-toggle_btn"] {{
+            position: fixed !important;
+            top: 50% !important;
+            left: {"330px" if st.session_state['panel_visible'] else "10px"} !important;
+            z-index: 9999 !important;
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            border: none !important;
+            background: #2c3e50 !important;
+            color: white !important;
+            font-size: 20px !important;
+            cursor: pointer !important;
+            transition: left 0.3s ease !important;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
     st.subheader("🏫SCIS Campus Navigation System")
     st.markdown("3D Map & Inter-building Path Planning (A/B/C Building + Gate Navigation)")
-
-    # ========== 新增：初始化滑动面板状态 ==========
-    if 'panel_expanded' not in st.session_state:
-        st.session_state.panel_expanded = True  # 默认展开
-
-    # 定义状态切换函数
-    def toggle_panel():
-        st.session_state.panel_expanded = not st.session_state.panel_expanded
-        st.rerun()  # 刷新页面应用状态
 
     if 'display_options' not in st.session_state:
         st.session_state['display_options'] = {
@@ -1216,108 +1267,87 @@ def main_interface():
         st.error(f"Initialization error: {str(e)}")
         return
 
-    col1, col2 = st.columns([1, 6])
+    # --------------------------
+    # 滑动面板：Select Locations 区域
+    # --------------------------
+    panel_class = "slide-panel visible" if st.session_state['panel_visible'] else "slide-panel hidden"
+    st.markdown(f'<div class="{panel_class}">', unsafe_allow_html=True)
+    
+    st.markdown("#### 📍 Select Locations")
+    st.markdown("#### Start Point")
+    start_building = st.selectbox("Building", building_names, key="start_building")
+    start_levels = levels_by_building.get(start_building, [])
+    start_level = st.selectbox("Floor", start_levels, key="start_level")
+    start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+    start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-    with col1:
-        # ========== 核心修改：行内标题 + 箭头按钮 ==========
-        # 1. 行内显示标题 + 箭头按钮
-        col_title, col_btn = st.columns([4, 1])
-        with col_title:
-            st.markdown("#### 📍 Select Locations")
-        with col_btn:
-            # 箭头文字：隐藏时显示 →，展开时显示 ←
-            arrow_text = "←" if st.session_state.panel_expanded else "→"
-            # 行内箭头按钮，绑定切换函数
-            st.button(arrow_text, on_click=toggle_panel, key="toggle_btn", 
-                      use_container_width=True, 
-                      help="Click to show/hide panel",
-                      args=(), 
-                      kwargs={})
-        
-        # ========== 滑动面板容器（根据状态加类名） ==========
-        panel_class = "slide-panel expanded" if st.session_state.panel_expanded else "slide-panel hidden"
-        # 用 HTML 包裹面板，应用滑动样式
-        st.markdown(f'<div class="{panel_class}">', unsafe_allow_html=True)
-        
-        # 原有选择区域代码（完全保留，仅缩进）
-        if st.session_state.panel_expanded:  # 仅展开时显示选择框
-            st.markdown("#### Start Point")
-            start_building = st.selectbox("Building", building_names, key="start_building")
-            start_levels = levels_by_building.get(start_building, [])
-            start_level = st.selectbox("Floor", start_levels, key="start_level")
-            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+    st.markdown("#### End Point")
+    end_building = st.selectbox("Building", building_names, key="end_building")
+    end_levels = levels_by_building.get(end_building, [])
+    end_level = st.selectbox("Floor", end_levels, key="end_level")
+    end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+    end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-            st.markdown("#### End Point")
-            end_building = st.selectbox("Building", building_names, key="end_building")
-            end_levels = levels_by_building.get(end_building, [])
-            end_level = st.selectbox("Floor", end_levels, key="end_level")
-            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+    nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+    
+    reset_button = st.button(
+        "🔄 Reset View", 
+        use_container_width=True,
+        help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
+    )
+    
+    exit_button = st.button(
+        "🚪 Exit to Welcome Page", 
+        use_container_width=True,
+        help="Click to return to the welcome page",
+        type="secondary"
+    )
+    
+    if reset_button:
+        reset_app_state()
+        st.rerun()
+    
+    if exit_button:
+        reset_app_state()
+        st.session_state['page'] = 'welcome'
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-            
-            reset_button = st.button(
-                "🔄 Reset View", 
-                use_container_width=True,
-                help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
+    # --------------------------
+    # 地图区域（适配面板状态）
+    # --------------------------
+    map_class = "map-container visible" if st.session_state['panel_visible'] else "map-container"
+    st.markdown(f'<div class="{map_class}">', unsafe_allow_html=True)
+    st.markdown("#### 🗺️ 3D Campus Map")
+    
+    try:
+        if nav_button:
+            path, message, simplified_path, display_options = navigate(
+                graph, 
+                start_building, start_classroom, start_level,
+                end_building, end_classroom, end_level
             )
             
-            exit_button = st.button(
-                "🚪 Exit to Welcome Page", 
-                use_container_width=True,
-                help="Click to return to the welcome page",
-                type="secondary"
-            )
-            
-            if reset_button:
-                reset_app_state()
-                st.rerun()
-            
-            if exit_button:
-                reset_app_state()
-                st.session_state['page'] = 'welcome'
-                st.rerun()
-        
-        # 关闭滑动面板容器
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("#### 🗺️ 3D Campus Map")
-        
-        # 仅在展开且点击导航按钮时执行导航逻辑
-        nav_clicked = False
-        if st.session_state.panel_expanded and 'nav_button' in locals() and nav_button:
-            nav_clicked = True
-            try:
-                path, message, simplified_path, display_options = navigate(
-                    graph, 
-                    start_building, start_classroom, start_level,
-                    end_building, end_classroom, end_level
-                )
+            if path and display_options:
+                st.success(f"📊 Navigation result: {message}")
+                st.markdown("##### 🛤️ Path Details")
+                st.info(simplified_path)
                 
-                if path and display_options:
-                    st.success(f"📊 Navigation result: {message}")
-                    st.markdown("##### 🛤️ Path Details")
-                    st.info(simplified_path)
-                    
-                    st.session_state['current_path'] = path
-                    st.session_state['display_options'] = display_options
-                else:
-                    st.error(f"❌ {message}")
-            except Exception as e:
-                st.error(f"Navigation process error: {str(e)}")
-        
-        try:
-            if st.session_state['current_path'] is not None:
-                fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
-                plot_path(ax, graph, st.session_state['current_path'])
+                st.session_state['current_path'] = path
+                st.session_state['display_options'] = display_options
             else:
-                fig, ax = plot_3d_map(school_data)
-            
-            st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Failed to display map: {str(e)}")
+                st.error(f"❌ {message}")
+        
+        if st.session_state['current_path'] is not None:
+            fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
+            plot_path(ax, graph, st.session_state['current_path'])
+        else:
+            fig, ax = plot_3d_map(school_data)
+        
+        st.pyplot(fig, use_container_width=True)
+    except Exception as e:
+        st.error(f"Failed to display map: {str(e)}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
     # 初始化会话状态，控制显示哪个页面
