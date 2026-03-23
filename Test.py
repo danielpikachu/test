@@ -1,21 +1,19 @@
+import warnings
+import logging
+warnings.filterwarnings("ignore")
+logger = logging.getLogger("streamlit")
+logger.setLevel(logging.ERROR)
+import streamlit as st
+st.set_option('deprecation.showPyplotGlobalUse', False)
 import json
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
-import warnings
-import logging
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
-
-warnings.filterwarnings('ignore')
-# 2. 屏蔽Streamlit非ERROR级别的日志（只显示错误，隐藏警告/信息）
-logger = logging.getLogger('streamlit')
-logger.setLevel(logging.ERROR)
-# 3. 屏蔽matplotlib相关的deprecation警告（可选，防止绘图警告）
-st.set_option('deprecation.showPyplotGlobalUse', False)
 
 # 核心修改1：开启宽布局 + 原生侧边栏配置
 st.set_page_config(
