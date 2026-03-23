@@ -1,10 +1,3 @@
-import warnings
-import logging
-warnings.filterwarnings("ignore")
-logger = logging.getLogger("streamlit")
-logger.setLevel(logging.ERROR)
-import streamlit as st
-st.set_option('deprecation.showPyplotGlobalUse', False)
 import json
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
