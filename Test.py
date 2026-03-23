@@ -1180,7 +1180,8 @@ def main_interface():
     col1, col2 = st.columns([1, 6])
 
     with col1:
-        st.markdown("#### 📍 Select Locations")
+        with st.expander("📍 Select Locations", expanded=True):
+        
         
         st.markdown("#### Start Point")
         start_building = st.selectbox("Building", building_names, key="start_building")
