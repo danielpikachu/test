@@ -1036,6 +1036,9 @@ def reset_app_state():
     st.session_state['current_path'] = None
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
+    # 重置列宽
+    if 'sidebar_width_ratio' in st.session_state:
+        st.session_state['sidebar_width_ratio'] = 20
 
 def welcome_page():
     # 初始化Google Sheets连接
@@ -1143,18 +1146,32 @@ def main_interface():
                 border: none;
                 border-radius: 0;
                 z-index: 9999;  
-                
-        }
-        /* 新增：侧边栏展开/收起按钮样式 */
-        .sidebar-toggle-btn {
-            position: absolute;
-            left: 10px;
-            top: 100px;
-            z-index: 999;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
+            }
+            /* 线条型按钮样式 */
+            .stButton>button {
+                border: 1px solid #d0d7de !important;
+                background-color: #f6f8fa !important;
+                color: #24292f !important;
+                border-radius: 6px !important;
+                padding: 0.5rem 1rem !important;
+                font-size: 14px !important;
+                font-weight: 500 !important;
+            }
+            .stButton>button:hover {
+                background-color: #f3f4f6 !important;
+                border-color: #afb8c1 !important;
+            }
+            /* 收起/展开按钮样式 */
+            .sidebar-toggle-btn {
+                border: 1px solid #d0d7de !important;
+                background-color: #f6f8fa !important;
+                color: #24292f !important;
+                width: 32px !important;
+                height: 32px !important;
+                border-radius: 4px !important;
+                padding: 0 !important;
+                font-size: 16px !important;
+            }
         </style>
     """, unsafe_allow_html=True)
     st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
@@ -1173,9 +1190,12 @@ def main_interface():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
-    # 新增：初始化侧边栏展开状态
+    # 初始化侧边栏展开状态
     if 'sidebar_expanded' not in st.session_state:
         st.session_state['sidebar_expanded'] = True
+    # 初始化列宽比例（百分比）
+    if 'sidebar_width_ratio' not in st.session_state:
+        st.session_state['sidebar_width_ratio'] = 20
 
     try:
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1190,9 +1210,10 @@ def main_interface():
         st.error(f"Initialization error: {str(e)}")
         return
 
-    # 新增：侧边栏展开/收起按钮
-    toggle_col, _ = st.columns([0.05, 0.95])
-    with toggle_col:
+    # 侧边栏控制区域
+    control_col, _ = st.columns([0.1, 0.9])
+    with control_col:
+        # 展开/收起按钮
         if st.button(
             "◀️" if st.session_state['sidebar_expanded'] else "▶️",
             key="sidebar_toggle",
@@ -1201,14 +1222,35 @@ def main_interface():
         ):
             st.session_state['sidebar_expanded'] = not st.session_state['sidebar_expanded']
             st.rerun()
+        
+        # 列宽调整滑块（仅展开时显示）
+        if st.session_state['sidebar_expanded']:
+            new_width = st.slider(
+                "Width",
+                min_value=10,
+                max_value=40,
+                value=st.session_state['sidebar_width_ratio'],
+                step=1,
+                key="width_slider",
+                help="Adjust sidebar width",
+                label_visibility="collapsed"
+            )
+            if new_width != st.session_state['sidebar_width_ratio']:
+                st.session_state['sidebar_width_ratio'] = new_width
+                st.rerun()
 
-    # 修改：根据展开状态设置列宽度
-    sidebar_width = 1 if st.session_state['sidebar_expanded'] else 0.01
-    map_width = 6 if st.session_state['sidebar_expanded'] else 6.99
+    # 动态计算列宽
+    if st.session_state['sidebar_expanded']:
+        sidebar_width = st.session_state['sidebar_width_ratio'] / 100
+        map_width = 1 - sidebar_width
+    else:
+        sidebar_width = 0.01
+        map_width = 0.99
+
     col1, col2 = st.columns([sidebar_width, map_width])
 
     with col1:
-        # 修改：仅在展开状态显示选择器
+        # 仅在展开状态显示选择器
         if st.session_state['sidebar_expanded']:
             with st.expander("📍 Select Locations", expanded=True):
                 st.markdown("#### Start Point")
@@ -1252,7 +1294,7 @@ def main_interface():
     with col2:
         st.markdown("#### 🗺️ 3D Campus Map")
         
-        # 修改：仅在展开状态且点击导航按钮时执行导航逻辑
+        # 仅在展开状态且点击导航按钮时执行导航逻辑
         if st.session_state['sidebar_expanded'] and 'nav_button' in locals() and nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
