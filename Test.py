@@ -8,7 +8,6 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
 
-# 核心修改1：开启宽布局 + 原生侧边栏配置
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
@@ -17,9 +16,6 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
-# --------------------------
-# Google Sheets 配置（适配 Streamlit Secrets TOML）
-# --------------------------
 SHEET_NAME = 'Navigation visitors'
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -27,7 +23,6 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 从 Streamlit Secrets (TOML格式) 加载密钥
 def get_credentials():
     try:
         service_account_info = st.secrets["google_service_account"]
@@ -43,7 +38,6 @@ def get_credentials():
         return None
 
 def init_google_sheet():
-    """初始化Google Sheets连接并确保表格结构正确"""
     try:
         creds = get_credentials()
         if not creds:
@@ -66,11 +60,7 @@ def init_google_sheet():
     except Exception as e:
         return None
 
-# --------------------------
-# 访问次数统计逻辑
-# --------------------------
 def update_access_count(worksheet):
-    """更新访问次数统计"""
     if not worksheet:
         return 0
         
@@ -91,7 +81,6 @@ def update_access_count(worksheet):
         return 0
 
 def get_total_accesses(worksheet):
-    """获取总访问次数"""
     if not worksheet:
         return 0
         
@@ -105,9 +94,6 @@ def get_total_accesses(worksheet):
     except Exception as e:
         return 0
 
-# --------------------------
-# 地图与导航核心逻辑（保持不变，新增gate相关配色）
-# --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
     'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},
@@ -144,14 +130,16 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 🔥 优化：超大画布 + 完美比例，撑满全屏
-    fig = plt.figure(figsize=(24, 13), dpi=100)
+    # 超大画布 + 高清晰度
+    fig = plt.figure(figsize=(30, 17), dpi=120)
     ax = fig.add_subplot(111, projection='3d')
 
-    # 优化字体大小，视觉更清晰
-    ax.tick_params(axis='x', labelsize=11)
-    ax.tick_params(axis='y', labelsize=11)
-    ax.tick_params(axis='z', labelsize=11)
+    # 核心优化：拉近视角，让模型瞬间变大
+    ax.view_init(elev=25, azim=-60)
+    
+    ax.tick_params(axis='x', labelsize=10)
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='z', labelsize=10)
 
     if display_options is None:
         display_options = {
@@ -374,17 +362,17 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             pass
 
-    ax.set_xlabel('X Coordinate', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Y Coordinate', fontsize=12, fontweight='bold')
-    ax.set_zlabel('Floor Height (Z Value)', fontsize=12, fontweight='bold')
-    ax.set_title('Campus 3D Navigation Map', fontsize=16, fontweight='bold', pad=10)
+    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
+    ax.set_zlabel('Height', fontsize=11, fontweight='bold')
+    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=12)
     
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, frameon=True)
-    ax.grid(True, alpha=0.3, linewidth=1)
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
+    ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    # 🔥 关键优化：收紧图表边距，撑满画布
-    plt.tight_layout()
-    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    # 彻底消除留白，撑满画布
+    plt.tight_layout(pad=0)
+    fig.subplots_adjust(left=0, right=1, top=0.96, bottom=0)
 
     return fig, ax
 
@@ -925,24 +913,18 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-# --------------------------
-# 全局样式：彻底消除滚动条 + 全屏自适应 + 登录页完美居中
-# --------------------------
+# ====================== 样式：登录页完全不变，只放大导航页3D图 ======================
 st.markdown("""
 <style>
-/* 全局禁用滚动条，保持页面可交互 */
-::-webkit-scrollbar {
-    display: none !important;
-}
+/* 全局滚动条隐藏 */
+::-webkit-scrollbar { display: none !important; }
 html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
     overflow: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
     margin: 0 !important;
     padding: 0 !important;
 }
 
-/* 登录/欢迎页面 全屏垂直水平居中 */
+/* 登录页容器 —— 完全保持原样！！！ */
 .welcome-container {
     width: 100vw !important;
     height: 100vh !important;
@@ -958,39 +940,20 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     left: 0 !important;
 }
 
-/* 按钮自适应居中 */
-.welcome-button {
-    min-width: 280px !important;
-    max-width: 400px !important;
-    margin: 20px auto !important;
-}
-
-/* 图片自适应不溢出 */
-img {
-    max-height: 55vh !important;
-    max-width: 90vw !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
-    margin: 0 auto !important;
-}
-
-/* 主内容区占满屏幕不留白 */
-.block-container {
-    padding: 1rem 2rem !important;
+/* 导航页专用：让3D图全屏撑满 */
+.stAppViewContainer:not(:has(.welcome-container)) .block-container {
+    padding: 0 !important;
+    margin: 0 !important;
     max-width: 100vw !important;
+    height: calc(100vh - 60px) !important;
 }
-/* 3D图容器 100%宽度撑满 */
-.element-container div {
+.stAppViewContainer:not(:has(.welcome-container)) .element-container {
     width: 100% !important;
-    max-height: 88vh !important;
+    height: 100% !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --------------------------
-# 页面逻辑
-# --------------------------
 def main():
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
@@ -1007,7 +970,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # 欢迎页面
+    # 登录页面 —— 100% 不变
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
@@ -1026,7 +989,7 @@ def main():
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # 主页面
+    # 导航页面 —— 3D图全屏超大优化
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -1064,7 +1027,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h3 style="margin:0.5rem 0; line-height:1.2;">🏫 SCIS Campus 3D Navigation System</h4>', unsafe_allow_html=True)
+        st.markdown('<h3 style="padding-left:1rem; margin:0.5rem 0;">🏫 SCIS 3D Navigation</h3>', unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1073,7 +1036,6 @@ def main():
         
         global graph
         graph = build_navigation_graph(school_data)
-        st.success("✅ Campus data loaded successfully!")
 
         if nav_button:
             try:
@@ -1084,7 +1046,7 @@ def main():
                 )
                 
                 if path and display_options:
-                    st.success(f"📊 Navigation Result: {message}")
+                    st.success(f"Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
                     st.info(simplified_path)
                     
@@ -1093,7 +1055,7 @@ def main():
                 else:
                     st.error(f"❌ {message}")
             except Exception as e:
-                st.error(f"Navigation process error: {str(e)}")
+                st.error(f"Navigation error: {str(e)}")
 
         try:
             if st.session_state['current_path'] is not None:
@@ -1102,12 +1064,10 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            # 🔥 关键：强制图表宽度100%撑满
+            # 关键：强制全屏渲染
             st.pyplot(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
-        
-        st.markdown('<div style="position: fixed; bottom: 20px; right: 20px; font-size: 14px; color: #666;">Created By DANIEL HAN</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
