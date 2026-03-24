@@ -1039,7 +1039,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.title("🏫 SCIS Campus 3D Navigation System")
+        st.markdown("<h3 style='margin:0;'>🏫 SCIS Campus 3D Navigation System</h3>", unsafe_allow_html=True)
         
         
         school_data = load_school_data_detailed('school_data_detailed.json')
