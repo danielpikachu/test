@@ -925,43 +925,38 @@ def reset_app_state():
 # --------------------------
 st.markdown("""
 <style>
-/* 彻底全局隐藏滚动条 */
-html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], [data-testid="stMainBlockContainer"] {
-    overflow: hidden !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+/* 1. 彻底隐藏滚动条（全局） */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
-::-webkit-scrollbar {display: none !important;}
+html, body {
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+}
 
-/* 登录页面：全屏 + 垂直水平居中 + 无滚动 */
+/* 2. 登录页面垂直居中 + 全屏 + 不偏下 */
 .welcome-container {
     height: 100vh !important;
-    min-height: 100vh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     padding: 0 !important;
-    margin: 0 auto !important;
-    position: relative !important;
-    top: 0 !important;
+    margin: 0 !important;
 }
 
-/* 图片不溢出 */
+/* 3. 图片自适应不溢出 */
 img {
-    max-height: 55vh !important;
-    max-width: 90% !important;
-    object-fit: contain !important;
+    max-height: 50vh !important;
+    width: auto !important;
 }
 
-/* 主内容区不留白 */
+/* 4. 主内容正常显示 */
 .block-container {
-    padding: 0.8rem 1.5rem !important;
-    max-width: 100vw !important;
-    height: 100vh !important;
+    padding: 1rem 2rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
