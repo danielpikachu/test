@@ -942,7 +942,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     align-items: center;
     justify-content: flex-start;
     text-align: center;
-    padding: 5vh !important;
+    padding: 1vh !important;
     margin: 0 !important;
 }
 /* 图片自适应不溢出 */
