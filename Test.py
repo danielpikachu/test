@@ -925,38 +925,40 @@ def reset_app_state():
 # --------------------------
 st.markdown("""
 <style>
-/* 1. 彻底隐藏滚动条（全局） */
+/* 全局禁用滚动条，保持页面可交互 */
 ::-webkit-scrollbar {
     display: none !important;
-    width: 0 !important;
-    height: 0 !important;
 }
-html, body {
+html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
     overflow: hidden !important;
     scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
 }
-
-/* 2. 登录页面垂直居中 + 全屏 + 不偏下 */
+/* 欢迎页面全屏适配 */
 .welcome-container {
-    height: 100vh !important;
+    height: 90vh !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 0 !important;
+    padding: 1vh !important;
     margin: 0 !important;
 }
-
-/* 3. 图片自适应不溢出 */
+/* 图片自适应不溢出 */
 img {
-    max-height: 50vh !important;
+    max-height: 60vh !important;
     width: auto !important;
+    object-fit: contain !important;
 }
-
-/* 4. 主内容正常显示 */
+/* 主内容区占满屏幕不留白 */
 .block-container {
     padding: 1rem 2rem !important;
+    max-width: 100vw !important;
+}
+/* 3D图容器自适应 */
+.element-container div {
+    max-height: 80vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -986,30 +988,6 @@ def main():
             st.session_state['worksheet'] = init_google_sheet()
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
-        st.markdown("""
-        <style>
-        .welcome-container {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 0;
-            margin: 0;
-        }
-        .welcome-title {
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            color: #2c3e50;
-        }
-        .access-count {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: #666;
-        }
-        </style>
-    """, unsafe_allow_html=True)
         
         st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
         st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
