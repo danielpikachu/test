@@ -8,12 +8,11 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
 
-# 核心修改1：开启宽布局 + 原生侧边栏配置
+# 核心修改1：开启宽布局 + 原生侧边栏配置（移除不兼容的initial_sidebar_width参数）
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",  # 宽布局
-    initial_sidebar_state="expanded",  # 初始侧边栏展开
-    initial_sidebar_width=300  # 侧边栏初始宽度（自适应）
+    initial_sidebar_state="expanded"  # 初始侧边栏展开
 )
 
 # 核心新增：全局响应式样式（消除滚动条，自适应屏幕）
@@ -30,6 +29,7 @@ st.markdown("""
     [data-testid="stSidebar"] {
         max-height: 100vh;
         overflow-y: auto; /* 侧边栏内容过多时仅内部滚动 */
+        width: 300px !important; /* 用CSS设置侧边栏宽度，替代不兼容的参数 */
     }
     
     /* 主内容区自适应 */
