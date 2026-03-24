@@ -925,40 +925,43 @@ def reset_app_state():
 # --------------------------
 st.markdown("""
 <style>
-/* 全局禁用滚动条，保持页面可交互 */
-::-webkit-scrollbar {
-    display: none !important;
-}
-html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+/* 彻底全局隐藏滚动条 */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], [data-testid="stMainBlockContainer"] {
     overflow: hidden !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
-/* 欢迎页面全屏适配 */
+::-webkit-scrollbar {display: none !important;}
+
+/* 登录页面：全屏 + 垂直水平居中 + 无滚动 */
 .welcome-container {
-    height: 90vh !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
-    padding: 1vh !important;
-    margin: 0 !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    top: 0 !important;
 }
-/* 图片自适应不溢出 */
+
+/* 图片不溢出 */
 img {
-    max-height: 60vh !important;
-    width: auto !important;
+    max-height: 55vh !important;
+    max-width: 90% !important;
     object-fit: contain !important;
 }
-/* 主内容区占满屏幕不留白 */
+
+/* 主内容区不留白 */
 .block-container {
-    padding: 1rem 2rem !important;
+    padding: 0.8rem 1.5rem !important;
     max-width: 100vw !important;
-}
-/* 3D图容器自适应 */
-.element-container div {
-    max-height: 80vh !important;
+    height: 100vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
