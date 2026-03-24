@@ -144,8 +144,8 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 自适应尺寸，不固定超大宽高
-    fig = plt.figure(figsize=(16, 10))
+    # 修改2：3D图自适应屏幕宽度，等比例缩放，撑满宽度不拉伸
+    fig = plt.figure(figsize=(20, 9))
     ax = fig.add_subplot(111, projection='3d')
 
     ax.tick_params(axis='x', labelsize=10)
@@ -388,7 +388,7 @@ class Graph:
         self.nodes = {}
         self.node_id_map = {}
 
-    def add_node(self, building_id, node_type, name, level, coordinates):
+    def add_node(self building_id, node_type, name, level, coordinates):
         if building_id == 'gate':
             building_name = 'Gate'
         else:
@@ -933,32 +933,37 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
+    height: 100vh !important;
 }
-/* 欢迎页面全屏适配 */
+/* 欢迎页面全屏垂直居中 */
 .welcome-container {
-    height: 90vh !important;
+    height: 100vh !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     text-align: center;
-    padding: 1vh !important;
+    padding: 0 !important;
     margin: 0 !important;
+    gap: 2vh;
 }
 /* 图片自适应不溢出 */
 img {
-    max-height: 60vh !important;
+    max-height: 55vh !important;
+    max-width: 90vw !important;
     width: auto !important;
     object-fit: contain !important;
 }
 /* 主内容区占满屏幕不留白 */
 .block-container {
-    padding: 1rem 2rem !important;
+    padding: 0.5rem 1rem !important;
     max-width: 100vw !important;
+    height: 100% !important;
 }
-/* 3D图容器自适应 */
+/* 3D图容器自适应全屏 */
 .element-container div {
-    max-height: 80vh !important;
+    height: 88vh !important;
+    max-height: 88vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -990,14 +995,14 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-        st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 style="margin:0;">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
         
         if st.button('Enter System', use_container_width=True, type="primary"):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
         
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
+        st.markdown(f'<p style="margin:0; font-size:16px;">Total Accesses: {total_accesses}</p>', unsafe_allow_html=True)
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
