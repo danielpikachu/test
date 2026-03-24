@@ -144,8 +144,8 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 修改2：3D图自适应屏幕宽度，等比例缩放，撑满宽度不拉伸
-    fig = plt.figure(figsize=(20, 9))
+    # 自适应尺寸，不固定超大宽高
+    fig = plt.figure(figsize=(16, 10))
     ax = fig.add_subplot(111, projection='3d')
 
     ax.tick_params(axis='x', labelsize=10)
@@ -921,7 +921,7 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式：彻底消除滚动条 + 全屏自适应
+# 全局样式：彻底消除滚动条 + 全屏自适应 + 登录页完美居中
 # --------------------------
 st.markdown("""
 <style>
@@ -933,37 +933,51 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
-    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
-/* 欢迎页面全屏垂直居中 */
+
+/* 登录/欢迎页面 全屏垂直水平居中 */
 .welcome-container {
+    width: 100vw !important;
     height: 100vh !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
     padding: 0 !important;
     margin: 0 !important;
-    gap: 2vh;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
 }
+
+/* 按钮自适应居中 */
+.welcome-button {
+    min-width: 280px !important;
+    max-width: 400px !important;
+    margin: 20px auto !important;
+}
+
 /* 图片自适应不溢出 */
 img {
     max-height: 55vh !important;
     max-width: 90vw !important;
     width: auto !important;
+    height: auto !important;
     object-fit: contain !important;
+    margin: 0 auto !important;
 }
+
 /* 主内容区占满屏幕不留白 */
 .block-container {
-    padding: 0.5rem 1rem !important;
+    padding: 1rem 2rem !important;
     max-width: 100vw !important;
-    height: 100% !important;
 }
-/* 3D图容器自适应全屏 */
+/* 3D图容器自适应 */
 .element-container div {
-    height: 88vh !important;
-    max-height: 88vh !important;
+    max-height: 80vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -995,14 +1009,14 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-        st.markdown('<h1 style="margin:0;">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 style="margin-bottom:30px;">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
         
-        if st.button('Enter System', use_container_width=True, type="primary"):
+        if st.button('Enter System', use_container_width=True, type="primary", key="welcome_btn"):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
         
-        st.markdown(f'<p style="margin:0; font-size:16px;">Total Accesses: {total_accesses}</p>', unsafe_allow_html=True)
+        st.markdown(f'<p style="margin-top:20px; font-size:16px;">Total Accesses: {total_accesses}</p>', unsafe_allow_html=True)
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
