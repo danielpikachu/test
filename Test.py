@@ -66,7 +66,7 @@ def update_access_count(worksheet):
         
     try:
         records = worksheet.get_all_values()
-        if len(records) < 2:
+        if len(records)< 2:
             return 0
             
         last_row = records[-1]
@@ -363,7 +363,7 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
     ax.set_zlabel('Height', fontsize=11, fontweight='bold')
-    
+    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=2)
     
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
@@ -935,7 +935,7 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
 }
 
 .stAppViewContainer:not(:has(.welcome-container)) .block-container {
-    padding: 0.5rem 1rem !important;
+    padding: 2rem 1rem 0.5rem 1rem !important;
     margin: 0 !important;
     max-width: 100vw !important;
     height: calc(100vh - 20px) !important;
@@ -1018,7 +1018,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h2 style="margin:1rem 0 0.2rem 0; padding-top:10px; font-size:18px;">🏫 SCIS 3D Navigation</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 style="margin:1.5rem 0 0.2rem 0; padding-top:20px; font-size:18px; position:relative; z-index:10;">🏫 SCIS 3D Navigation</h2>', unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
