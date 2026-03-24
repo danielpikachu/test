@@ -986,6 +986,30 @@ def main():
             st.session_state['worksheet'] = init_google_sheet()
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
+        st.markdown("""
+        <style>
+        .welcome-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0;
+            margin: 0;
+        }
+        .welcome-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+        }
+        .access-count {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        </style>
+    """, unsafe_allow_html=True)
         
         st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
         st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
