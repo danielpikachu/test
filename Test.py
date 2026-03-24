@@ -107,7 +107,7 @@ COLORS = {
         'Stairs4': '#FF33F5',
         'Stairs5': '#F5FF33',
         'StairsB1': '#33FFF5',
-        'StairsB2': '#FF933',
+        'StairsB2': '#FF9933',
         'GateStairs': '#FFD700'
     },
     'stair_label': 'darkred',
