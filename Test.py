@@ -144,13 +144,14 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 自适应尺寸，不固定超大宽高
-    fig = plt.figure(figsize=(16, 10))
+    # 🔥 优化：超大画布 + 完美比例，撑满全屏
+    fig = plt.figure(figsize=(24, 13), dpi=100)
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.tick_params(axis='x', labelsize=10)
-    ax.tick_params(axis='y', labelsize=10)
-    ax.tick_params(axis='z', labelsize=10)
+    # 优化字体大小，视觉更清晰
+    ax.tick_params(axis='x', labelsize=11)
+    ax.tick_params(axis='y', labelsize=11)
+    ax.tick_params(axis='z', labelsize=11)
 
     if display_options is None:
         display_options = {
@@ -200,7 +201,7 @@ def plot_3d_map(school_data, display_options=None):
                     if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C'] and end_building in ['A','C'] and 'B' in [start_building, end_building]):
                         show_level = show_level or (level_name == 'level1')
                 elif building_name == 'Gate':
-                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any(('Gate', s_name, level_name) in path_stairs for s_name in ['GateStairs'])
+                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any(('Gate', s_name, level_name) in path_stairs for s_name ['GateStairs'])
                 else:
                     show_level = (level_name == start_level) or (level_name == end_level)
             
@@ -380,6 +381,10 @@ def plot_3d_map(school_data, display_options=None):
     
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, frameon=True)
     ax.grid(True, alpha=0.3, linewidth=1)
+
+    # 🔥 关键优化：收紧图表边距，撑满画布
+    plt.tight_layout()
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
     return fig, ax
 
@@ -975,9 +980,10 @@ img {
     padding: 1rem 2rem !important;
     max-width: 100vw !important;
 }
-/* 3D图容器自适应 */
+/* 3D图容器 100%宽度撑满 */
 .element-container div {
-    max-height: 80vh !important;
+    width: 100% !important;
+    max-height: 88vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1096,6 +1102,7 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
+            # 🔥 关键：强制图表宽度100%撑满
             st.pyplot(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
