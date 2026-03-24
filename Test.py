@@ -940,9 +940,9 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     text-align: center;
-    padding: 0 !important;
+    padding: 5vh !important;
     margin: 0 !important;
 }
 /* 图片自适应不溢出 */
