@@ -107,7 +107,7 @@ COLORS = {
         'Stairs4': '#FF33F5',
         'Stairs5': '#F5FF33',
         'StairsB1': '#33FFF5',
-        'StairsB2': '#FF9933',
+        'StairsB2': '#FF933',
         'GateStairs': '#FFD700'
     },
     'stair_label': 'darkred',
@@ -130,11 +130,9 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 超大画布 + 高清晰度
     fig = plt.figure(figsize=(30, 17), dpi=120)
     ax = fig.add_subplot(111, projection='3d')
 
-    # 核心优化：拉近视角，让模型瞬间变大
     ax.view_init(elev=25, azim=-60)
     
     ax.tick_params(axis='x', labelsize=10)
@@ -370,7 +368,6 @@ def plot_3d_map(school_data, display_options=None):
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    # 彻底消除留白，撑满画布
     plt.tight_layout(pad=0)
     fig.subplots_adjust(left=0, right=1, top=0.99, bottom=0)
 
@@ -913,10 +910,8 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-# ====================== 样式：登录页完全不变，只放大导航页3D图 ======================
 st.markdown("""
 <style>
-/* 全局滚动条隐藏 */
 ::-webkit-scrollbar { display: none !important; }
 html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
     overflow: hidden !important;
@@ -924,7 +919,6 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     padding: 0 !important;
 }
 
-/* 登录页容器 —— 完全保持原样！！！ */
 .welcome-container {
     width: 100vw !important;
     height: 100vh !important;
@@ -940,12 +934,11 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     left: 0 !important;
 }
 
-/* 导航页专用：让3D图全屏撑满 */
 .stAppViewContainer:not(:has(.welcome-container)) .block-container {
-    padding: 0 !important;
+    padding: 0.5rem 1rem !important;
     margin: 0 !important;
     max-width: 100vw !important;
-    height: calc(100vh - 60px) !important;
+    height: calc(100vh - 20px) !important;
 }
 .stAppViewContainer:not(:has(.welcome-container)) .element-container {
     width: 100% !important;
@@ -970,7 +963,6 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # 登录页面 —— 100% 不变
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
@@ -989,7 +981,6 @@ def main():
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # 导航页面 —— 3D图全屏超大优化
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -1027,7 +1018,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h3 style="padding-left:1rem; margin:0 0 0.1rem 0;">🏫 SCIS 3D Navigation</h3>', unsafe_allow_html=True)
+        st.markdown('<h2 style="margin:0 0 0.2rem 0;">🏫 SCIS 3D Navigation</h2>', unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1064,7 +1055,6 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            # 关键：强制全屏渲染
             st.pyplot(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
