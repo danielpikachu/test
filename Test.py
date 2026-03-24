@@ -201,7 +201,7 @@ def plot_3d_map(school_data, display_options=None):
                     if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C'] and end_building in ['A','C'] and 'B' in [start_building, end_building]):
                         show_level = show_level or (level_name == 'level1')
                 elif building_name == 'Gate':
-                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any(('Gate', s_name, level_name) in path_stairs for s_name ['GateStairs'])
+                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any(('Gate', s_name, level_name) in path_stairs for s_name in ['GateStairs'])
                 else:
                     show_level = (level_name == start_level) or (level_name == end_level)
             
