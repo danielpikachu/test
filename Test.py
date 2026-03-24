@@ -365,7 +365,7 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
     ax.set_zlabel('Height', fontsize=11, fontweight='bold')
-    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=12)
+    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=2)
     
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
