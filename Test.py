@@ -372,7 +372,7 @@ def plot_3d_map(school_data, display_options=None):
 
     # 彻底消除留白，撑满画布
     plt.tight_layout(pad=0)
-    fig.subplots_adjust(left=0, right=1, top=0.96, bottom=0)
+    fig.subplots_adjust(left=0, right=1, top=0.99, bottom=0)
 
     return fig, ax
 
