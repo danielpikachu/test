@@ -388,7 +388,7 @@ class Graph:
         self.nodes = {}
         self.node_id_map = {}
 
-    def add_node(self building_id, node_type, name, level, coordinates):
+    def add_node(self, building_id, node_type, name, level, coordinates):
         if building_id == 'gate':
             building_name = 'Gate'
         else:
