@@ -1018,7 +1018,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h2 style="margin:0 0 0.2rem 0;">🏫 SCIS 3D Navigation</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 style="margin:1rem 0 0.2rem 0; padding-top:10px; font-size:18px;">🏫 SCIS 3D Navigation</h2>', unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
