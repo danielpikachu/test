@@ -130,16 +130,14 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 超大画布 + 高清晰度
-    fig = plt.figure(figsize=(30, 17), dpi=120)
+    fig = plt.figure(figsize=(20, 11), dpi=100)
     ax = fig.add_subplot(111, projection='3d')
 
-    # 核心优化：拉近视角，让模型瞬间变大
     ax.view_init(elev=25, azim=-60)
     
-    ax.tick_params(axis='x', labelsize=10)
-    ax.tick_params(axis='y', labelsize=10)
-    ax.tick_params(axis='z', labelsize=10)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.tick_params(axis='y', labelsize=9)
+    ax.tick_params(axis='z', labelsize=9)
 
     if display_options is None:
         display_options = {
@@ -362,17 +360,16 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             pass
 
-    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
-    ax.set_zlabel('Height', fontsize=11, fontweight='bold')
-    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=12)
+    ax.set_xlabel('X Coordinate', fontsize=10, fontweight='bold')
+    ax.set_ylabel('Y Coordinate', fontsize=10, fontweight='bold')
+    ax.set_zlabel('Height', fontsize=10, fontweight='bold')
+    ax.set_title('SCIS 3D Navigation', fontsize=14, fontweight='bold', pad=10)
     
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=5, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    # 彻底消除留白，撑满画布
     plt.tight_layout(pad=0)
-    fig.subplots_adjust(left=0, right=1, top=0.96, bottom=0)
+    fig.subplots_adjust(left=0, right=1, top=0.95, bottom=0)
 
     return fig, ax
 
@@ -605,7 +602,6 @@ def build_navigation_graph(school_data):
             for i in range(len(stair_level_nodes)-1):
                 node1_id, coords1, _ = stair_level_nodes[i]
                 node2_id, coords2, _ = stair_level_nodes[i+1]
-                
                 dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
                 graph.add_edge(node1_id, node2_id, dist)
 
@@ -857,7 +853,6 @@ def plot_path(ax, graph, path):
                 labels.append("")
 
         ax.plot(x, y, z, color=COLORS['path'], linewidth=3, linestyle='-', marker='o', markersize=4)
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8)
     except Exception as e:
         pass
 
@@ -913,18 +908,29 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-# ====================== 样式：登录页完全不变，只放大导航页3D图 ======================
+# 核心样式：无滚动条 + 智能全屏适配 + 登录页完全不变
 st.markdown("""
 <style>
-/* 全局滚动条隐藏 */
-::-webkit-scrollbar { display: none !important; }
+/* 全局永久隐藏所有滚动条 */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+* {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
 html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
 }
 
-/* 登录页容器 —— 完全保持原样！！！ */
+/* 登录页面样式 —— 100% 完全保留不变 */
 .welcome-container {
     width: 100vw !important;
     height: 100vh !important;
@@ -940,16 +946,27 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     left: 0 !important;
 }
 
-/* 导航页专用：让3D图全屏撑满 */
+/* 导航页智能全屏适配，不破坏登录页 */
 .stAppViewContainer:not(:has(.welcome-container)) .block-container {
     padding: 0 !important;
     margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
     max-width: 100vw !important;
-    height: calc(100vh - 60px) !important;
+    max-height: 100vh !important;
 }
+
 .stAppViewContainer:not(:has(.welcome-container)) .element-container {
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100vh - 80px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 隐藏顶部空白 */
+[data-testid="stHeader"] {
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -970,7 +987,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # 登录页面 —— 100% 不变
+    # 登录界面 —— 完全不变
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
@@ -989,7 +1006,7 @@ def main():
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # 导航页面 —— 3D图全屏超大优化
+    # 导航界面 —— 智能全屏无滚动条
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -1027,36 +1044,6 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h3 style="padding-left:1rem; margin:0.5rem 0;">🏫 SCIS 3D Navigation</h3>', unsafe_allow_html=True)
-        
-        school_data = load_school_data_detailed('school_data_detailed.json')
-        if school_data is None:
-            st.error("Failed to load school data file!")
-            return
-        
-        global graph
-        graph = build_navigation_graph(school_data)
-
-        if nav_button:
-            try:
-                path, message, simplified_path, display_options = navigate(
-                    graph, 
-                    start_building, start_classroom, start_level,
-                    end_building, end_classroom, end_level
-                )
-                
-                if path and display_options:
-                    st.success(f"Navigation Result: {message}")
-                    st.markdown("#### 🛤️ Path Details")
-                    st.info(simplified_path)
-                    
-                    st.session_state['current_path'] = path
-                    st.session_state['display_options'] = display_options
-                else:
-                    st.error(f"❌ {message}")
-            except Exception as e:
-                st.error(f"Navigation error: {str(e)}")
-
         try:
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
@@ -1064,7 +1051,6 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            # 关键：强制全屏渲染
             st.pyplot(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
