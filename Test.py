@@ -1040,7 +1040,7 @@ def main():
                 st.rerun()
 
         st.title("🏫 SCIS Campus 3D Navigation System")
-        st.markdown("### 3D Map & Inter-building Path Planning")
+        
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
