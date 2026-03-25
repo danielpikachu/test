@@ -57,7 +57,7 @@ def init_google_sheet():
         try:
             stats_worksheet = sheet.worksheet("Access_Stats")
         except gspread.exceptions.WorksheetNotFound:
-            stats_worksheet = sheet.add_worksheet(title="Access_Stats", rows="1000", cols="3")
+            stats_worksheet = sheet.add_worksheet(title="Access_Stats", rows="1000", cols=3)
             stats_worksheet.append_row(["Timestamp", "Access_Count", "Total_Accesses"])
             stats_worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 1, 1])
         
@@ -137,7 +137,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D绘图函数（保持不变） ======================
+# ====================== 3D绘图函数：标题恢复 + 居中 ======================
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
@@ -402,11 +402,15 @@ def plot_3d_map_plotly(school_data, display_options=None):
         except Exception as e:
             pass
 
+    # ========== 标题恢复 + 居中 ==========
     fig.update_layout(
         title=dict(
             text="Campus 3D Navigation Map",
-            font=dict(size=20, family='Arial bold'),
-            y=0.98
+            font=dict(size=22, family="Arial bold"),
+            x=0.5,        # 水平居中
+            y=0.95,       # 垂直位置
+            xanchor='center',
+            yanchor='top'
         ),
         scene=dict(
             xaxis_title="X Coordinate",
@@ -419,7 +423,7 @@ def plot_3d_map_plotly(school_data, display_options=None):
             ),
             aspectmode='auto'
         ),
-        margin=dict(l=0, r=0, t=20, b=0),
+        margin=dict(l=0, r=0, t=60, b=0),
         legend=dict(font=dict(size=10)),
         height=850
     )
@@ -850,7 +854,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name or 'gateTo' in node_name:
-                        if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
+                        if 'connectToBuildingA' in node_name or 'gateToA' thentoA':
                             connected_building = 'A'
                         elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
                             connected_building = 'B'
@@ -945,28 +949,22 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式（强力压缩空白）
+# 全局样式
 # --------------------------
 st.markdown("""
 <style>
-/* 全局消灭空白 */
 div.stMarkdown, div.stAlert, div.element-container {
     margin-top: 0px !important;
     margin-bottom: 0px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
 }
-/* 压缩Plotly图表顶部间距 */
-.js-plotly-plot .plotly {
-    margin-top: -50px !important;
-}
-/* 隐藏滚动条 */
 ::-webkit-scrollbar {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
 # --------------------------
-# 页面逻辑（紧凑布局）
+# 页面逻辑
 # --------------------------
 def main():
     if 'page' not in st.session_state:
@@ -1038,8 +1036,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        # ============== 核心：标题 + 提示 + 图表 紧凑排列 ==============
-        st.markdown("<h2 style='margin:0; padding:0;'>🏫 SCIS Campus 3D Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:center;'>🏫 SCIS Campus Navigation</h2>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1065,13 +1062,21 @@ def main():
             except:
                 pass
 
-        # 渲染图表（自动紧贴上方）
+        # ========== 工具栏恢复显示 ==========
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, st.session_state['display_options'])[0]
         else:
             fig = plot_3d_map(school_data)[0]
         
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={
+                'displayModeBar': True,
+                'scrollZoom': True,
+                'editable': False
+            }
+        )
 
 if __name__ == "__main__":
     main()
