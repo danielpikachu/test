@@ -9,18 +9,13 @@ from datetime import datetime
 import os
 import plotly.graph_objects as go
 
-# 核心修改1：开启宽布局 + 原生侧边栏配置
 st.set_page_config(
     page_title="SCIS Navigation System",
-    layout="wide",
-    initial_state="expanded"
+    layout="wide"
 )
 
 plt.switch_backend('Agg')
 
-# --------------------------
-# Google Sheets 配置（适配 Streamlit Secrets TOML）
-# --------------------------
 SHEET_NAME = 'Navigation visitors'
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -28,7 +23,6 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 从 Streamlit Secrets 加载密钥
 def get_credentials():
     try:
         service_account_info = st.secrets["google_service_account"]
@@ -66,9 +60,6 @@ def init_google_sheet():
     except Exception as e:
         return None
 
-# --------------------------
-# 访问统计
-# --------------------------
 def update_access_count(ws):
     if not ws:
         return 0
@@ -89,9 +80,6 @@ def get_total_accesses(ws):
     except:
         return 0
 
-# --------------------------
-# 配色
-# --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
     'floor_z': {-9: 'darkgray', -6: 'blue', -3: 'cyan', 2: 'green', 4: 'teal', 7: 'orange', 12: 'purple'},
@@ -114,9 +102,6 @@ COLORS = {
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}
 }
 
-# --------------------------
-# 数据加载
-# --------------------------
 def load_school_data_detailed(fn):
     try:
         with open(fn, 'r', encoding='utf-8') as f:
@@ -125,9 +110,6 @@ def load_school_data_detailed(fn):
         st.error(f"加载数据失败: {e}")
         return None
 
-# --------------------------
-# 【已修复兼容】Plotly 3D 绘图（兼容旧版 Plotly）
-# --------------------------
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
@@ -226,10 +208,9 @@ def plot_3d_map_plotly(school_data, display_options=None):
                 show_l = sname not in added_legend
                 if show_l:
                     added_legend.add(sname)
-                # 修复：使用旧版 Plotly 支持的 symbol
                 fig.add_trace(go.Scatter3d(
                     x=[sx], y=[sy], z=[z], mode='markers+text',
-                    marker=dict(color=sc, size=6, symbol='diamond'),  # 这里修复
+                    marker=dict(color=sc, size=6, symbol='diamond'),
                     text=sname, textposition='top center', textfont=dict(size=8),
                     name=sname, showlegend=show_l
                 ))
@@ -246,15 +227,14 @@ def plot_3d_map_plotly(school_data, display_options=None):
             line=dict(color=COLORS['path'], width=5), marker=dict(size=3, color=COLORS['path']),
             name='Path'
         ))
-        # 修复：起点终点使用旧版兼容符号
         fig.add_trace(go.Scatter3d(
             x=[xs[0]], y=[ys[0]], z=[zs[0]], mode='markers',
-            marker=dict(color=COLORS['start_marker'], size=10, symbol='circle'),  # 修复
+            marker=dict(color=COLORS['start_marker'], size=10, symbol='circle'),
             name='Start'
         ))
         fig.add_trace(go.Scatter3d(
             x=[xs[-1]], y=[ys[-1]], z=[zs[-1]], mode='markers',
-            marker=dict(color=COLORS['end_marker'], size=10, symbol='square'),  # 修复
+            marker=dict(color=COLORS['end_marker'], size=10, symbol='square'),
             name='End'
         ))
 
@@ -264,10 +244,6 @@ def plot_3d_map_plotly(school_data, display_options=None):
         legend=dict(orientation='v', yanchor='top', y=1, xanchor='left', x=1.05)
     )
     return fig
-
-# --------------------------
-# 以下所有代码 100% 完全不变，完整保留
-# --------------------------
 
 class Graph:
     def __init__(self):
@@ -501,18 +477,12 @@ def build_navigation_graph(school_data):
                 dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
                 graph.add_edge(node1_id, node2_id, dist)
 
-        for connection in building_data['connections']:
+        for connection in building_data.get('connections', []):
             from_obj_name, from_level = connection['from']
             to_obj_name, to_level = connection['to']
             
             if from_obj_name.startswith(('Stairs', 'GateStairs')):
                 from_obj_type = 'stair'
-            elif any(
-                from_obj_name == cls['name'] 
-                for level in building_data['levels'] 
-                for cls in level.get('classrooms', [])
-            ):
-                from_obj_type = 'classroom'
             else:
                 from_obj_type = 'corridor'
             
@@ -534,12 +504,6 @@ def build_navigation_graph(school_data):
             
             if to_obj_name.startswith(('Stairs', 'GateStairs')):
                 to_obj_type = 'stair'
-            elif to_building_id in school_data:
-                to_obj_type = 'classroom' if any(
-                    to_obj_name == cls['name']
-                    for level in school_data[to_building_id]['levels']
-                    for cls in level.get('classrooms', [])
-                ) else 'corridor'
             else:
                 to_obj_type = 'corridor'
             
@@ -549,63 +513,60 @@ def build_navigation_graph(school_data):
             if from_node_id and to_node_id:
                 from_coords = graph.nodes[from_node_id]['coordinates']
                 to_coords = graph.nodes[to_node_id]['coordinates']
-                if building_id != to_building_id:
-                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=0)
-                else:
-                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=15.0)
+                distance = euclidean_distance(from_coords, to_coords, floor_penalty=0)
                 graph.add_edge(from_node_id, to_node_id, distance)
 
-        a_building_id = 'buildingA'
-        b_building_id = 'buildingB'
-        c_building_id = 'buildingC'
-        
-        ab_connect_level = 'level1'
-        a_b_corr_name = 'connectToBuildingB-p1'
-        a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
-        b_a_corr_name = 'connectToBuildingAAndC-p1'
-        b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
-        
-        if a_b_node_id and b_a_node_id:
-            coords_a = graph.nodes[a_b_node_id]['coordinates']
-            coords_b = graph.nodes[b_a_node_id]['coordinates']
-            distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
-            graph.add_edge(a_b_node_id, b_a_node_id, distance)
-        
-        bc_connect_level = 'level1'
-        b_c_corr_name = 'connectToBuildingAAndC-p0'
-        b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
-        c_b_corr_name = 'connectToBuildingB-p1'
-        c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
-        
-        if b_c_node_id and c_b_node_id:
-            coords_b = graph.nodes[b_c_node_id]['coordinates']
-            coords_c = graph.nodes[c_b_node_id]['coordinates']
-            distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
-            graph.add_edge(b_c_node_id, c_b_node_id, distance)
-        
-        connect_level1 = 'level1'
-        a_corr1_name = 'connectToBuildingC-p3'
-        a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
-        c_corr1_name = 'connectToBuildingA-p0'
-        c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
-        
-        if a_connect1_node_id and c_connect1_node_id:
-            coords_a = graph.nodes[a_connect1_node_id]['coordinates']
-            coords_c = graph.nodes[c_connect1_node_id]['coordinates']
-            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
-        
-        connect_level3 = 'level3'
-        a_corr3_name = 'connectToBuildingC-p2'
-        a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
-        c_corr3_name = 'connectToBuildingA-p0'
-        c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
-        
-        if a_connect3_node_id and c_connect3_node_id:
-            coords_a = graph.nodes[a_connect3_node_id]['coordinates']
-            coords_c = graph.nodes[c_connect3_node_id]['coordinates']
-            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+    a_building_id = 'buildingA'
+    b_building_id = 'buildingB'
+    c_building_id = 'buildingC'
+    
+    ab_connect_level = 'level1'
+    a_b_corr_name = 'connectToBuildingB-p1'
+    a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
+    b_a_corr_name = 'connectToBuildingAAndC-p1'
+    b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
+    
+    if a_b_node_id and b_a_node_id:
+        coords_a = graph.nodes[a_b_node_id]['coordinates']
+        coords_b = graph.nodes[b_a_node_id]['coordinates']
+        distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
+        graph.add_edge(a_b_node_id, b_a_node_id, distance)
+    
+    bc_connect_level = 'level1'
+    b_c_corr_name = 'connectToBuildingAAndC-p0'
+    b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
+    c_b_corr_name = 'connectToBuildingB-p1'
+    c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
+    
+    if b_c_node_id and c_b_node_id:
+        coords_b = graph.nodes[b_c_node_id]['coordinates']
+        coords_c = graph.nodes[c_b_node_id]['coordinates']
+        distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
+        graph.add_edge(b_c_node_id, c_b_node_id, distance)
+    
+    connect_level1 = 'level1'
+    a_corr1_name = 'connectToBuildingC-p3'
+    a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
+    c_corr1_name = 'connectToBuildingA-p0'
+    c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
+    
+    if a_connect1_node_id and c_connect1_node_id:
+        coords_a = graph.nodes[a_connect1_node_id]['coordinates']
+        coords_c = graph.nodes[c_connect1_node_id]['coordinates']
+        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+        graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+    
+    connect_level3 = 'level3'
+    a_corr3_name = 'connectToBuildingC-p2'
+    a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
+    c_corr3_name = 'connectToBuildingA-p0'
+    c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
+    
+    if a_connect3_node_id and c_connect3_node_id:
+        coords_a = graph.nodes[a_connect3_node_id]['coordinates']
+        coords_c = graph.nodes[c_connect3_node_id]['coordinates']
+        distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+        graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
 
     return graph
 
@@ -779,12 +740,8 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-# --------------------------
-# 全局样式：彻底消除滚动条 + 全屏自适应
-# --------------------------
 st.markdown("""
 <style>
-/* 全局禁用滚动条，保持页面可交互 */
 ::-webkit-scrollbar {
     display: none !important;
 }
@@ -793,38 +750,9 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
-/* 欢迎页面全屏适配 */
-.welcome-container {
-    height: 90vh !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
-    padding: 1vh !important;
-    margin: 0 !important;
-}
-/* 图片自适应不溢出 */
-img {
-    max-height: 60vh !important;
-    width: auto !important;
-    object-fit: contain !important;
-}
-/* 主内容区占满屏幕不留白 */
-.block-container {
-    padding: 1rem 2rem !important;
-    max-width: 100vw !important;
-}
-/* 3D图容器自适应 */
-.element-container div {
-    max-height: 80vh !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# --------------------------
-# 页面逻辑
-# --------------------------
 def main():
     global graph
     if 'page' not in st.session_state:
@@ -842,26 +770,23 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # 欢迎页面
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
-        st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-        st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        st.title("Welcome to SCIS Navigation System")
         
         if st.button('Enter System', use_container_width=True, type="primary"):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
         
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
+        st.caption(f"Total Accesses: {total_accesses}")
         st.image("welcome_image.jpg", use_column_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    # 主页面
+        return
+
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -899,7 +824,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h3 style="margin:0.5rem 0; line-height:1.2;">🏫 SCIS Campus 3D Navigation System</h4>', unsafe_allow_html=True)
+        st.markdown("## 🏫 SCIS Campus 3D Navigation System")
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -935,7 +860,7 @@ def main():
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
         
-        st.markdown('<div style="position: fixed; bottom: 20px; right: 20px; font-size: 14px; color: #666;">Created By DANIEL HAN</div>', unsafe_allow_html=True)
+        st.caption("Created By DANIEL HAN")
 
 if __name__ == "__main__":
     main()
