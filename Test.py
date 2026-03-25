@@ -1087,7 +1087,7 @@ def main():
             else:
                 fig = plot_3d_map(school_data)[0]
             
-            st.markdown("<div style='margin-top:-30px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-top:-50px;'>", unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             st.markdown("</div>", unsafe_allow_html=True)
             
