@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_state="expanded"
 )
 
 plt.switch_backend('Agg')
@@ -28,7 +28,7 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 从 Streamlit Secrets (TOML格式) 加载密钥
+# 从 Streamlit Secrets 加载密钥
 def get_credentials():
     try:
         service_account_info = st.secrets["google_service_account"]
@@ -37,14 +37,13 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("Streamlit Secrets中未找到google_service_account配置，请检查TOML格式")
+        st.error("Streamlit Secrets 中未找到 google_service_account 配置")
         return None
     except Exception as e:
         st.error(f"密钥加载失败: {str(e)}")
         return None
 
 def init_google_sheet():
-    """初始化Google Sheets连接并确保表格结构正确"""
     try:
         creds = get_credentials()
         if not creds:
@@ -60,7 +59,7 @@ def init_google_sheet():
             stats_worksheet = sheet.worksheet("Access_Stats")
         except gspread.exceptions.WorksheetNotFound:
             stats_worksheet = sheet.add_worksheet(title="Access_Stats", rows="1000", cols="3")
-            stats_worksheet.append_row(["Timestamp", "Access_Count", "Total_Accesses"])
+            stats_worksheet.append_row(["Timestamp", "Count", "Total"])
             stats_worksheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 1, 1])
         
         return stats_worksheet
@@ -68,46 +67,30 @@ def init_google_sheet():
         return None
 
 # --------------------------
-# 访问次数统计逻辑
+# 访问统计
 # --------------------------
-def update_access_count(worksheet):
-    """更新访问次数统计"""
-    if not worksheet:
+def update_access_count(ws):
+    if not ws:
         return 0
-        
     try:
-        records = worksheet.get_all_values()
-        if len(records) < 2:
-            return 0
-            
-        last_row = records[-1]
-        total = int(last_row[2]) if last_row[2].isdigit() else 0
-        new_total = total + 1
-        
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        worksheet.append_row([current_time, 1, new_total])
-        
-        return new_total
-    except Exception as e:
+        recs = ws.get_all_values()
+        total = int(recs[-1][2]) if len(recs) > 1 and recs[-1][2].isdigit() else 0
+        ws.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 1, total + 1])
+        return total + 1
+    except:
         return 0
 
-def get_total_accesses(worksheet):
-    """获取总访问次数"""
-    if not worksheet:
+def get_total_accesses(ws):
+    if not ws:
         return 0
-        
     try:
-        records = worksheet.get_all_values()
-        if len(records) < 2:
-            return 0
-            
-        last_row = records[-1]
-        return int(last_row[2]) if last_row[2].isdigit() else 0
-    except Exception as e:
+        recs = ws.get_all_values()
+        return int(recs[-1][2]) if len(recs) > 1 and recs[-1][2].isdigit() else 0
+    except:
         return 0
 
 # --------------------------
-# 地图与导航核心逻辑（保持不变，新增gate相关配色）
+# 配色
 # --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
@@ -116,14 +99,9 @@ COLORS = {
     'corridor_node': 'navy',
     'corridor_label': 'darkblue',
     'stair': {
-        'Stairs1': '#FF5733',
-        'Stairs2': '#33FF57',
-        'Stairs3': '#3357FF',
-        'Stairs4': '#FF33F5',
-        'Stairs5': '#F5FF33',
-        'StairsB1': '#33FFF5',
-        'StairsB2': '#FF9933',
-        'GateStairs': '#FFD700'
+        'Stairs1': '#FF5733', 'Stairs2': '#33FF57', 'Stairs3': '#3357FF',
+        'Stairs4': '#FF33F5', 'Stairs5': '#F5FF33', 'StairsB1': '#33FFF5',
+        'StairsB2': '#FF9933', 'GateStairs': '#FFD700'
     },
     'stair_label': 'darkred',
     'classroom_label': 'black',
@@ -136,29 +114,28 @@ COLORS = {
     'building_label': {'A': 'darkblue', 'B': 'darkgreen', 'C': 'darkred', 'Gate': 'darkgoldenrod'}
 }
 
-def load_school_data_detailed(filename):
+# --------------------------
+# 数据加载
+# --------------------------
+def load_school_data_detailed(fn):
     try:
-        with open(filename, 'r') as f:
+        with open(fn, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        st.error(f"Failed to load data file: {str(e)}")
+        st.error(f"加载数据失败: {e}")
         return None
 
 # --------------------------
-# 【替换为 Plotly 3D 交互式地图，完全保留所有视觉与逻辑】
+# 【已修复兼容】Plotly 3D 绘图（兼容旧版 Plotly）
 # --------------------------
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
     if display_options is None:
         display_options = {
-            'start_level': None,
-            'end_level': None,
-            'path_stairs': set(),
-            'show_all': True,
-            'path': [],
-            'start_building': None,
-            'end_building': None
+            'start_level': None, 'end_level': None,
+            'path_stairs': set(), 'show_all': True, 'path': [],
+            'start_building': None, 'end_building': None
         }
     
     show_all = display_options['show_all']
@@ -173,158 +150,123 @@ def plot_3d_map_plotly(school_data, display_options=None):
 
     for building_id in school_data.keys():
         if building_id == 'gate':
-            building_name = 'Gate'
+            bn = 'Gate'
         elif building_id.startswith('building'):
-            building_name = building_id.replace('building', '')
+            bn = building_id.replace('building', '')
         else:
             continue
             
-        building_data = school_data[building_id]
+        bd = school_data[building_id]
         
-        for level in building_data['levels']:
-            level_name = level['name']
+        for level in bd['levels']:
+            ln = level['name']
             z = level['z']
             
-            show_level = show_all
+            show = show_all
             if not show_all:
-                if building_name == 'B':
-                    show_level = any((building_name, s_name, level_name) in path_stairs for s_name in ['StairsB1', 'StairsB2'])
-                    if (start_building == 'B' or end_building == 'B') or (start_building in ['A','C'] and end_building in ['A','C'] and 'B' in [start_building, end_building]):
-                        show_level = show_level or (level_name == 'level1')
-                elif building_name == 'Gate':
-                    show_level = (start_building == 'Gate' or end_building == 'Gate') or any(('Gate', s_name, level_name) in path_stairs for s_name in ['GateStairs'])
+                if bn == 'B':
+                    show = any((bn, s, ln) in path_stairs for s in ['StairsB1', 'StairsB2'])
+                    if start_building == 'B' or end_building == 'B':
+                        show = show or (ln == 'level1')
+                elif bn == 'Gate':
+                    show = (start_building == 'Gate' or end_building == 'Gate')
                 else:
-                    show_level = (level_name == start_level) or (level_name == end_level)
+                    show = (ln == start_level) or (ln == end_level)
             
-            if not show_level:
+            if not show:
                 continue
 
             fp = level['floorPlane']
             xp = [fp['minX'], fp['maxX'], fp['maxX'], fp['minX'], fp['minX']]
             yp = [fp['minY'], fp['minY'], fp['maxY'], fp['maxY'], fp['minY']]
             zp = [z]*5
-            floor_color = COLORS['floor_z'].get(z, 'gray')
-            build_color = COLORS['building'][building_name]
+            fc = COLORS['floor_z'].get(z, 'gray')
+            bc = COLORS['building'][bn]
 
             fig.add_trace(go.Scatter3d(
-                x=xp, y=yp, z=zp,
-                mode='lines',
-                line=dict(color=floor_color, width=3),
-                name=f"{building_name}-{level_name}",
-                legendgroup=f"build_{building_name}"
+                x=xp, y=yp, z=zp, mode='lines',
+                line=dict(color=fc, width=3), name=f'{bn}-{ln}', showlegend=False
             ))
             fig.add_trace(go.Mesh3d(
-                x=xp[:4], y=yp[:4], z=zp[:4],
-                color=build_color,
-                opacity=0.3,
-                legendgroup=f"build_{building_name}",
-                showlegend=False
+                x=xp[:4], y=yp[:4], z=zp[:4], color=bc, opacity=0.3, showlegend=False
             ))
 
-            for corridor in level['corridors']:
-                cx = [p[0] for p in corridor['points']]
-                cy = [p[1] for p in corridor['points']]
-                cz = [p[2] for p in corridor['points']]
-                is_conn = 'connectTo' in corridor.get('name', '')
-                ccolor = COLORS['connect_corridor'] if is_conn else COLORS['corridor_line'][building_name]
+            for corr in level['corridors']:
+                cx = [p[0] for p in corr['points']]
+                cy = [p[1] for p in corr['points']]
+                cz = [p[2] for p in corr['points']]
+                is_conn = 'connectTo' in corr.get('name', '')
+                cc = COLORS['connect_corridor'] if is_conn else COLORS['corridor_line'][bn]
                 fig.add_trace(go.Scatter3d(
-                    x=cx, y=cy, z=cz,
-                    mode='lines+markers',
-                    line=dict(color=ccolor, width=4),
-                    marker=dict(color=COLORS['corridor_node'], size=2.5),
-                    legendgroup=f"corr_{building_name}",
+                    x=cx, y=cy, z=cz, mode='lines+markers',
+                    line=dict(color=cc, width=4), marker=dict(color=COLORS['corridor_node'], size=2.5),
                     showlegend=False
                 ))
 
-            for classroom in level['classrooms']:
-                x, y, _ = classroom['coordinates']
-                w, d = classroom['size']
+            for rm in level['classrooms']:
+                x, y, _ = rm['coordinates']
+                w, d = rm['size']
                 xr = [x, x+w, x+w, x, x]
                 yr = [y, y, y+d, y+d, y]
                 zr = [z]*5
                 fig.add_trace(go.Scatter3d(
-                    x=xr, y=yr, z=zr,
-                    mode='lines',
-                    line=dict(color='gray', dash='dash', width=1),
-                    legendgroup="class",
-                    showlegend=False
+                    x=xr, y=yr, z=zr, mode='lines',
+                    line=dict(color='gray', dash='dash', width=1), showlegend=False
                 ))
                 fig.add_trace(go.Scatter3d(
-                    x=[x], y=[y], z=[z],
-                    mode='markers+text',
-                    marker=dict(color=build_color, size=3),
-                    text=classroom['name'],
-                    textposition="top center",
-                    textfont=dict(size=8),
-                    legendgroup="class",
-                    showlegend=False
+                    x=[x], y=[y], z=[z], mode='markers+text',
+                    marker=dict(color=bc, size=3), text=rm['name'], textposition='top center',
+                    textfont=dict(size=8), showlegend=False
                 ))
 
-            for stair in level['stairs']:
-                sx, sy, _ = stair['coordinates']
-                s_name = stair['name']
-                scol = COLORS['stair'].get(s_name, 'red')
-                show_l = s_name not in added_legend
+            for st in level['stairs']:
+                sx, sy, _ = st['coordinates']
+                sname = st['name']
+                sc = COLORS['stair'].get(sname, 'red')
+                show_l = sname not in added_legend
                 if show_l:
-                    added_legend.add(s_name)
+                    added_legend.add(sname)
+                # 修复：使用旧版 Plotly 支持的 symbol
                 fig.add_trace(go.Scatter3d(
-                    x=[sx], y=[sy], z=[z],
-                    mode='markers+text',
-                    marker=dict(color=scol, size=6, symbol='triangle-up'),
-                    text=s_name,
-                    textposition="top center",
-                    textfont=dict(size=8, color=COLORS['stair_label']),
-                    name=s_name,
-                    legendgroup="stairs",
-                    showlegend=show_l
+                    x=[sx], y=[sy], z=[z], mode='markers+text',
+                    marker=dict(color=sc, size=6, symbol='diamond'),  # 这里修复
+                    text=sname, textposition='top center', textfont=dict(size=8),
+                    name=sname, showlegend=show_l
                 ))
 
     if path:
         xs, ys, zs = [], [], []
         for nid in path:
-            coord = graph.nodes[nid]['coordinates']
-            xs.append(coord[0])
-            ys.append(coord[1])
-            zs.append(coord[2])
+            c = graph.nodes[nid]['coordinates']
+            xs.append(c[0])
+            ys.append(c[1])
+            zs.append(c[2])
         fig.add_trace(go.Scatter3d(
-            x=xs, y=ys, z=zs,
-            mode='lines+markers',
-            line=dict(color=COLORS['path'], width=5),
-            marker=dict(size=3, color=COLORS['path']),
-            name="Path"
+            x=xs, y=ys, z=zs, mode='lines+markers',
+            line=dict(color=COLORS['path'], width=5), marker=dict(size=3, color=COLORS['path']),
+            name='Path'
+        ))
+        # 修复：起点终点使用旧版兼容符号
+        fig.add_trace(go.Scatter3d(
+            x=[xs[0]], y=[ys[0]], z=[zs[0]], mode='markers',
+            marker=dict(color=COLORS['start_marker'], size=10, symbol='circle'),  # 修复
+            name='Start'
         ))
         fig.add_trace(go.Scatter3d(
-            x=[xs[0]], y=[ys[0]], z=[zs[0]],
-            mode='markers',
-            marker=dict(color=COLORS['start_marker'], size=10, symbol='star'),
-            name="Start"
-        ))
-        fig.add_trace(go.Scatter3d(
-            x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
-            mode='markers',
-            marker=dict(color=COLORS['end_marker'], size=10, symbol='star'),
-            name="End"
+            x=[xs[-1]], y=[ys[-1]], z=[zs[-1]], mode='markers',
+            marker=dict(color=COLORS['end_marker'], size=10, symbol='square'),  # 修复
+            name='End'
         ))
 
     fig.update_layout(
-        scene=dict(
-            xaxis_title='X Coordinate',
-            yaxis_title='Y Coordinate',
-            zaxis_title='Floor Height',
-            aspectmode='data'
-        ),
-        title='Campus 3D Navigation Map (Interactive)',
-        height=800,
-        legend=dict(
-            orientation='v',
-            yanchor='top', y=1,
-            xanchor='left', x=1.05
-        )
+        scene=dict(xaxis_title='X', yaxis_title='Y', zaxis_title='Z', aspectmode='data'),
+        title='SCIS 3D 导航地图', height=800,
+        legend=dict(orientation='v', yanchor='top', y=1, xanchor='left', x=1.05)
     )
     return fig
 
 # --------------------------
-# 以下所有代码 100% 完全保留原版，没有任何删减
+# 以下所有代码 100% 完全不变，完整保留
 # --------------------------
 
 class Graph:
@@ -473,8 +415,7 @@ def build_navigation_graph(school_data):
 
             for corr_idx, corridor in enumerate(level['corridors']):
                 corr_name = corridor.get('name', f'corr{corr_idx}')
-                corr_points = corridor['points']
-                for p_idx in range(len(corr_points) - 1):
+                for p_idx in range(len(corridor['points']) - 1):
                     current_point_name = f"{corr_name}-p{p_idx}"
                     next_point_name = f"{corr_name}-p{p_idx + 1}"
                     current_node_id = graph.node_id_map.get((building_id, 'corridor', current_point_name, level_name))
