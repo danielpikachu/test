@@ -369,7 +369,7 @@ def plot_3d_map(school_data, display_options=None):
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
     plt.tight_layout(pad=0)
-    fig.subplots_adjust(left=0, right=1, top=0.99, bottom=0)
+    fig.subplots_adjust(left=0, right=1, top=1.0, bottom=0)
 
     return fig, ax
 
