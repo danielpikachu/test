@@ -360,9 +360,9 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             pass
 
-    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
-    ax.set_zlabel('Height', fontsize=11, fontweight='bold')
+    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold', labelpad=5)
+    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=5)
+    ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=2)
     ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=0)
     
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
