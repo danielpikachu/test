@@ -66,7 +66,7 @@ def update_access_count(worksheet):
         
     try:
         records = worksheet.get_all_values()
-        if len(records)< 2:
+        if len(records) < 2:
             return 0
             
         last_row = records[-1]
@@ -364,15 +364,12 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=2)
     ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=0)
 
-    # 标题完美贴近 3D 图
     ax.set_title('SCIS 3D MAP', fontsize=16, fontweight='bold', pad=5)
 
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    # 安全布局，无暴力全屏
     fig.tight_layout()
-
     return fig, ax
 
 class Graph:
@@ -380,7 +377,8 @@ class Graph:
         self.nodes = {}
         self.node_id_map = {}
 
-    def add_node(self building_id, node_type, name, level, coordinates):
+    # ✅ 这里已修复：加上了逗号
+    def add_node(self, building_id, node_type, name, level, coordinates):
         if building_id == 'gate':
             building_name = 'Gate'
         else:
@@ -1061,7 +1059,6 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            # 关键修复：自动裁剪空白，标题紧贴图表
             st.pyplot(fig, use_container_width=True, bbox_inches='tight')
             
         except Exception as e:
