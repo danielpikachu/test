@@ -137,7 +137,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 修复 Plotly 3D 兼容 symbol 报错 ======================
+# ====================== 核心修改：调整 3D 相机视角，让图上移且标题可见 ======================
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
@@ -317,7 +317,6 @@ def plot_3d_map_plotly(school_data, display_options=None):
                     marker_size = 12 if is_path_stair else 10
                     line_width = 3 if is_path_stair else 2
                     
-                    # 修复：Plotly 3D 只支持 circle / square 等基础符号
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers+text',
@@ -382,7 +381,6 @@ def plot_3d_map_plotly(school_data, display_options=None):
                 marker=dict(color=COLORS['path'], size=5),
                 name="Navigation Path"
             ))
-            # 修复：起点终点使用 square 替代 star
             fig.add_trace(go.Scatter3d(
                 x=[x[0]], y=[y[0]], z=[z[0]],
                 mode='markers+text',
@@ -404,18 +402,31 @@ def plot_3d_map_plotly(school_data, display_options=None):
         except Exception as e:
             pass
 
+    # --------------------------
+    # 关键修改：调整相机视角，让 3D 图上移，标题可见
+    # --------------------------
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=20, family='Arial bold')),
+        title=dict(
+            text="Campus 3D Navigation Map",
+            font=dict(size=20, family='Arial bold'),
+            y=0.95  # 标题位置上移，避免被遮挡
+        ),
         scene=dict(
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             zaxis_title="Floor Height (Z Value)",
-            camera=dict(eye=dict(x=1.2, y=1.2, z=1.0)),  # 保持放大效果
-            aspectmode='data'
+            # 核心：调整 camera 让 3D 场景整体上移
+            camera=dict(
+                eye=dict(x=1.3, y=1.3, z=1.0),  # 保持放大
+                up=dict(x=0, y=0, z=1),         # 保持Z轴向上
+                center=dict(x=0, y=0.1, z=0)     # 场景中心上移（y=0.1 是关键）
+            ),
+            aspectmode='auto'  # 改为 auto，让 Plotly 自动填充空白，不再严格按数据比例
         ),
-        margin=dict(l=0, r=0, t=0, b=0),  # 完全去掉边距 → 整体上移
+        # 恢复正常边距，不再用负 margin 硬拽
+        margin=dict(l=0, r=0, t=50, b=20),
         legend=dict(font=dict(size=10)),
-        height=1000  # 进一步增大画布，保证C楼完整显示
+        height=900
     )
 
     return fig
@@ -1087,7 +1098,8 @@ def main():
             else:
                 fig = plot_3d_map(school_data)[0]
             
-            st.markdown("<div style='margin-top:-70px;'>", unsafe_allow_html=True)
+            # 去掉之前的负 margin，恢复正常布局
+            st.markdown("<div>", unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             st.markdown("</div>", unsafe_allow_html=True)
             
