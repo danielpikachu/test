@@ -360,28 +360,19 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             pass
 
-        # —————— 坐标轴标签 / 标题 （已经贴紧）
-    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold', labelpad=1)
-    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=1)
+    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold', labelpad=2)
+    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=2)
     ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=0)
-    
-    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=0)
-    
+
+    ax.set_title('SCIS 3D MAP', fontsize=16, fontweight='bold', pad=0)
+
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
-    
-    # ==============================================
-    # ✅ ✅ ✅ 核心：暴力消除 3D 图所有空白间隔（必生效）
-    # ==============================================
-    ax.margins(0)  # 消除内部边距
-    ax.xaxis.set_major_locator(plt.NullLocator())  # 压死刻度间距
-    ax.yaxis.set_major_locator(plt.NullLocator())
-    ax.zaxis.set_major_locator(plt.NullLocator())
-    
-    # 强制画布 0 边距
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    plt.tight_layout(pad=0, h_pad=0, w_pad=0)
-    fig.canvas.draw()
+
+   # 关键：3D 图必须用这个方式消除所有间隔！
+    ax.set_position([0, 0, 1, 1])  # 让图占满整个画布
+
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
    
 
