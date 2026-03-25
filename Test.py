@@ -180,7 +180,7 @@ def plot_3d_map_plotly(school_data, display_options=None):
         
         for level in building_data['levels']:
             level_name = level['name']
-            z = level['z']
+            z = level['z']+5
             
             show_level = show_all
             if not show_all:
