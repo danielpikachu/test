@@ -919,6 +919,8 @@ def reset_app_state():
     st.session_state['current_path'] = None
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
+    if 'zoom_scale' in st.session_state:
+        del st.session_state['zoom_scale']
 
 # --------------------------
 # 全局样式：彻底消除滚动条 + 全屏自适应
@@ -981,6 +983,8 @@ def main():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
+    if 'zoom_scale' not in st.session_state:
+        st.session_state['zoom_scale'] = 1.0
 
     # 欢迎页面
     if st.session_state['page'] == 'welcome':
@@ -1076,6 +1080,27 @@ def main():
                 plot_path(ax, graph, st.session_state['current_path'])
             else:
                 fig, ax = plot_3d_map(school_data)
+            
+            # ========== 新增：3D图缩放控制按钮 ==========
+            col1, col2, col3 = st.columns([1,1,1])
+            with col1:
+                if st.button("🔍 Zoom In", use_container_width=True):
+                    st.session_state['zoom_scale'] *= 1.2
+                    st.rerun()
+            with col2:
+                if st.button("↔️ Reset Zoom", use_container_width=True):
+                    st.session_state['zoom_scale'] = 1.0
+                    st.rerun()
+            with col3:
+                if st.button("🔍 Zoom Out", use_container_width=True):
+                    st.session_state['zoom_scale'] /= 1.2
+                    st.rerun()
+
+            # 应用缩放
+            ax.set_xlim(np.array(ax.get_xlim()) * st.session_state['zoom_scale'])
+            ax.set_ylim(np.array(ax.get_ylim()) * st.session_state['zoom_scale'])
+            ax.set_zlim(np.array(ax.get_zlim()) * st.session_state['zoom_scale'])
+            # ==========================================
             
             st.pyplot(fig, use_container_width=True)
         except Exception as e:
