@@ -8,9 +8,14 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
 
-plt.switch_backend('Agg')
+# 核心修改1：开启宽布局 + 原生侧边栏配置
+st.set_page_config(
+    page_title="SCIS Navigation System",
+    layout="wide",  # 宽布局
+    initial_sidebar_state="expanded"  # 初始侧边栏展开
+)
 
-st.set_page_config(page_title="SCIS Navigation System")
+plt.switch_backend('Agg')
 
 # --------------------------
 # Google Sheets 配置（适配 Streamlit Secrets TOML）
@@ -1037,120 +1042,13 @@ def reset_app_state():
     if 'path_result' in st.session_state:
         del st.session_state['path_result']
 
-def welcome_page():
-    # 初始化Google Sheets连接
-    if 'worksheet' not in st.session_state:
-        st.session_state['worksheet'] = init_google_sheet()
-    
-    # 获取当前总访问次数
-    total_accesses = get_total_accesses(st.session_state['worksheet'])
-    
-    # 设置欢迎页面样式
-    st.markdown("""
-        <style>
-        .welcome-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding-top: 20px; 
-            margin-top: -500px;
-            padding: 0;
-            text-align: center;
-        }
-        .welcome-title {
-            font-size: 3rem;
-            margin-bottom: 2rem;
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        .enter-button {
-            font-size: 2rem;
-            padding: 0.8rem 2rem;
-            width: 200px;
-            font-weight: bold;
-        }
-        .access-count {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: #666;
-            text-align: center;
-            width: 100%;
-        }
-        .main > div:first-child {
-            height: 100vh;
-            overflow: hidden;
-            padding-top: 0 !important; 
-        }
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
-            overflow: hidden !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # 欢迎页面内容
-    st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-    st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
-    
-    # 创建包含按钮和访问次数的列
-    col = st.columns(1)
-    with col[0]:
-        if st.button('Enter System', key='enter_btn', use_container_width=True):
-            # 更新访问次数
-            update_access_count(st.session_state['worksheet'])
-            st.session_state['page'] = 'main'
-            st.rerun()
-    
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
-    st.image("welcome_image.jpg", use_column_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-def main_interface():
-    st.markdown("""
-        <style>
-        .stApp {
-                padding-top: 0.0rem !important; 
-            }
-             header {
-                display: none !important;
-                }
-            body {
-                position: relative;
-                min-height: 100vh;
-                margin: 0;
-                padding: 0;
-            }
-            .block-container {
-                padding-top: 0.2rem !important;
-                padding-left: 1rem;
-                padding-right: 1rem;
-                max-width: 100%;
-                padding-bottom: 80px; 
-            }
-         
-            .author-tag {
-                position: fixed; 
-                bottom: 50px;  
-                right: 60px;    
-                font-size: 16px;
-                font-weight: bold;
-                color: #666;    
-                background: transparent;;
-                padding: 6px 12px;
-                border: none;
-                border-radius: 0;
-                z-index: 9999;  
-                
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    st.markdown('<div class="author-tag">Created By DANIEL HAN</div>', unsafe_allow_html=True)
-    st.subheader("🏫SCIS Campus Navigation System")
-    st.markdown("3D Map & Inter-building Path Planning (A/B/C Building + Gate Navigation)")
-
+# --------------------------
+# 页面逻辑（核心修改：使用原生sidebar）
+# --------------------------
+def main():
+    # 初始化会话状态
+    if 'page' not in st.session_state:
+        st.session_state['page'] = 'welcome'
     if 'display_options' not in st.session_state:
         st.session_state['display_options'] = {
             'start_level': None,
@@ -1164,67 +1062,112 @@ def main_interface():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    try:
+    # 欢迎页面
+    if st.session_state['page'] == 'welcome':
+        # 初始化Google Sheets连接
+        if 'worksheet' not in st.session_state:
+            st.session_state['worksheet'] = init_google_sheet()
+        
+        # 获取当前总访问次数
+        total_accesses = get_total_accesses(st.session_state['worksheet'])
+        
+        # 设置欢迎页面样式
+        st.markdown("""
+            <style>
+            .welcome-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 80vh;
+                text-align: center;
+            }
+            .welcome-title {
+                font-size: 3rem;
+                margin-bottom: 2rem;
+                color: #2c3e50;
+            }
+            .access-count {
+                margin-top: 1rem;
+                font-size: 0.8rem;
+                color: #666;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # 欢迎页面内容
+        st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
+        st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        
+        if st.button('Enter System', use_container_width=True, type="primary"):
+            # 更新访问次数
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
+            st.rerun()
+        
+        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    # 主页面（原生sidebar + 宽布局）
+    else:
+        # 1. 原生侧边栏（内置可拖拽+箭头）
+        with st.sidebar:
+            st.header("📍 Select Locations")
+            
+            # 加载数据
+            school_data = load_school_data_detailed('school_data_detailed.json')
+            if school_data is None:
+                st.error("Failed to load school data!")
+                return
+            building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+            
+            # 起点选择
+            st.subheader("Start Point")
+            start_building = st.selectbox("Building", building_names, key="start_building")
+            start_levels = levels_by_building.get(start_building, [])
+            start_level = st.selectbox("Floor", start_levels, key="start_level")
+            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+
+            # 终点选择
+            st.subheader("End Point")
+            end_building = st.selectbox("Building", building_names, key="end_building")
+            end_levels = levels_by_building.get(end_building, [])
+            end_level = st.selectbox("Floor", end_levels, key="end_level")
+            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+
+            # 功能按钮（线条型原生按钮）
+            st.divider()
+            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+            reset_button = st.button("🔄 Reset View", use_container_width=True)
+            exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
+
+            # 按钮逻辑
+            if reset_button:
+                reset_app_state()
+                st.rerun()
+            if exit_button:
+                reset_app_state()
+                st.session_state['page'] = 'welcome'
+                st.rerun()
+
+        # 2. 主内容区（宽布局）
+        st.title("🏫 SCIS Campus 3D Navigation System")
+        st.markdown("### 3D Map & Inter-building Path Planning (A/B/C Building + Gate Navigation)")
+        
+        # 加载地图数据
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
+            st.error("Failed to load school data file!")
             return
-            
+        
+        # 初始化导航图
         global graph
         graph = build_navigation_graph(school_data)
-        building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
         st.success("✅ Campus data loaded successfully! Initial state shows A/B/C buildings and Gate")
-    except Exception as e:
-        st.error(f"Initialization error: {str(e)}")
-        return
 
-    col1, col2 = st.columns([1, 6])
-
-    with col1:
-        st.markdown("#### 📍 Select Locations")
-        
-        st.markdown("#### Start Point")
-        start_building = st.selectbox("Building", building_names, key="start_building")
-        start_levels = levels_by_building.get(start_building, [])
-        start_level = st.selectbox("Floor", start_levels, key="start_level")
-        start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-        start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
-
-        st.markdown("#### End Point")
-        end_building = st.selectbox("Building", building_names, key="end_building")
-        end_levels = levels_by_building.get(end_building, [])
-        end_level = st.selectbox("Floor", end_levels, key="end_level")
-        end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-        end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
-
-        nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-        
-        reset_button = st.button(
-            "🔄 Reset View", 
-            use_container_width=True,
-            help="Click to return to initial state, showing all floors (including Building B and Gate) and clearing path"
-        )
-        
-        # 添加退出按钮，返回欢迎页面
-        exit_button = st.button(
-            "🚪 Exit to Welcome Page", 
-            use_container_width=True,
-            help="Click to return to the welcome page",
-            type="secondary"  # 使用次要样式区分
-        )
-        
-        if reset_button:
-            reset_app_state()
-            st.rerun()
-        
-        if exit_button:
-            # 重置应用状态并返回欢迎页
-            reset_app_state()
-            st.session_state['page'] = 'welcome'
-            st.rerun()
-
-    with col2:
-        st.markdown("#### 🗺️ 3D Campus Map")
-        
+        # 导航逻辑
         if nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
@@ -1234,8 +1177,8 @@ def main_interface():
                 )
                 
                 if path and display_options:
-                    st.success(f"📊 Navigation result: {message}")
-                    st.markdown("##### 🛤️ Path Details")
+                    st.success(f"📊 Navigation Result: {message}")
+                    st.markdown("#### 🛤️ Path Details")
                     st.info(simplified_path)
                     
                     st.session_state['current_path'] = path
@@ -1244,7 +1187,8 @@ def main_interface():
                     st.error(f"❌ {message}")
             except Exception as e:
                 st.error(f"Navigation process error: {str(e)}")
-        
+
+        # 渲染3D地图
         try:
             if st.session_state['current_path'] is not None:
                 fig, ax = plot_3d_map(school_data, st.session_state['display_options'])
@@ -1252,20 +1196,12 @@ def main_interface():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            st.pyplot(fig)
+            st.pyplot(fig, use_container_width=True)  # 响应式地图
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
-
-def main():
-    # 初始化会话状态，控制显示哪个页面
-    if 'page' not in st.session_state:
-        st.session_state['page'] = 'welcome'
-    
-    # 根据当前页面状态显示不同内容
-    if st.session_state['page'] == 'welcome':
-        welcome_page()
-    else:
-        main_interface()
+        
+        # 页脚
+        st.markdown('<div style="position: fixed; bottom: 20px; right: 20px; font-size: 14px; color: #666;">Created By DANIEL HAN</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
