@@ -66,7 +66,7 @@ def update_access_count(worksheet):
         
     try:
         records = worksheet.get_all_values()
-        if len(records) < 2:
+        if len(records)< 2:
             return 0
             
         last_row = records[-1]
@@ -130,8 +130,7 @@ def load_school_data_detailed(filename):
         return None
 
 def plot_3d_map(school_data, display_options=None):
-    # 🔥 关键1：figsize 高度改小，从 17 → 14，减少顶部空白
-    fig = plt.figure(figsize=(30, 14), dpi=120)
+    fig = plt.figure(figsize=(30, 17), dpi=120)
     ax = fig.add_subplot(111, projection='3d')
 
     ax.view_init(elev=25, azim=-60)
@@ -364,16 +363,13 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold')
     ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold')
     ax.set_zlabel('Height', fontsize=11, fontweight='bold')
-    
-    # 🔥 关键2：完全关闭图标题，彻底消除顶部空白
-    # ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=0)
+    ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=0)
     
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
     plt.tight_layout(pad=0)
-    # 🔥 关键3：把图顶到最最上面
-    fig.subplots_adjust(left=0, right=1, top=1.0, bottom=0, hspace=0, wspace=0)
+    fig.subplots_adjust(left=0, right=1, top=1.0, bottom=0)
 
     return fig, ax
 
@@ -923,14 +919,6 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     padding: 0 !important;
 }
 
-/* 🔥 关键4：页面整体上移，彻底消除 Streamlit 默认空白 */
-.block-container {
-    padding-top: 0rem !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    padding-bottom: 0rem !important;
-}
-
 .welcome-container {
     width: 100vw !important;
     height: 100vh !important;
@@ -944,6 +932,17 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
+}
+
+.stAppViewContainer:not(:has(.welcome-container)) .block-container {
+    padding: 2rem 1rem 0.5rem 1rem !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    height: calc(100vh - 20px) !important;
+}
+.stAppViewContainer:not(:has(.welcome-container)) .element-container {
+    width: 100% !important;
+    height: 100% !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -983,8 +982,9 @@ def main():
         st.markdown('</div>', unsafe_allow_html=True)
         
     else:
+        # 新增：在最顶部添加系统标题
         st.markdown("""
-        <h1 style="text-align: center; margin:0; padding: 5px 0; font-size: 28px; font-weight: bold;">
+        <h1 style="text-align: center; margin: 0; padding: 10px 0; font-size: 28px; font-weight: bold;">
             SCIS Campus Navigation System
         </h1>
         """, unsafe_allow_html=True)
@@ -1025,8 +1025,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        # 🔥 关键5：网页标题也彻底贴紧
-        st.markdown('<h2 style="margin:0; padding:0; font-size:22px; text-align:center; font-weight:bold;">SCIS 3D Navigation</h2>', unsafe_allow_html=True)
+    
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1063,8 +1062,7 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            # 🔥 关键6：渲染图片时禁用所有额外留白
-            st.pyplot(fig, use_container_width=True, bbox_inches='tight', pad_inches=0)
+            st.pyplot(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
 
