@@ -410,7 +410,7 @@ def plot_3d_map_plotly(school_data, display_options=None):
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             zaxis_title="Floor Height (Z Value)",
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2)),
+            camera=dict(eye=dict(x=1.5, y=1.5, z=2.0)),
             aspectmode='data'
         ),
         margin=dict(l=0, r=0, t=40, b=0),
