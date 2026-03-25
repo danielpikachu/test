@@ -360,16 +360,21 @@ def plot_3d_map(school_data, display_options=None):
         except Exception as e:
             pass
 
-    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold', labelpad=5)
-    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=5)
-    ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=2)
+    ax.set_xlabel('X Coordinate', fontsize=11, fontweight='bold', labelpad=2)
+    ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=2)
+    ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=0)
+
     ax.set_title('SCIS 3D Navigation', fontsize=16, fontweight='bold', pad=0)
-    
+
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    plt.tight_layout(pad=0)
-    fig.subplots_adjust(left=0, right=1, top=1.0, bottom=0)
+   # 关键：3D 图必须用这个方式消除所有间隔！
+    ax.set_position([0, 0, 1, 1])  # 让图占满整个画布
+
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+   
 
     return fig, ax
 
