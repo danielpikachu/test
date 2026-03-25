@@ -985,7 +985,7 @@ def main():
         # 新增：在最顶部添加系统标题
         st.markdown("""
         <h1 style="text-align: center; margin: 0; padding: 10px 0; font-size: 28px; font-weight: bold;">
-            SCIS Navigation System
+            SCIS Campus Navigation System
         </h1>
         """, unsafe_allow_html=True)
         
