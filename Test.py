@@ -364,14 +364,14 @@ def plot_3d_map(school_data, display_options=None):
     ax.set_ylabel('Y Coordinate', fontsize=11, fontweight='bold', labelpad=2)
     ax.set_zlabel('Height', fontsize=11, fontweight='bold', labelpad=0)
 
-    ax.set_title('SCIS 3D MAP', fontsize=16, fontweight='bold', pad=25)
+    # 标题完美贴近 3D 图
+    ax.set_title('SCIS 3D MAP', fontsize=16, fontweight='bold', pad=5)
 
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=6, frameon=True)
     ax.grid(True, alpha=0.1, linewidth=0.5)
 
-    fig.tight_layout(pad=0.5)
-
-   
+    # 安全布局，无暴力全屏
+    fig.tight_layout()
 
     return fig, ax
 
@@ -380,7 +380,7 @@ class Graph:
         self.nodes = {}
         self.node_id_map = {}
 
-    def add_node(self, building_id, node_type, name, level, coordinates):
+    def add_node(self building_id, node_type, name, level, coordinates):
         if building_id == 'gate':
             building_name = 'Gate'
         else:
@@ -984,7 +984,6 @@ def main():
         st.markdown('</div>', unsafe_allow_html=True)
         
     else:
-        # 新增：在最顶部添加系统标题
         st.markdown("""
         <h1 style="text-align: center; margin: 0; padding: 10px 0; font-size: 28px; font-weight: bold;">
             SCIS Campus Navigation System
@@ -1027,8 +1026,6 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-    
-        
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
             st.error("Failed to load school data file!")
@@ -1064,7 +1061,9 @@ def main():
             else:
                 fig, ax = plot_3d_map(school_data)
             
-            st.pyplot(fig, use_container_width=True)
+            # 关键修复：自动裁剪空白，标题紧贴图表
+            st.pyplot(fig, use_container_width=True, bbox_inches='tight')
+            
         except Exception as e:
             st.error(f"Failed to display map: {str(e)}")
 
