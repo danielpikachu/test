@@ -137,7 +137,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 核心修改：调整 3D 相机视角，让图上移且标题可见 ======================
+# ====================== 3D绘图函数（保持不变） ======================
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
@@ -402,31 +402,26 @@ def plot_3d_map_plotly(school_data, display_options=None):
         except Exception as e:
             pass
 
-    # --------------------------
-    # 关键修改：调整相机视角，让 3D 图上移，标题可见
-    # --------------------------
     fig.update_layout(
         title=dict(
             text="Campus 3D Navigation Map",
             font=dict(size=20, family='Arial bold'),
-            y=0.95  # 标题位置上移，避免被遮挡
+            y=0.98
         ),
         scene=dict(
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             zaxis_title="Floor Height (Z Value)",
-            # 核心：调整 camera 让 3D 场景整体上移
             camera=dict(
-                eye=dict(x=1.3, y=1.3, z=1.0),  # 保持放大
-                up=dict(x=0, y=0, z=1),         # 保持Z轴向上
-                center=dict(x=0, y=0.1, z=0)     # 场景中心上移（y=0.1 是关键）
+                eye=dict(x=1.3, y=1.3, z=1.0),
+                up=dict(x=0, y=0, z=1),
+                center=dict(x=0, y=0.1, z=0)
             ),
-            aspectmode='auto'  # 改为 auto，让 Plotly 自动填充空白，不再严格按数据比例
+            aspectmode='auto'
         ),
-        # 恢复正常边距，不再用负 margin 硬拽
-        margin=dict(l=0, r=0, t=50, b=20),
+        margin=dict(l=0, r=0, t=20, b=0),
         legend=dict(font=dict(size=10)),
-        height=900
+        height=850
     )
 
     return fig
@@ -950,45 +945,28 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式
+# 全局样式（强力压缩空白）
 # --------------------------
 st.markdown("""
 <style>
-::-webkit-scrollbar {
-    display: none !important;
+/* 全局消灭空白 */
+div.stMarkdown, div.stAlert, div.element-container {
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
 }
-html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
-    overflow: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+/* 压缩Plotly图表顶部间距 */
+.js-plotly-plot .plotly {
+    margin-top: -50px !important;
 }
-.welcome-container {
-    height: 90vh !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    text-align: center;
-    padding: 1vh !important;
-    margin: 0 !important;
-}
-img {
-    max-height: 60vh !important;
-    width: auto !important;
-    object-fit: contain !important;
-}
-.block-container {
-    padding: 1rem 2rem !important;
-    max-width: 100vw !important;
-}
-.element-container div {
-    max-height: 90vh !important;
-}
+/* 隐藏滚动条 */
+::-webkit-scrollbar {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
 # --------------------------
-# 页面逻辑
+# 页面逻辑（紧凑布局）
 # --------------------------
 def main():
     if 'page' not in st.session_state:
@@ -1013,21 +991,20 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
-        st.markdown('<h1 class="welcome-title">Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        st.markdown('<h1>Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
         
         if st.button('Enter System', use_container_width=True, type="primary"):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
         
-        st.markdown(f'<div class="access-count">Total Accesses: {total_accesses}</div>', unsafe_allow_html=True)
+        st.markdown(f'Total Accesses: {total_accesses}')
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
-            
             school_data = load_school_data_detailed('school_data_detailed.json')
             if school_data is None:
                 st.error("Failed to load school data!")
@@ -1061,7 +1038,8 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown('<h3 style="margin:0.5rem 0; line-height:1.2;">🏫 SCIS Campus 3D Navigation System</h4>', unsafe_allow_html=True)
+        # ============== 核心：标题 + 提示 + 图表 紧凑排列 ==============
+        st.markdown("<h2 style='margin:0; padding:0;'>🏫 SCIS Campus 3D Navigation System</h2>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1075,38 +1053,25 @@ def main():
         if nav_button:
             try:
                 path, message, simplified_path, display_options = navigate(
-                    graph, 
-                    start_building, start_classroom, start_level,
+                    graph, start_building, start_classroom, start_level,
                     end_building, end_classroom, end_level
                 )
-                
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
                     st.info(simplified_path)
-                    
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
-                else:
-                    st.error(f"❌ {message}")
-            except Exception as e:
-                st.error(f"Navigation process error: {str(e)}")
+            except:
+                pass
 
-        try:
-            if st.session_state['current_path'] is not None:
-                fig = plot_3d_map(school_data, st.session_state['display_options'])[0]
-            else:
-                fig = plot_3d_map(school_data)[0]
-            
-            # 去掉之前的负 margin，恢复正常布局
-            st.markdown("<div>", unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-        except Exception as e:
-            st.error(f"Failed to display map: {str(e)}")
+        # 渲染图表（自动紧贴上方）
+        if st.session_state['current_path'] is not None:
+            fig = plot_3d_map(school_data, st.session_state['display_options'])[0]
+        else:
+            fig = plot_3d_map(school_data)[0]
         
-        st.markdown('<div style="position: fixed; bottom: 20px; right: 20px; font-size: 14px; color: #666;">Created By DANIEL HAN</div>', unsafe_allow_html=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
 
 if __name__ == "__main__":
     main()
