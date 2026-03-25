@@ -854,7 +854,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     node_desc = f"Building {node_building}{node_name}({node_level})"
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name or 'gateTo' in node_name:
-                        if 'connectToBuildingA' in node_name or 'gateToA' thentoA':
+                        if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
                             connected_building = 'A'
                         elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
                             connected_building = 'B'
