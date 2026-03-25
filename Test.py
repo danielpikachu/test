@@ -410,12 +410,12 @@ def plot_3d_map_plotly(school_data, display_options=None):
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             zaxis_title="Floor Height (Z Value)",
-            camera=dict(eye=dict(x=1.2, y=1.2, z=1.0)),  # 缩小eye值 = 放大视图
+            camera=dict(eye=dict(x=1.2, y=1.2, z=1.0)),  # 保持放大效果
             aspectmode='data'
         ),
-        margin=dict(l=0, r=0, t=20, b=0),  # 减小上下边距 = 整体上移 + 放大
+        margin=dict(l=0, r=0, t=0, b=0),  # 完全去掉边距 → 整体上移
         legend=dict(font=dict(size=10)),
-        height=900  # 增大高度 = 画面更大
+        height=1000  # 进一步增大画布，保证C楼完整显示
     )
 
     return fig
@@ -971,7 +971,7 @@ img {
     max-width: 100vw !important;
 }
 .element-container div {
-    max-height: 80vh !important;
+    max-height: 90vh !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1087,7 +1087,7 @@ def main():
             else:
                 fig = plot_3d_map(school_data)[0]
             
-            st.markdown("<div style='margin-top:-50px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-top:-70px;'>", unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             st.markdown("</div>", unsafe_allow_html=True)
             
