@@ -7,11 +7,9 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
-# 新增 Plotly 导入
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# 核心修改1：开启宽布局 + 原生侧边栏配置
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
@@ -21,7 +19,7 @@ st.set_page_config(
 plt.switch_backend('Agg')
 
 # --------------------------
-# Google Sheets 配置（适配 Streamlit Secrets TOML）
+# Google Sheets 配置
 # --------------------------
 SHEET_NAME = 'Navigation visitors'
 SCOPE = [
@@ -30,7 +28,6 @@ SCOPE = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 从 Streamlit Secrets (TOML格式) 加载密钥
 def get_credentials():
     try:
         service_account_info = st.secrets["google_service_account"]
@@ -46,7 +43,6 @@ def get_credentials():
         return None
 
 def init_google_sheet():
-    """初始化Google Sheets连接并确保表格结构正确"""
     try:
         creds = get_credentials()
         if not creds:
@@ -69,11 +65,7 @@ def init_google_sheet():
     except Exception as e:
         return None
 
-# --------------------------
-# 访问次数统计逻辑
-# --------------------------
 def update_access_count(worksheet):
-    """更新访问次数统计"""
     if not worksheet:
         return 0
         
@@ -94,7 +86,6 @@ def update_access_count(worksheet):
         return 0
 
 def get_total_accesses(worksheet):
-    """获取总访问次数"""
     if not worksheet:
         return 0
         
@@ -109,7 +100,7 @@ def get_total_accesses(worksheet):
         return 0
 
 # --------------------------
-# 地图与导航核心逻辑（保持不变，新增gate相关配色）
+# 配色
 # --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
@@ -146,7 +137,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 核心替换：Plotly 3D 绘图 ======================
+# ====================== 修复 Plotly 3D 兼容 symbol 报错 ======================
 def plot_3d_map_plotly(school_data, display_options=None):
     fig = go.Figure()
 
@@ -326,11 +317,12 @@ def plot_3d_map_plotly(school_data, display_options=None):
                     marker_size = 12 if is_path_stair else 10
                     line_width = 3 if is_path_stair else 2
                     
+                    # 修复：Plotly 3D 只支持 circle / square 等基础符号
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers+text',
                         marker=dict(
-                            color=stair_color, size=marker_size, symbol='triangle-up',
+                            color=stair_color, size=marker_size, symbol='diamond',
                             line=dict(color='black', width=line_width)
                         ),
                         text=stair_name,
@@ -390,10 +382,11 @@ def plot_3d_map_plotly(school_data, display_options=None):
                 marker=dict(color=COLORS['path'], size=5),
                 name="Navigation Path"
             ))
+            # 修复：起点终点使用 square 替代 star
             fig.add_trace(go.Scatter3d(
                 x=[x[0]], y=[y[0]], z=[z[0]],
                 mode='markers+text',
-                marker=dict(color=COLORS['start_marker'], size=15, symbol='star', line=dict(color='black', width=2)),
+                marker=dict(color=COLORS['start_marker'], size=15, symbol='square', line=dict(color='black', width=2)),
                 text=f"Start\n{labels[0]}",
                 textposition="top center",
                 textfont=dict(size=12, color=COLORS['start_label']),
@@ -402,7 +395,7 @@ def plot_3d_map_plotly(school_data, display_options=None):
             fig.add_trace(go.Scatter3d(
                 x=[x[-1]], y=[y[-1]], z=[z[-1]],
                 mode='markers+text',
-                marker=dict(color=COLORS['end_marker'], size=15, symbol='star', line=dict(color='black', width=2)),
+                marker=dict(color=COLORS['end_marker'], size=15, symbol='square', line=dict(color='black', width=2)),
                 text=f"End\n{labels[-1]}",
                 textposition="top center",
                 textfont=dict(size=12, color=COLORS['end_label']),
@@ -427,7 +420,6 @@ def plot_3d_map_plotly(school_data, display_options=None):
 
     return fig
 
-# 保留原函数名兼容主逻辑
 def plot_3d_map(school_data, display_options=None):
     fig = plot_3d_map_plotly(school_data, display_options)
     return fig, None
@@ -947,11 +939,10 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式：彻底消除滚动条 + 全屏自适应
+# 全局样式
 # --------------------------
 st.markdown("""
 <style>
-/* 全局禁用滚动条，保持页面可交互 */
 ::-webkit-scrollbar {
     display: none !important;
 }
@@ -960,7 +951,6 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
-/* 欢迎页面全屏适配 */
 .welcome-container {
     height: 90vh !important;
     display: flex;
@@ -971,18 +961,15 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
     padding: 1vh !important;
     margin: 0 !important;
 }
-/* 图片自适应不溢出 */
 img {
     max-height: 60vh !important;
     width: auto !important;
     object-fit: contain !important;
 }
-/* 主内容区占满屏幕不留白 */
 .block-container {
     padding: 1rem 2rem !important;
     max-width: 100vw !important;
 }
-/* 3D图容器自适应 */
 .element-container div {
     max-height: 80vh !important;
 }
@@ -1008,7 +995,6 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # 欢迎页面
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
@@ -1027,7 +1013,6 @@ def main():
         st.image("welcome_image.jpg", use_column_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # 主页面
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
