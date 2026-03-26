@@ -911,7 +911,22 @@ div.block-container {
     padding-bottom: 0rem !important;
 }
 ::-webkit-scrollbar {display: none !important;}
-section[data-testid="stSidebar"] > div:first-child {padding-top: 0.0rem !important;}
+
+/* 侧边栏顶部彻底上移 */
+section[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0rem !important;
+}
+/* 缩小顶部箭头占用的空间 */
+section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {
+    height: 1.5rem !important;
+    min-height: 1.5rem !important;
+    margin: 0 0 -5px 0 !important;
+}
+/* 把 Select Locations 往上拉 */
+section[data-testid="stSidebar"] h2 {
+    margin-top: -10px !important;
+    padding-top: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
