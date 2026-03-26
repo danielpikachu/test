@@ -897,7 +897,7 @@ div.stMarkdown, div.stAlert, div.element-container {
     padding-bottom: 0px !important;
 }
 div.block-container {
-    padding-top: 2.0rem !important;
+    padding-top: 2.2rem !important;
     padding-bottom: 0rem !important;
 }
 ::-webkit-scrollbar {display: none !important;}
