@@ -137,7 +137,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D绘图函数：已完全修复 ======================
+# ====================== 3D绘图函数：已修复图例重复 ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
@@ -161,6 +161,9 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     end_building = display_options.get('end_building')
 
     building_label_positions = {}
+    
+    # 用于控制楼梯图例只显示一次
+    shown_stairs_legends = set()
 
     for building_id in school_data.keys():
         if building_id == 'gate':
@@ -297,12 +300,19 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     color = COLORS['stair'].get(s_name, 'red')
                     size = 12 if is_path else 9
                     
+                    legend_name = f"{building_name}-{s_name}"
+                    show_legend = legend_name not in shown_stairs_legends
+                    if show_legend:
+                        shown_stairs_legends.add(legend_name)
+                    
                     fig.add_trace(go.Scatter3d(
                         x=[x], y=[y], z=[z],
                         mode='markers+text',
                         marker=dict(color=color, size=size, symbol='diamond', line=dict(color='black', width=2)),
                         text=s_name, textposition="top center", textfont=dict(size=9, color='darkred'),
-                        name=f"{building_name}-{s_name}", legendgroup="Stairs", showlegend=True
+                        name=legend_name,
+                        legendgroup="Stairs",
+                        showlegend=show_legend
                     ))
         
         if displayed_levels:
@@ -320,7 +330,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             showlegend=False
         ))
 
-    # 绘制路径（已修复作用域问题）
+    # 绘制路径
     if path and graph and not show_all:
         try:
             xs, ys, zs = [], [], []
@@ -372,7 +382,7 @@ def plot_3d_map(school_data, graph=None, display_options=None):
     return fig, None
 
 # --------------------------
-# 图与寻路（无改动，保持你的逻辑）
+# 图与寻路
 # --------------------------
 class Graph:
     def __init__(self):
