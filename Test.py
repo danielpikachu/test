@@ -355,15 +355,22 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             pass
 
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22), x=0.5, xanchor='center'),
+        title=dict(
+            text="Campus 3D Navigation Map",
+            font=dict(size=22),
+            x=0.5,
+            xanchor='center',
+            pad=dict(t=0, b=0)  # 标题与图表之间 0 间距
+        ),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=60, b=0),
-        height=880
+        margin=dict(l=0, r=0, t=10, b=0),  # 进一步缩到最小
+        height=890
     )
+    
 
     return fig
 
