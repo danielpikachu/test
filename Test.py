@@ -365,7 +365,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             pass
 
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22), x=0.5, xanchor='center'),
+        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
