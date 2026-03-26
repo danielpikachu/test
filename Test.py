@@ -911,7 +911,7 @@ div.block-container {
     padding-bottom: 0rem !important;
 }
 ::-webkit-scrollbar {display: none !important;}
-section[data-testid="stSidebar"] > div:first-child {padding-top: -0.2rem !important;}
+section[data-testid="stSidebar"] > div:first-child {padding-top: -0.4rem !important;}
 </style>
 """, unsafe_allow_html=True)
 
