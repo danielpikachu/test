@@ -949,74 +949,23 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ————————————————————————————————————————————
-    # 【仅修改这里】登录界面 = 你截图的完整样式
-    # ————————————————————————————————————————————
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
-
-        st.markdown("""
-            <style>
-                .welcome-container {
-                    position: relative;
-                    width: 100%;
-                    height: 80vh;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    overflow: hidden;
-                }
-                .right-curve {
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    width: 38%;
-                    height: 100%;
-                    background: linear-gradient(140deg, #4285F430, #4285F470);
-                    clip-path: ellipse(75% 75% at 100% 50%);
-                    z-index: -1;
-                }
-                .welcome-title {
-                    font-size: 76px;
-                    font-weight: 900;
-                    color: #000;
-                    margin: 0;
-                }
-                .welcome-subtitle {
-                    font-size: 26px;
-                    color: #444;
-                    margin-top: 8px;
-                    margin-bottom: 60px;
-                }
-            </style>
-
-            <div class="welcome-container">
-                <div class="right-curve"></div>
-                <h1 class="welcome-title">SCIS Navigation</h1>
-                <p class="welcome-subtitle">Navigate the school with ease</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-        col1, col2, col3 = st.columns([1, 0.4, 1])
-        with col2:
-            if st.button("Enter", type="primary", use_container_width=True):
-                update_access_count(st.session_state['worksheet'])
-                st.session_state['page'] = 'main'
-                st.rerun()
-
-        st.markdown(f"""
-            <div style="text-align:right; margin-top:-60px; opacity:0.5;">
-                Total Accesses: {total_accesses}
-            </div>
-        """, unsafe_allow_html=True)
-
-    # ————————————————————————————————————————————
-    # 以下所有功能完全不变
-    # ————————————————————————————————————————————
+        
+        st.markdown('<div class="welcome-container">', unsafe_allow_html=True)
+        st.markdown('<h1>Welcome to SCIS Navigation System</h1>', unsafe_allow_html=True)
+        
+        if st.button('Enter System', use_container_width=True, type="primary"):
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
+            st.rerun()
+        
+        st.markdown(f'Total Accesses: {total_accesses}')
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
