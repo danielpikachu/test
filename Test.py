@@ -941,7 +941,7 @@ def main():
             }}
 
             div.stButton > button:first-child {{
-                background-color: #4CAF50 !important;
+                background-color: linear-gradient(135deg, #1e88e5 0%, #bbdefb 100%) !important;
                 color: white !important;
                 font-size: 20px !important;
                 height: 60px !important;
