@@ -896,10 +896,44 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式
+# 全局样式 —— 仅更新登录界面背景
 # --------------------------
 st.markdown("""
 <style>
+/* 登录页全屏背景图 */
+[data-testid="stAppViewContainer"] {
+    background-image: url("background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* 欢迎页卡片半透明效果 */
+.welcome-container {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 60px 40px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 700px;
+    margin: 15% auto;
+    color: white !important;
+}
+
+.welcome-container h1 {
+    font-size: 42px !important;
+    font-weight: bold !important;
+    margin-bottom: 30px !important;
+    color: white !important;
+}
+
+.stButton button {
+    font-size: 18px !important;
+    height: 55px !important;
+    border-radius: 10px !important;
+}
+
+/* 原有样式不变 */
 div.stMarkdown, div.stAlert, div.element-container {
     margin-top: 0px !important;
     margin-bottom: 0px !important;
