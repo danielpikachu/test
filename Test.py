@@ -941,7 +941,7 @@ def main():
             }}
 
             div.stButton > button:first-child {{
-                background-color: #1E90FF !important;
+                background-color: #87CEEB !important;
                 color: white !important;
                 font-size: 20px !important;
                 height: 60px !important;
