@@ -941,7 +941,7 @@ def main():
             }}
 
             div.stButton > button:first-child {{
-                background-color: linear-gradient(135deg, #1e88e5 0%, #bbdefb 100%) !important;
+                background-color: #1E90FF !important;
                 color: white !important;
                 font-size: 20px !important;
                 height: 60px !important;
@@ -950,7 +950,7 @@ def main():
                 border: none !important;
                 font-weight: bold !important;
                 display: block !important;
-                margin: 30px 450px auto !important;
+                margin: 30px 650px auto !important;
             }}
 
             div.stButton > button:first-child:hover {{
