@@ -974,7 +974,7 @@ def main():
         
         st.markdown("<h1>Welcome to SCIS Navigation System</h1>", unsafe_allow_html=True)
         
-        if st.button('Enter System'):
+        if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
