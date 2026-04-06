@@ -1059,7 +1059,9 @@ def main():
                 'displayModeBar': True,
                 'scrollZoom': True,
                 'editable': False
-            }
+            },
+            theme="streamlit",
+            kwargs={"layout": {"margin": {"t": 10}}}
         )
 
 if __name__ == "__main__":
