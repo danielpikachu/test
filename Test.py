@@ -973,6 +973,8 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:white; font-size:20px; opacity:0.9;'>Find Classrooms,labs,resources in stunning 3D </p>", unsafe_allow_html=True)
+
         
         if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
