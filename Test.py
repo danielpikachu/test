@@ -9,6 +9,7 @@ from datetime import datetime
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import base64
 
 st.set_page_config(
     page_title="SCIS Navigation System",
@@ -896,73 +897,93 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 全局样式 —— 仅更新登录界面背景
+# 全局样式 —— 真正全屏背景
 # --------------------------
-st.markdown("""
-<style>
-/* 登录页全屏背景图 */
-[data-testid="stAppViewContainer"] {
-    background-image: url("background.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-}
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
+    css = f"""
+    <style>
+    /* 登录页全屏背景 */
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/jpeg;base64,{encoded}");
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+    }}
 
-/* 欢迎页卡片半透明效果 */
-.welcome-container {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 60px 40px;
-    border-radius: 15px;
-    text-align: center;
-    max-width: 700px;
-    margin: 15% auto;
-    color: white !important;
-}
+    /* 隐藏默认白色背景 */
+    [data-testid="stAppViewContainer"] > .main {{
+        background-color: rgba(0,0,0,0) !important;
+    }}
 
-.welcome-container h1 {
-    font-size: 42px !important;
-    font-weight: bold !important;
-    margin-bottom: 30px !important;
-    color: white !important;
-}
+    /* 欢迎卡片半透明 */
+    .welcome-container {{
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 60px 50px;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 700px;
+        margin: 18vh auto;
+        color: white !important;
+        backdrop-filter: blur(4px);
+    }}
 
-.stButton button {
-    font-size: 18px !important;
-    height: 55px !important;
-    border-radius: 10px !important;
-}
+    .welcome-container h1 {{
+        font-size: 44px !important;
+        font-weight: 900 !important;
+        margin-bottom: 40px !important;
+        color: #fff !important;
+    }}
 
-/* 原有样式不变 */
-div.stMarkdown, div.stAlert, div.element-container {
-    margin-top: 0px !important;
-    margin-bottom: 0px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-}
-div.block-container {
-    padding-top: 2.2rem !important;
-    padding-bottom: 0rem !important;
-}
-::-webkit-scrollbar {display: none !important;}
+    /* 进入系统按钮 */
+    div.stButton > button:first-child {{
+        background-color: #4CAF50 !important;
+        color: white !important;
+        font-size: 20px !important;
+        height: 60px !important;
+        width: 100% !important;
+        border-radius: 12px !important;
+        border: none !important;
+        font-weight: bold !important;
+    }}
 
-/* 侧边栏顶部彻底上移 */
-section[data-testid="stSidebar"] > div:first-child {
-    padding-top: 0rem !important;
-}
-/* 缩小顶部箭头占用的空间 */
-section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {
-    height: 1.5rem !important;
-    min-height: 1.5rem !important;
-    margin: 0 0 -5px 0 !important;
-}
-/* 把 Select Locations 往上拉 */
-section[data-testid="stSidebar"] h2 {
-    margin-top: -10px !important;
-    padding-top: 0 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+    div.stButton > button:first-child:hover {{
+        background-color: #45a049 !important;
+    }}
+
+    /* 原有样式保留 */
+    div.stMarkdown, div.stAlert, div.element-container {{
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }}
+    div.block-container {{
+        padding-top: 2.2rem !important;
+        padding-bottom: 0rem !important;
+    }}
+    ::-webkit-scrollbar {{display: none !important;}}
+
+    section[data-testid="stSidebar"] > div:first-child {{
+        padding-top: 0rem !important;
+    }}
+    section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {{
+        height: 1.5rem !important;
+        min-height: 1.5rem !important;
+        margin: 0 0 -5px 0 !important;
+    }}
+    section[data-testid="stSidebar"] h2 {{
+        margin-top: -10px !important;
+        padding-top: 0 !important;
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+# 加载背景图（只在欢迎页生效）
+add_bg_from_local("background.jpg")
 
 # --------------------------
 # 页面逻辑
@@ -997,7 +1018,7 @@ def main():
             st.session_state['page'] = 'main'
             st.rerun()
         
-        st.markdown(f'Total Accesses: {total_accesses}')
+        st.markdown(f"<p style='font-size:16px; margin-top:20px;'>Total Accesses: {total_accesses}</p>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
     else:
