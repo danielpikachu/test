@@ -375,13 +375,17 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             pass
 
     fig.update_layout(
-        title=None,  # 关键：关闭图表内部标题，不占空间
+        title=dict(
+            text="Campus 3D Navigation Map", 
+            font=dict(size=20, color="gray"), 
+            x=0.5, xanchor="center"
+        ),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=0, b=0),  # 关键：顶部无边距，彻底上移
+        margin=dict(l=0, r=0, t=40, b=0),  # 只留一点点给标题
         height=880
     )
 
@@ -420,7 +424,7 @@ class Graph:
         }
         
         map_key = (building_id, node_type, name, level)
-        self.node_id_map[map_key] = node_id
+        self.node_id_map[map] = node_id
         if node_type == 'classroom':
             class_key = (building_name, name, level)
             self.node_id_map[class_key] = node_id
@@ -939,23 +943,23 @@ def main():
                 encoded = base64.b64encode(f.read()).decode()
             css = f"""
             <style>
-            [data-testid="stAppViewContainer"] {{
+            [data-testid="stAppViewContainer"] {
                 background-image: url("data:image/jpeg;base64,{encoded}");
                 background-size: cover !important;
                 background-position: center !important;
                 background-repeat: no-repeat !important;
                 background-attachment: fixed !important;
-            }}
+            }
 
-            h1 {{
+            h1 {
                 color: white !important;
                 text-align: center !important;
                 margin-top: 25vh !important;
                 font-size: 48px !important;
                 font-weight: 900 !important;
-            }}
+            }
 
-            div.stButton > button:first-child {{
+            div.stButton > button:first-child {
                 background-color: #4682B4 !important;
                 color: white !important;
                 font-size: 20px !important;
@@ -965,12 +969,12 @@ def main():
                 border: none !important;
                 font-weight: bold !important;
                 display: block !important;
-                margin: 30px 650px auto !important;
-            }}
+                margin: 30px auto !important;
+            }
 
-            div.stButton > button:first-child:hover {{
+            div.stButton > button:first-child:hover {
                 background-color: #45a049 !important;
-            }}
+            }
 
             </style>
             """
