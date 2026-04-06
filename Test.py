@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # --------------------------
-# 样式调整：左侧边栏紧贴顶部箭头
+# 最终样式调整：左侧边栏完美贴顶，箭头不受影响
 # --------------------------
 st.markdown("""
 <style>
@@ -32,15 +32,20 @@ header {
     visibility: hidden;
     height: 0px;
 }
-/* 左侧边栏紧贴顶部，无空白 */
+/* 核心：强制侧边栏顶部间距为0，文字紧贴箭头 */
+section[data-testid="stSidebar"] > div > div > div:first-child {
+    padding-top: 0px !important;
+    margin-top: -10px !important;
+}
 section[data-testid="stSidebar"] .block-container {
     padding-top: 0px !important;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
+    padding-bottom: 1rem !important;
 }
 /* 缩小侧边栏内部间距 */
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0.4rem !important;
+    gap: 0.3rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
