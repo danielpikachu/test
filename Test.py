@@ -436,9 +436,11 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if curr_is_stair and next_is_stair:
         if next_z > curr_z:
-            return "up"
+            # 高亮黄色：up
+            return "<span style='color:yellow; font-weight:bold;'>up</span>"
         elif next_z < curr_z:
-            return "down"
+            # 高亮黄色：down
+            return "<span style='color:yellow; font-weight:bold;'>down</span>"
         else:
             return ""
     
@@ -448,15 +450,20 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if abs(x_diff) > threshold or abs(y_diff) > threshold:
         if y_diff > threshold:
-            return "forward"
+            # 高亮黄色：forward
+            return "<span style='color:yellow; font-weight:bold;'>forward</span>"
         elif y_diff < -threshold:
-            return "backward"
+            # 高亮黄色：backward
+            return "<span style='color:yellow; font-weight:bold;'>backward</span>"
         elif x_diff > threshold:
-            return "right"
+            # 高亮黄色：right
+            return "<span style='color:yellow; font-weight:bold;'>right</span>"
         elif x_diff < -threshold:
-            return "left"
+            # 高亮黄色：left
+            return "<span style='color:yellow; font-weight:bold;'>left</span>"
     
     return ""
+
 
 def build_navigation_graph(school_data):
     graph = Graph()
