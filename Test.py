@@ -16,6 +16,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+st.markdown("""
+<style>
+/* 核心：让整个页面内容上移 */
+.main .block-container {
+    padding-top: 25px !important;
+    padding-left: 15px !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 plt.switch_backend('Agg')
 
