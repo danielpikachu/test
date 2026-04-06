@@ -950,7 +950,7 @@ def main():
                 border: none !important;
                 font-weight: bold !important;
                 display: block !important;
-                margin: 30px 150px auto !important;
+                margin: 30px 450px auto !important;
             }}
 
             div.stButton > button:first-child:hover {{
