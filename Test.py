@@ -17,39 +17,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --------------------------
-# 最终样式调整：左侧边栏完美贴顶，箭头不受影响
-# --------------------------
-st.markdown("""
-<style>
-/* 主内容区域上移 */
-.block-container {
-    padding-top: 10px !important;
-    padding-bottom: 1rem !important;
-}
-/* 隐藏默认顶部 Header */
-header {
-    visibility: hidden;
-    height: 0px;
-}
-/* 核心：强制侧边栏顶部间距为0，文字紧贴箭头 */
-section[data-testid="stSidebar"] > div > div > div:first-child {
-    padding-top: 0px !important;
-    margin-top: -10px !important;
-}
-section[data-testid="stSidebar"] .block-container {
-    padding-top: 0px !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-    padding-bottom: 1rem !important;
-}
-/* 缩小侧边栏内部间距 */
-section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0.3rem !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
 plt.switch_backend('Agg')
 
 # --------------------------
@@ -70,10 +37,10 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("google_service_account not found in Streamlit Secrets!")
+        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
         return None
     except Exception as e:
-        st.error(f"Failed to load credentials: {e}")
+        st.error(f"Failed to load credentials: {str(e)}")
         return None
 
 def init_google_sheet():
@@ -102,15 +69,19 @@ def init_google_sheet():
 def update_access_count(worksheet):
     if not worksheet:
         return 0
+        
     try:
         records = worksheet.get_all_values()
         if len(records) < 2:
             return 0
+            
         last_row = records[-1]
         total = int(last_row[2]) if last_row[2].isdigit() else 0
         new_total = total + 1
+        
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         worksheet.append_row([current_time, 1, new_total])
+        
         return new_total
     except Exception as e:
         return 0
@@ -118,10 +89,12 @@ def update_access_count(worksheet):
 def get_total_accesses(worksheet):
     if not worksheet:
         return 0
+        
     try:
         records = worksheet.get_all_values()
         if len(records) < 2:
             return 0
+            
         last_row = records[-1]
         return int(last_row[2]) if last_row[2].isdigit() else 0
     except Exception as e:
@@ -162,7 +135,7 @@ def load_school_data_detailed(filename):
         with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        st.error(f"Failed to load data file: {e}")
+        st.error(f"Failed to load data file: {str(e)}")
         return None
 
 # ====================== 3D Plot Function ======================
@@ -205,6 +178,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         max_displayed_z = -float('inf')
         max_displayed_y = -float('inf')
         corresponding_x = 0
+        level_count = 0
         
         for level in building_data['levels']:
             level_name = level['name']
@@ -231,6 +205,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     max_displayed_y = current_max_y
                     corresponding_x = (fp['minX'] + fp['maxX']) / 2
             
+            level_count += 1
             floor_border_color = COLORS['floor_z'].get(raw_z, 'gray')
             building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
@@ -384,17 +359,13 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             pass
 
     fig.update_layout(
-        title=dict(
-            text="Campus 3D Navigation Map", 
-            font=dict(size=20, color="gray"), 
-            x=0.5, xanchor="center"
-        ),
+        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=40, b=0),
+        margin=dict(l=0, r=0, t=30, b=0),
         height=880
     )
 
@@ -453,6 +424,7 @@ def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     total_dist = base_dist + penalty
     return total_dist
 
+# ====================== 方向函数：全部改为深黄色高亮 ======================
 def get_direction_between_nodes(graph, current_node_id, next_node_id):
     current_node = graph.nodes[current_node_id]
     next_node = graph.nodes[next_node_id]
@@ -777,6 +749,7 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
+# ====================== 导航函数：自动补全深黄色 forward ======================
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
@@ -843,6 +816,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                         next_node_id = path[i+1]
                         direction = get_direction_between_nodes(graph, node_id, next_node_id)
                         
+                        # 自动补全 深黄色 forward
                         if not direction:
                             direction = "<span style='color:DarkGoldenRod; font-weight:bold;'>forward</span>"
                         
@@ -905,7 +879,7 @@ def get_classroom_info(school_data):
             
         return building_names, levels_by_building, classrooms_by_building
     except Exception as e:
-        st.error(f"Failed to retrieve classroom information: {e}")
+        st.error(f"Failed to retrieve classroom information: {str(e)}")
         return [], {}, {}
 
 def reset_app_state():
@@ -941,63 +915,75 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
+    # --------------------------
+    # Welcome Page with Background
+    # --------------------------
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
-            try:
-                with open(image_file, "rb") as f:
-                    encoded = base64.b64encode(f.read()).decode()
-                st.markdown(f"""
-                <style>
-                [data-testid="stAppViewContainer"] {{
-                    background-image: url("data:image/jpeg;base64,{encoded}");
-                    background-size: cover !important;
-                    background-position: center !important;
-                    background-repeat: no-repeat !important;
-                    background-attachment: fixed !important;
-                }}
+            with open(image_file, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode()
+            css = f"""
+            <style>
+            [data-testid="stAppViewContainer"] {{
+                background-image: url("data:image/jpeg;base64,{encoded}");
+                background-size: cover !important;
+                background-position: center !important;
+                background-repeat: no-repeat !important;
+                background-attachment: fixed !important;
+            }}
 
-                h1 {{
-                    color: white !important;
-                    text-align: center !important;
-                    margin-top: 25vh !important;
-                    font-size: 48px !important;
-                    font-weight: 900 !important;
-                }}
+            h1 {{
+                color: white !important;
+                text-align: center !important;
+                margin-top: 25vh !important;
+                font-size: 48px !important;
+                font-weight: 900 !important;
+            }}
 
-                div.stButton > button:first-child {{
-                    background-color: #4682B4 !important;
-                    color: white !important;
-                    font-size: 20px !important;
-                    height: 60px !important;
-                    width: 280px !important;
-                    border-radius: 12px !important;
-                    border: none !important;
-                    font-weight: bold !important;
-                    display: block !important;
-                    margin: 30px auto !important;
-                }}
+            div.stButton > button:first-child {{
+                background-color: #4682B4 !important;
+                color: white !important;
+                font-size: 20px !important;
+                height: 60px !important;
+                width: 280px !important;
+                border-radius: 12px !important;
+                border: none !important;
+                font-weight: bold !important;
+                display: block !important;
+                margin: 30px 650px auto !important;
+            }}
 
-                div.stButton > button:first-child:hover {{
-                    background-color: #45a049 !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-            except:
-                pass
+            div.stButton > button:first-child:hover {{
+                background-color: #45a049 !important;
+            }}
+
+            </style>
+            """
+            st.markdown(css, unsafe_allow_html=True)
 
         add_bg_from_local("background.jpg")
 
+    # --------------------------
+    # Welcome Page
+    # --------------------------
+    if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
+        
+        total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align:center; color:white; font-size:20px; opacity:0.9;'>Find Classrooms, labs, resources in stunning 3D</p>", unsafe_allow_html=True)
 
+        
         if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
 
+    # --------------------------
+    # Main Interface
+    # --------------------------
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -1034,7 +1020,8 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1053,6 +1040,7 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
+                    # 启用 HTML 渲染，显示深黄色高亮
                     st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
@@ -1071,7 +1059,9 @@ def main():
                 'displayModeBar': True,
                 'scrollZoom': True,
                 'editable': False
-            }
+            },
+            theme="streamlit",
+            kwargs={"layout": {"margin": {"t": 10}}}
         )
 
 if __name__ == "__main__":
