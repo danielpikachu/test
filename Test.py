@@ -365,7 +365,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=10, b=0),
+        margin=dict(l=0, r=0, t=30, b=0),
         height=880
     )
 
