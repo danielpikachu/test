@@ -16,12 +16,19 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --------------------------
+# 关键：让整个页面内容整体上移
+# --------------------------
 st.markdown("""
 <style>
-/* 核心：让整个页面内容上移 */
-.main .block-container {
-    padding-top: 25px !important;
-    padding-left: 15px !important;
+.block-container {
+    padding-top: 10px !important;
+    padding-bottom: 1rem !important;
+}
+header {
+    visibility: hidden;
+    height: 0px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -368,13 +375,13 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             pass
 
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+        title=None,  # 关键：关闭图表内部标题，不占空间
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=0, b=0),  # 关键：顶部无边距，彻底上移
         height=880
     )
 
@@ -825,7 +832,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                         next_node_id = path[i+1]
                         direction = get_direction_between_nodes(graph, node_id, next_node_id)
                         
-                        # 自动补全 深黄色 forward
                         if not direction:
                             direction = "<span style='color:DarkGoldenRod; font-weight:bold;'>forward</span>"
                         
@@ -1029,8 +1035,8 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
-        
+        # 标题：紧贴顶部，无空白
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1049,7 +1055,6 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    # 启用 HTML 渲染，显示深黄色高亮
                     st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
@@ -1068,9 +1073,7 @@ def main():
                 'displayModeBar': True,
                 'scrollZoom': True,
                 'editable': False
-            },
-            theme="streamlit",
-            kwargs={"layout": {"margin": {"t": 10}}}
+            }
         )
 
 if __name__ == "__main__":
