@@ -1030,7 +1030,7 @@ def main():
                 st.rerun()
 
         st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
-        st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
+        
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
