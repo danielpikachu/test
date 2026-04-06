@@ -18,17 +18,29 @@ st.set_page_config(
 )
 
 # --------------------------
-# 关键：让整个页面内容整体上移
+# 样式调整：左侧边栏紧贴顶部箭头
 # --------------------------
 st.markdown("""
 <style>
+/* 主内容区域上移 */
 .block-container {
     padding-top: 10px !important;
     padding-bottom: 1rem !important;
 }
+/* 隐藏默认顶部 Header */
 header {
     visibility: hidden;
     height: 0px;
+}
+/* 左侧边栏紧贴顶部，无空白 */
+section[data-testid="stSidebar"] .block-container {
+    padding-top: 0px !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+/* 缩小侧边栏内部间距 */
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: 0.4rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -53,10 +65,10 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
+        st.error("google_service_account not found in Streamlit Secrets!")
         return None
     except Exception as e:
-        st.error(f"Failed to load credentials: {str(e)}")
+        st.error(f"Failed to load credentials: {e}")
         return None
 
 def init_google_sheet():
@@ -85,19 +97,15 @@ def init_google_sheet():
 def update_access_count(worksheet):
     if not worksheet:
         return 0
-        
     try:
         records = worksheet.get_all_values()
         if len(records) < 2:
             return 0
-            
         last_row = records[-1]
         total = int(last_row[2]) if last_row[2].isdigit() else 0
         new_total = total + 1
-        
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         worksheet.append_row([current_time, 1, new_total])
-        
         return new_total
     except Exception as e:
         return 0
@@ -105,12 +113,10 @@ def update_access_count(worksheet):
 def get_total_accesses(worksheet):
     if not worksheet:
         return 0
-        
     try:
         records = worksheet.get_all_values()
         if len(records) < 2:
             return 0
-            
         last_row = records[-1]
         return int(last_row[2]) if last_row[2].isdigit() else 0
     except Exception as e:
@@ -151,7 +157,7 @@ def load_school_data_detailed(filename):
         with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        st.error(f"Failed to load data file: {str(e)}")
+        st.error(f"Failed to load data file: {e}")
         return None
 
 # ====================== 3D Plot Function ======================
@@ -194,7 +200,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         max_displayed_z = -float('inf')
         max_displayed_y = -float('inf')
         corresponding_x = 0
-        level_count = 0
         
         for level in building_data['levels']:
             level_name = level['name']
@@ -221,7 +226,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     max_displayed_y = current_max_y
                     corresponding_x = (fp['minX'] + fp['maxX']) / 2
             
-            level_count += 1
             floor_border_color = COLORS['floor_z'].get(raw_z, 'gray')
             building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
@@ -896,7 +900,7 @@ def get_classroom_info(school_data):
             
         return building_names, levels_by_building, classrooms_by_building
     except Exception as e:
-        st.error(f"Failed to retrieve classroom information: {str(e)}")
+        st.error(f"Failed to retrieve classroom information: {e}")
         return [], {}, {}
 
 def reset_app_state():
