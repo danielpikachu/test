@@ -424,6 +424,7 @@ def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     total_dist = base_dist + penalty
     return total_dist
 
+# ====================== 方向函数：全部改为深黄色高亮 ======================
 def get_direction_between_nodes(graph, current_node_id, next_node_id):
     current_node = graph.nodes[current_node_id]
     next_node = graph.nodes[next_node_id]
@@ -436,11 +437,9 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if curr_is_stair and next_is_stair:
         if next_z > curr_z:
-            # 高亮黄色：up
-            return "<span style='color:yellow; font-weight:bold;'>up</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>up</span>"
         elif next_z < curr_z:
-            # 高亮黄色：down
-            return "<span style='color:yellow; font-weight:bold;'>down</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>down</span>"
         else:
             return ""
     
@@ -450,20 +449,15 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if abs(x_diff) > threshold or abs(y_diff) > threshold:
         if y_diff > threshold:
-            # 高亮黄色：forward
-            return "<span style='color:yellow; font-weight:bold;'>forward</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>forward</span>"
         elif y_diff < -threshold:
-            # 高亮黄色：backward
-            return "<span style='color:yellow; font-weight:bold;'>backward</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>backward</span>"
         elif x_diff > threshold:
-            # 高亮黄色：right
-            return "<span style='color:yellow; font-weight:bold;'>right</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>right</span>"
         elif x_diff < -threshold:
-            # 高亮黄色：left
-            return "<span style='color:yellow; font-weight:bold;'>left</span>"
+            return "<span style='color:DarkGoldenRod; font-weight:bold;'>left</span>"
     
     return ""
-
 
 def build_navigation_graph(school_data):
     graph = Graph()
@@ -755,6 +749,7 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
+# ====================== 导航函数：自动补全深黄色 forward ======================
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
@@ -820,6 +815,11 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                     if i < len(path) - 1:
                         next_node_id = path[i+1]
                         direction = get_direction_between_nodes(graph, node_id, next_node_id)
+                        
+                        # 自动补全 深黄色 forward
+                        if not direction:
+                            direction = "<span style='color:DarkGoldenRod; font-weight:bold;'>forward</span>"
+                        
                         if direction:
                             node_desc += f" {direction}"
                     
@@ -1024,7 +1024,7 @@ def main():
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
-            st.error("Failed to load school data file!")
+            st.error("Failed to load data file!")
             return
         
         graph = build_navigation_graph(school_data)
@@ -1039,9 +1039,8 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                  
+                    # 启用 HTML 渲染，显示深黄色高亮
                     st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
-
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
             except Exception as e:
