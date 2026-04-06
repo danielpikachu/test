@@ -20,7 +20,7 @@ st.set_page_config(
 plt.switch_backend('Agg')
 
 # --------------------------
-# Google Sheets 配置
+# Google Sheets Configuration
 # --------------------------
 SHEET_NAME = 'Navigation visitors'
 SCOPE = [
@@ -37,10 +37,10 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("Streamlit Secrets中未找到google_service_account配置，请检查TOML格式")
+        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
         return None
     except Exception as e:
-        st.error(f"密钥加载失败: {str(e)}")
+        st.error(f"Failed to load credentials: {str(e)}")
         return None
 
 def init_google_sheet():
@@ -101,7 +101,7 @@ def get_total_accesses(worksheet):
         return 0
 
 # --------------------------
-# 配色
+# Color Scheme
 # --------------------------
 COLORS = {
     'building': {'A': 'lightblue', 'B': 'lightgreen', 'C': 'lightcoral', 'Gate': 'gold'},
@@ -138,7 +138,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D绘图函数：已修复图例重复 ======================
+# ====================== 3D Plot Function ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
@@ -162,8 +162,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     end_building = display_options.get('end_building')
 
     building_label_positions = {}
-    
-    # 用于控制楼梯图例只显示一次
     shown_stairs_legends = set()
 
     for building_id in school_data.keys():
@@ -185,7 +183,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         for level in building_data['levels']:
             level_name = level['name']
             raw_z = level['z']
-            z = raw_z + 10  # 统一抬高，修复地下楼层显示问题
+            z = raw_z + 10
             
             show_level = show_all
             if not show_all:
@@ -231,12 +229,11 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     color=building_fill_color, opacity=0.3, showlegend=False
                 ))
 
-                # 绘制走廊
                 for corridor in level['corridors']:
                     points = corridor['points']
                     x = [p[0] for p in points]
                     y = [p[1] for p in points]
-                    z_coords = [p[2]+10 for p in points]  # 关键修复：连廊Z坐标统一抬高
+                    z_coords = [p[2]+10 for p in points]
                     
                     is_external = corridor.get('type') == 'external'
                     is_connect = 'connectToBuilding' in corridor.get('name','') or 'gateTo' in corridor.get('name','')
@@ -268,7 +265,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                         showlegend=False
                     ))
 
-                # 绘制教室
                 for classroom in level['classrooms']:
                     x, y, _ = classroom['coordinates']
                     w, d = classroom['size']
@@ -291,7 +287,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                         opacity=0.6, showlegend=False
                     ))
 
-            # 绘制楼梯
             for stair in level['stairs']:
                 s_name = stair['name']
                 is_path = (building_name, s_name, level_name) in path_stairs
@@ -321,7 +316,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             label_y = max_displayed_y + (3 if building_name != 'B' else -2)
             building_label_positions[building_name] = (corresponding_x, label_y, label_z)
 
-    # 建筑标注
     for bld, (x, y, z) in building_label_positions.items():
         fig.add_trace(go.Scatter3d(
             x=[x], y=[y], z=[z],
@@ -331,7 +325,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             showlegend=False
         ))
 
-    # 绘制路径
     if path and graph and not show_all:
         try:
             xs, ys, zs = [], [], []
@@ -383,7 +376,7 @@ def plot_3d_map(school_data, graph=None, display_options=None):
     return fig, None
 
 # --------------------------
-# 图与寻路
+# Graph & Pathfinding
 # --------------------------
 class Graph:
     def __init__(self):
@@ -443,9 +436,9 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if curr_is_stair and next_is_stair:
         if next_z > curr_z:
-            return "往上"
+            return "up"
         elif next_z < curr_z:
-            return "往下"
+            return "down"
         else:
             return ""
     
@@ -455,13 +448,13 @@ def get_direction_between_nodes(graph, current_node_id, next_node_id):
     
     if abs(x_diff) > threshold or abs(y_diff) > threshold:
         if y_diff > threshold:
-            return "向前"
+            return "forward"
         elif y_diff < -threshold:
-            return "向后"
+            return "backward"
         elif x_diff > threshold:
-            return "向右"
+            return "right"
         elif x_diff < -threshold:
-            return "向左"
+            return "left"
     
     return ""
 
@@ -797,9 +790,9 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                 node_desc = ""
                 if node_type == 'stair':
                     path_stairs.add((node_building, node_name, node_level))
-                    node_desc = f"Building {node_building}{node_name}({node_level})"
+                    node_desc = f"Building {node_building} {node_name} ({node_level})"
                 elif node_type == 'classroom':
-                    node_desc = f"Building {node_building}{node_name}({node_level})"
+                    node_desc = f"Building {node_building} {node_name} ({node_level})"
                 elif node_type == 'corridor':
                     if 'connectToBuilding' in node_name or 'gateTo' in node_name:
                         if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
@@ -814,7 +807,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                             connected_building = 'Other'
                             
                         if prev_building and prev_building != node_building:
-                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building} ({node_level})"
                 
                 if node_desc:
                     if i < len(path) - 1:
@@ -897,7 +890,7 @@ def reset_app_state():
         del st.session_state['path_result']
 
 # --------------------------
-# 页面逻辑
+# Page Logic
 # --------------------------
 def main():
     if 'page' not in st.session_state:
@@ -916,7 +909,7 @@ def main():
         st.session_state['current_path'] = None
 
     # --------------------------
-    # 只有欢迎页有背景，无半透明卡片
+    # Welcome Page with Background
     # --------------------------
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
@@ -964,7 +957,7 @@ def main():
         add_bg_from_local("background.jpg")
 
     # --------------------------
-    # 欢迎页面
+    # Welcome Page
     # --------------------------
     if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
@@ -973,7 +966,7 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:white; font-size:20px; opacity:0.9;'>Find Classrooms,labs,resources in stunning 3D </p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:white; font-size:20px; opacity:0.9;'>Find Classrooms, labs, resources in stunning 3D</p>", unsafe_allow_html=True)
 
         
         if st.button('EXPLORE 3D MAP'):
@@ -982,7 +975,7 @@ def main():
             st.rerun()
 
     # --------------------------
-    # 主界面：纯白无背景
+    # Main Interface
     # --------------------------
     else:
         with st.sidebar:
