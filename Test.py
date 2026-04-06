@@ -138,7 +138,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D绘图函数 ======================
+# ====================== 3D绘图函数：已修复图例重复 ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
@@ -162,6 +162,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     end_building = display_options.get('end_building')
 
     building_label_positions = {}
+    
+    # 用于控制楼梯图例只显示一次
     shown_stairs_legends = set()
 
     for building_id in school_data.keys():
@@ -178,11 +180,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         max_displayed_z = -float('inf')
         max_displayed_y = -float('inf')
         corresponding_x = 0
+        level_count = 0
         
         for level in building_data['levels']:
             level_name = level['name']
             raw_z = level['z']
-            z = raw_z + 10
+            z = raw_z + 10  # 统一抬高，修复地下楼层显示问题
             
             show_level = show_all
             if not show_all:
@@ -204,10 +207,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     max_displayed_y = current_max_y
                     corresponding_x = (fp['minX'] + fp['maxX']) / 2
             
+            level_count += 1
             floor_border_color = COLORS['floor_z'].get(raw_z, 'gray')
             building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
             if show_level:
+                fp = level['floorPlane']
                 x_vals = [fp['minX'], fp['maxX'], fp['maxX'], fp['minX'], fp['minX']]
                 y_vals = [fp['minY'], fp['minY'], fp['maxY'], fp['maxY'], fp['minY']]
                 z_vals = [z] * 5
@@ -220,16 +225,18 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     legendgroup=f"Building {building_name}",
                     showlegend=True
                 ))
+
                 fig.add_trace(go.Mesh3d(
                     x=x_vals[:4], y=y_vals[:4], z=z_vals[:4],
                     color=building_fill_color, opacity=0.3, showlegend=False
                 ))
 
+                # 绘制走廊
                 for corridor in level['corridors']:
                     points = corridor['points']
                     x = [p[0] for p in points]
                     y = [p[1] for p in points]
-                    z_coords = [p[2]+10 for p in points]
+                    z_coords = [p[2]+10 for p in points]  # 关键修复：连廊Z坐标统一抬高
                     
                     is_external = corridor.get('type') == 'external'
                     is_connect = 'connectToBuilding' in corridor.get('name','') or 'gateTo' in corridor.get('name','')
@@ -248,47 +255,65 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                         dash = 'solid'
 
                     fig.add_trace(go.Scatter3d(
-                        x=x, y=y, z=z_coords, mode='lines',
-                        line=dict(color=corr_line_color, width=corr_line_width, dash=dash), showlegend=False
+                        x=x, y=y, z=z_coords,
+                        mode='lines',
+                        line=dict(color=corr_line_color, width=corr_line_width, dash=dash),
+                        showlegend=False
                     ))
+                    
                     fig.add_trace(go.Scatter3d(
-                        x=x, y=y, z=z_coords, mode='markers',
-                        marker=dict(color=COLORS['corridor_node'], size=3), showlegend=False
+                        x=x, y=y, z=z_coords,
+                        mode='markers',
+                        marker=dict(color=COLORS['corridor_node'], size=3, symbol='square'),
+                        showlegend=False
                     ))
 
+                # 绘制教室
                 for classroom in level['classrooms']:
                     x, y, _ = classroom['coordinates']
                     w, d = classroom['size']
                     name = classroom['name']
+
                     fig.add_trace(go.Scatter3d(
-                        x=[x], y=[y], z=[z], mode='markers+text',
-                        marker=dict(color=building_fill_color, size=7),
-                        text=name, textposition="top center", textfont=dict(size=9), showlegend=False
+                        x=[x], y=[y], z=[z],
+                        mode='markers+text',
+                        marker=dict(color=building_fill_color, size=7, line=dict(color=floor_border_color, width=1)),
+                        text=name, textposition="top center", textfont=dict(size=9, color='black'),
+                        showlegend=False
                     ))
+
                     cx = [x, x+w, x+w, x, x]
                     cy = [y, y, y+d, y+d, y]
                     cz = [z]*5
                     fig.add_trace(go.Scatter3d(
-                        x=cx, y=cy, z=cz, mode='lines',
-                        line=dict(color=floor_border_color, width=1, dash='dash'), opacity=0.6, showlegend=False
+                        x=cx, y=cy, z=cz,
+                        mode='lines', line=dict(color=floor_border_color, width=1, dash='dash'),
+                        opacity=0.6, showlegend=False
                     ))
 
+            # 绘制楼梯
             for stair in level['stairs']:
                 s_name = stair['name']
                 is_path = (building_name, s_name, level_name) in path_stairs
+                
                 if show_all or show_level or is_path:
                     x, y, _ = stair['coordinates']
                     color = COLORS['stair'].get(s_name, 'red')
                     size = 12 if is_path else 9
+                    
                     legend_name = f"{building_name}-{s_name}"
                     show_legend = legend_name not in shown_stairs_legends
                     if show_legend:
                         shown_stairs_legends.add(legend_name)
+                    
                     fig.add_trace(go.Scatter3d(
-                        x=[x], y=[y], z=[z], mode='markers+text',
-                        marker=dict(color=color, size=size, symbol='diamond', line=dict(width=2)),
+                        x=[x], y=[y], z=[z],
+                        mode='markers+text',
+                        marker=dict(color=color, size=size, symbol='diamond', line=dict(color='black', width=2)),
                         text=s_name, textposition="top center", textfont=dict(size=9, color='darkred'),
-                        name=legend_name, legendgroup="Stairs", showlegend=show_legend
+                        name=legend_name,
+                        legendgroup="Stairs",
+                        showlegend=show_legend
                     ))
         
         if displayed_levels:
@@ -296,47 +321,61 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             label_y = max_displayed_y + (3 if building_name != 'B' else -2)
             building_label_positions[building_name] = (corresponding_x, label_y, label_z)
 
+    # 建筑标注
     for bld, (x, y, z) in building_label_positions.items():
         fig.add_trace(go.Scatter3d(
-            x=[x], y=[y], z=[z], mode='text',
+            x=[x], y=[y], z=[z],
+            mode='text',
             text=f"Building {bld}",
             textfont=dict(size=14, color=COLORS['building_label'][bld], family='Arial bold'),
             showlegend=False
         ))
 
+    # 绘制路径
     if path and graph and not show_all:
         try:
-            xs, ys, zs, labels = [], [], [], []
+            xs, ys, zs = [], [], []
+            labels = []
             for nid in path:
                 c = graph.nodes[nid]['coordinates']
                 xs.append(c[0])
                 ys.append(c[1])
                 zs.append(c[2]+10)
                 labels.append(graph.nodes[nid]['name'])
+
             fig.add_trace(go.Scatter3d(
-                x=xs, y=ys, z=zs, mode='lines+markers',
-                line=dict(color=COLORS['path'], width=5), marker=dict(color=COLORS['path'], size=4), name="Path"
+                x=xs, y=ys, z=zs,
+                mode='lines+markers',
+                line=dict(color=COLORS['path'], width=5),
+                marker=dict(color=COLORS['path'], size=4),
+                name="Path"
             ))
             fig.add_trace(go.Scatter3d(
-                x=[xs[0]], y=[ys[0]], z=[zs[0]], mode='markers+text',
-                marker=dict(color=COLORS['start_marker'], size=14),
-                text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'), name="Start"
+                x=[xs[0]], y=[ys[0]], z=[zs[0]],
+                mode='markers+text', marker=dict(color=COLORS['start_marker'], size=14, symbol='square', line=dict(width=2)),
+                text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'),
+                name="Start"
             ))
             fig.add_trace(go.Scatter3d(
-                x=[xs[-1]], y=[ys[-1]], z=[zs[-1]], mode='markers+text',
-                marker=dict(color=COLORS['end_marker'], size=14),
-                text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'), name="End"
+                x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
+                mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
+                text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
+                name="End"
             ))
         except Exception:
             pass
 
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22, color="gray"), x=0.5),
-        scene=dict(xaxis_title="X", yaxis_title="Y", zaxis_title="Z",
-                   camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
-                   aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)),
-        margin=dict(l=0, r=0, t=60, b=0), height=880
+        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+        scene=dict(
+            xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
+            camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
+            aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
+        ),
+        margin=dict(l=0, r=0, t=60, b=0),
+        height=880
     )
+
     return fig
 
 def plot_3d_map(school_data, graph=None, display_options=None):
@@ -350,262 +389,674 @@ class Graph:
     def __init__(self):
         self.nodes = {}
         self.node_id_map = {}
-    def add_node(self, building_id, node_type, name, level, coords):
-        bn = 'Gate' if building_id == 'gate' else building_id.replace('building','')
-        nid = f"{bn}-{node_type}-{name}@{level}"
-        self.nodes[nid] = {'building':bn,'type':node_type,'name':name,'level':level,'coordinates':coords,'neighbors':{}}
-        self.node_id_map[(building_id,node_type,name,level)] = nid
-        if node_type=='classroom': self.node_id_map[(bn,name,level)]=nid
-        return nid
-    def add_edge(self,a,b,w):
-        if a in self.nodes and b in self.nodes:
-            self.nodes[a]['neighbors'][b]=w
-            self.nodes[b]['neighbors'][a]=w
 
-def euclidean_distance(a,b,p=15):
-    return np.sqrt(sum((ax-bx)**2 for ax,bx in zip(a,b))) + p*abs(a[2]-b[2])
+    def add_node(self, building_id, node_type, name, level, coordinates):
+        if building_id == 'gate':
+            building_name = 'Gate'
+        else:
+            building_name = building_id.replace('building', '')
+        
+        if node_type == 'corridor':
+            node_id = f"{building_name}-corr-{name}@{level}"
+        else:
+            node_id = f"{building_name}-{node_type}-{name}@{level}"
+        
+        self.nodes[node_id] = {
+            'building': building_name,
+            'type': node_type,
+            'name': name,
+            'level': level,
+            'coordinates': coordinates,
+            'neighbors': {}
+        }
+        
+        map_key = (building_id, node_type, name, level)
+        self.node_id_map[map_key] = node_id
+        if node_type == 'classroom':
+            class_key = (building_name, name, level)
+            self.node_id_map[class_key] = node_id
+            
+        return node_id
 
-def get_direction_between_nodes(g,c,n):
-    cc = g.nodes[c]['coordinates']
-    nc = g.nodes[n]['coordinates']
-    dx,dy = nc[0]-cc[0], nc[1]-cc[1]
-    if abs(dy)>0.1: return "向前" if dy>0 else "向后"
-    if abs(dx)>0.1: return "向右" if dx>0 else "向左"
+    def add_edge(self, node1_id, node2_id, weight):
+        if node1_id in self.nodes and node2_id in self.nodes:
+            self.nodes[node1_id]['neighbors'][node2_id] = weight
+            self.nodes[node2_id]['neighbors'][node1_id] = weight
+
+def euclidean_distance(coords1, coords2, floor_penalty=15.0):
+    base_dist = np.sqrt(sum((a - b)**2 for a, b in zip(coords1, coords2)))
+    z1, z2 = coords1[2], coords2[2]
+    floor_diff = abs(z1 - z2)
+    penalty = floor_diff * floor_penalty
+    total_dist = base_dist + penalty
+    return total_dist
+
+def get_direction_between_nodes(graph, current_node_id, next_node_id):
+    current_node = graph.nodes[current_node_id]
+    next_node = graph.nodes[next_node_id]
+    
+    curr_x, curr_y, curr_z = current_node['coordinates']
+    next_x, next_y, next_z = next_node['coordinates']
+    
+    curr_is_stair = current_node['type'] == 'stair'
+    next_is_stair = next_node['type'] == 'stair'
+    
+    if curr_is_stair and next_is_stair:
+        if next_z > curr_z:
+            return "往上"
+        elif next_z < curr_z:
+            return "往下"
+        else:
+            return ""
+    
+    x_diff = next_x - curr_x
+    y_diff = next_y - curr_y
+    threshold = 0.1
+    
+    if abs(x_diff) > threshold or abs(y_diff) > threshold:
+        if y_diff > threshold:
+            return "向前"
+        elif y_diff < -threshold:
+            return "向后"
+        elif x_diff > threshold:
+            return "向右"
+        elif x_diff < -threshold:
+            return "向左"
+    
     return ""
 
-def build_navigation_graph(data):
-    g=Graph()
-    for bid in data:
-        if not (bid.startswith('building') or bid=='gate'):continue
-        bd=data[bid]
-        for lv in bd['levels']:
-            lvn=lv['name']
-            for cr in lv['classrooms']:
-                g.add_node(bid,'classroom',cr['name'],lvn,cr['coordinates'])
-            for st in lv['stairs']:
-                g.add_node(bid,'stair',st['name'],lvn,st['coordinates'])
-            for i,cor in enumerate(lv['corridors']):
-                cn=cor.get('name',f'cor{i}')
-                for j,p in enumerate(cor['points']):
-                    g.add_node(bid,'corridor',f'{cn}-p{j}',lvn,p)
-    for bid in data:
-        if not (bid.startswith('building') or bid=='gate'):continue
-        bn='Gate' if bid=='gate' else bid.replace('building','')
-        bd=data[bid]
-        for lv in bd['levels']:
-            lvn=lv['name']
-            cors=[n for n,inf in g.nodes.items() if inf['building']==bn and inf['type']=='corridor' and inf['level']==lvn]
-            for i,cor in enumerate(lv['corridors']):
-                cn=cor.get('name',f'cor{i}')
-                pts=cor['points']
-                for j in range(len(pts)-1):
-                    a=g.node_id_map.get((bid,'corridor',f'{cn}-p{j}',lvn))
-                    b=g.node_id_map.get((bid,'corridor',f'{cn}-p{j+1}',lvn))
-                    if a and b: g.add_edge(a,b,euclidean_distance(g.nodes[a]['coordinates'],g.nodes[b]['coordinates'],0))
-            for i in range(len(cors)):
-                for j in range(i+1,len(cors)):
-                    a,b=cors[i],cors[j]
-                    d=euclidean_distance(g.nodes[a]['coordinates'],g.nodes[b]['coordinates'],0)
-                    if d<3:g.add_edge(a,b,d)
-            for cl in [n for n,inf in g.nodes.items() if inf['building']==bn and inf['type']=='classroom' and inf['level']==lvn]:
-                best=min(cors,key=lambda x:euclidean_distance(g.nodes[cl]['coordinates'],g.nodes[x]['coordinates'],0))
-                g.add_edge(cl,best,euclidean_distance(g.nodes[cl]['coordinates'],g.nodes[best]['coordinates'],0))
-            for st in [n for n,inf in g.nodes.items() if inf['building']==bn and inf['type']=='stair' and inf['level']==lvn]:
-                best=min(cors,key=lambda x:euclidean_distance(g.nodes[st]['coordinates'],g.nodes[x]['coordinates'],0))
-                g.add_edge(st,best,euclidean_distance(g.nodes[st]['coordinates'],g.nodes[best]['coordinates'],0))
-        stairs=set((inf['building'],inf['name']) for n,inf in g.nodes.items() if inf['type']=='stair')
-        for b,sn in stairs:
-            lst=[(n,inf['coordinates'],inf['level']) for n,inf in g.nodes.items() if inf['building']==b and inf['name']==sn and inf['type']=='stair']
-            lst.sort(key=lambda x:x[1][2])
-            for i in range(len(lst)-1):
-                a,b=lst[i][0],lst[i+1][0]
-                g.add_edge(a,b,euclidean_distance(g.nodes[a]['coordinates'],g.nodes[b]['coordinates']))
-        for bid in data:
-            if not (bid.startswith('building') or bid=='gate'):continue
-            bd=data[bid]
-            for conn in bd.get('connections',[]):
-                fn,fl=conn['from']
-                tn,tl=conn['to']
-                ft='stair' if fn.startswith(('Stairs','GateStairs')) else 'classroom' if any(fn==c['name'] for l in bd['levels'] for c in l.get('classrooms',[])) else 'corridor'
-                tbid=bid
-                if 'ENTRANCE' in tn:tbid='buildingA'
-                if 'connectToBuildingAAndC' in tn:tbid='buildingB'
-                if 'SCHOOL CLINIC' in tn:tbid='buildingC'
-                if 'connectToBuildingB' in tn:tbid='buildingB'
-                if 'connectToBuildingC' in tn:tbid='buildingC'
-                tt='stair' if tn.startswith(('Stairs','GateStairs')) else 'classroom' if tbid in data and any(tn==c['name'] for l in data[tbid]['levels'] for c in l.get('classrooms',[])) else 'corridor'
-                ffn=fn+'-p0' if ft=='corridor' else fn
-                ttn=tn+'-p0' if tt=='corridor' else tn
-                f=g.node_id_map.get((bid,ft,ffn,fl))
-                t=g.node_id_map.get((tbid,tt,ttn,tl))
-                if f and t:g.add_edge(f,t,euclidean_distance(g.nodes[f]['coordinates'],g.nodes[t]['coordinates'],0))
-    a,b,c='buildingA','buildingB','buildingC'
-    l='level1'
-    abn='connectToBuildingB-p1'
-    bbn='connectToBuildingAAndC-p1'
-    ab=g.node_id_map.get((a,'corridor',abn,l))
-    bb=g.node_id_map.get((b,'corridor',bbn,l))
-    if ab and bb:g.add_edge(ab,bb,euclidean_distance(g.nodes[ab]['coordinates'],g.nodes[bb]['coordinates'],0))
-    bcn='connectToBuildingAAndC-p0'
-    cbn='connectToBuildingB-p1'
-    bc=g.node_id_map.get((b,'corridor',bcn,l))
-    cb=g.node_id_map.get((c,'corridor',cbn,l))
-    if bc and cb:g.add_edge(bc,cb,euclidean_distance(g.nodes[bc]['coordinates'],g.nodes[cb]['coordinates'],0))
-    ac1n='connectToBuildingC-p3'
-    ca1n='connectToBuildingA-p0'
-    ac1=g.node_id_map.get((a,'corridor',ac1n,l))
-    ca1=g.node_id_map.get((c,'corridor',ca1n,l))
-    if ac1 and ca1:g.add_edge(ac1,ca1,euclidean_distance(g.nodes[ac1]['coordinates'],g.nodes[ca1]['coordinates'],0))
-    l3='level3'
-    ac3n='connectToBuildingC-p2'
-    ca3n='connectToBuildingA-p0'
-    ac3=g.node_id_map.get((a,'corridor',ac3n,l3))
-    ca3=g.node_id_map.get((c,'corridor',ca3n,l3))
-    if ac3 and ca3:g.add_edge(ac3,ca3,euclidean_distance(g.nodes[ac3]['coordinates'],g.nodes[ca3]['coordinates'],0))
-    return g
+def build_navigation_graph(school_data):
+    graph = Graph()
 
-def dijkstra(g,s):
-    dist={n:float('inf') for n in g.nodes}
-    prev={n:None for n in g.nodes}
-    dist[s]=0
-    q=set(g.nodes)
-    while q:
-        u=min(q,key=lambda x:dist[x])
-        q.remove(u)
-        if dist[u]==float('inf'):break
-        for v,w in g.nodes[u]['neighbors'].items():
-            if dist[v]>dist[u]+w:
-                dist[v]=dist[u]+w
-                prev[v]=u
-    return dist,prev
+    for building_id in school_data.keys():
+        if not (building_id.startswith('building') or building_id == 'gate'):
+            continue
+            
+        building_data = school_data[building_id]
+        
+        for level in building_data['levels']:
+            level_name = level['name']
 
-def construct_path(prev,e):
-    p=[]
-    while e:
-        p.insert(0,e)
-        e=prev[e]
-    return p if len(p)>1 else None
+            for classroom in level['classrooms']:
+                class_name = classroom['name']
+                graph.add_node(
+                    building_id=building_id,
+                    node_type='classroom',
+                    name=class_name,
+                    level=level_name,
+                    coordinates=classroom['coordinates']
+                )
 
-def navigate(g,sb,sc,sl,eb,ec,el):
-    if sb not in 'ABCGate' or eb not in 'ABCGate':return None,'Invalid',None,None
-    s=g.node_id_map.get((sb,sc,sl)) or f'{sb}-classroom-{sc}@{sl}'
-    e=g.node_id_map.get((eb,ec,el)) or f'{eb}-classroom-{ec}@{el}'
-    if s not in g.nodes or e not in g.nodes:return None,'Not exist',None,None
-    d,p=dijkstra(g,s)
-    path=construct_path(p,e)
-    if not path:return None,'No path',None,None
-    steps=[]
-    stairs=set()
-    pb=None
-    for i,n in enumerate(path):
-        inf=g.nodes[n]
-        b,t,nm,l=inf['building'],inf['type'],inf['name'],inf['level']
-        if t=='stair':
-            stairs.add((b,nm,l))
-            steps.append(f"{b}{nm}({l})")
-        elif t=='classroom':
-            steps.append(f"{b}{nm}({l})")
-        pb=b
-    return path,f"Total: {d[e]:.1f} units"," → ".join(steps),{'start_level':sl,'end_level':el,'path_stairs':stairs,'show_all':False,'path':path,'start_building':sb,'end_building':eb}
+            for stair in level['stairs']:
+                graph.add_node(
+                    building_id=building_id,
+                    node_type='stair',
+                    name=stair['name'],
+                    level=level_name,
+                    coordinates=stair['coordinates']
+                )
 
-def get_classroom_info(data):
-    bns=[]
-    for b in data:
-        if b=='gate':bns.append('Gate')
-        elif b.startswith('building'):bns.append(b.replace('building',''))
-    info={}
-    lvs={}
-    for b in data:
-        bn='Gate' if b=='gate' else b.replace('building','')
-        info[bn]={}
-        lvs[bn]=[]
-        for lv in data[b]['levels']:
-            lvn=lv['name']
-            lvs[bn].append(lvn)
-            info[bn][lvn]=[c['name'] for c in lv.get('classrooms',[])]
-    return bns,lvs,info
+            for corr_idx, corridor in enumerate(level['corridors']):
+                corr_name = corridor.get('name', f'corr{corr_idx}')
+                for p_idx, point in enumerate(corridor['points']):
+                    corridor_point_name = f"{corr_name}-p{p_idx}"
+                    graph.add_node(
+                        building_id=building_id,
+                        node_type='corridor',
+                        name=corridor_point_name,
+                        level=level_name,
+                        coordinates=point
+                    )
+
+    for building_id in school_data.keys():
+        if not (building_id.startswith('building') or building_id == 'gate'):
+            continue
+            
+        if building_id == 'gate':
+            building_name = 'Gate'
+        else:
+            building_name = building_id.replace('building', '')
+        
+        building_data = school_data[building_id]
+
+        for level in building_data['levels']:
+            level_name = level['name']
+            
+            corr_nodes = [
+                node_id for node_id, node_info in graph.nodes.items()
+                if node_info['building'] == building_name 
+                and node_info['type'] == 'corridor' 
+                and node_info['level'] == level_name
+            ]
+
+            for corr_idx, corridor in enumerate(level['corridors']):
+                corr_name = corridor.get('name', f'corr{corr_idx}')
+                corr_points = corridor['points']
+                for p_idx in range(len(corr_points) - 1):
+                    current_point_name = f"{corr_name}-p{p_idx}"
+                    next_point_name = f"{corr_name}-p{p_idx + 1}"
+                    current_node_id = graph.node_id_map.get((building_id, 'corridor', current_point_name, level_name))
+                    next_node_id = graph.node_id_map.get((building_id, 'corridor', next_point_name, level_name))
+                    
+                    if current_node_id and next_node_id:
+                        coords1 = graph.nodes[current_node_id]['coordinates']
+                        coords2 = graph.nodes[next_node_id]['coordinates']
+                        distance = euclidean_distance(coords1, coords2, floor_penalty=0)
+                        graph.add_edge(current_node_id, next_node_id, distance)
+
+            for i in range(len(corr_nodes)):
+                node1_id = corr_nodes[i]
+                coords1 = graph.nodes[node1_id]['coordinates']
+                for j in range(i + 1, len(corr_nodes)):
+                    node2_id = corr_nodes[j]
+                    coords2 = graph.nodes[node2_id]['coordinates']
+                    distance = euclidean_distance(coords1, coords2, floor_penalty=0)
+                    
+                    if distance < 3.0:
+                        graph.add_edge(node1_id, node2_id, distance)
+
+            class_nodes = [
+                node_id for node_id, node_info in graph.nodes.items()
+                if node_info['building'] == building_name 
+                and node_info['type'] == 'classroom' 
+                and node_info['level'] == level_name
+            ]
+            for class_node_id in class_nodes:
+                class_coords = graph.nodes[class_node_id]['coordinates']
+                min_dist = float('inf')
+                nearest_corr_node_id = None
+                
+                for corr_node_id in corr_nodes:
+                    corr_coords = graph.nodes[corr_node_id]['coordinates']
+                    dist = euclidean_distance(class_coords, corr_coords, floor_penalty=0)
+                    if dist < min_dist:
+                        min_dist = dist
+                        nearest_corr_node_id = corr_node_id
+                
+                if nearest_corr_node_id:
+                    graph.add_edge(class_node_id, nearest_corr_node_id, min_dist)
+
+            stair_nodes = [
+                node_id for node_id, node_info in graph.nodes.items()
+                if node_info['building'] == building_name 
+                and node_info['type'] == 'stair' 
+                and node_info['level'] == level_name
+            ]
+            for stair_node_id in stair_nodes:
+                stair_coords = graph.nodes[stair_node_id]['coordinates']
+                min_dist = float('inf')
+                nearest_corr_node_id = None
+                
+                for corr_node_id in corr_nodes:
+                    corr_coords = graph.nodes[corr_node_id]['coordinates']
+                    dist = euclidean_distance(stair_coords, corr_coords, floor_penalty=0)
+                    if dist < min_dist:
+                        min_dist = dist
+                        nearest_corr_node_id = corr_node_id
+                
+                if nearest_corr_node_id:
+                    graph.add_edge(stair_node_id, nearest_corr_node_id, min_dist)
+
+        stair_names = set()
+        for node_id, node_info in graph.nodes.items():
+            if node_info['type'] == 'stair':
+                stair_names.add((node_info['building'], node_info['name']))
+
+        for (building, stair_name) in stair_names:
+            stair_level_nodes = []
+            for node_id, node_info in graph.nodes.items():
+                if (node_info['building'] == building and 
+                    node_info['type'] == 'stair' and 
+                    node_info['name'] == stair_name):
+                    stair_level_nodes.append((node_id, node_info['coordinates'], node_info['level']))
+            
+            stair_level_nodes.sort(key=lambda x: x[1][2])
+            for i in range(len(stair_level_nodes)-1):
+                node1_id, coords1, _ = stair_level_nodes[i]
+                node2_id, coords2, _ = stair_level_nodes[i+1]
+                
+                dist = euclidean_distance(coords1, coords2, floor_penalty=15.0)
+                graph.add_edge(node1_id, node2_id, dist)
+
+        for connection in building_data['connections']:
+            from_obj_name, from_level = connection['from']
+            to_obj_name, to_level = connection['to']
+            
+            if from_obj_name.startswith(('Stairs', 'GateStairs')):
+                from_obj_type = 'stair'
+            elif any(
+                from_obj_name == cls['name'] 
+                for level in building_data['levels'] 
+                for cls in level.get('classrooms', [])
+            ):
+                from_obj_type = 'classroom'
+            else:
+                from_obj_type = 'corridor'
+            
+            from_node_name = f"{from_obj_name}-p0" if from_obj_type == 'corridor' else from_obj_name
+            from_node_id = graph.node_id_map.get((building_id, from_obj_type, from_node_name, from_level))
+
+            to_building_id = building_id
+            target_building_map = {
+                'ENTRANCE': 'buildingA',
+                'connectToBuildingAAndC': 'buildingB',
+                'SCHOOL CLINIC': 'buildingC',
+                'connectToBuildingB': 'buildingB',
+                'connectToBuildingC': 'buildingC'
+            }
+            for keyword, target_building in target_building_map.items():
+                if keyword in to_obj_name:
+                    to_building_id = target_building
+                    break
+            
+            if to_obj_name.startswith(('Stairs', 'GateStairs')):
+                to_obj_type = 'stair'
+            elif to_building_id in school_data:
+                to_obj_type = 'classroom' if any(
+                    to_obj_name == cls['name']
+                    for level in school_data[to_building_id]['levels']
+                    for cls in level.get('classrooms', [])
+                ) else 'corridor'
+            else:
+                to_obj_type = 'corridor'
+            
+            to_node_name = f"{to_obj_name}-p0" if to_obj_type == 'corridor' else to_obj_name
+            to_node_id = graph.node_id_map.get((to_building_id, to_obj_type, to_node_name, to_level))
+
+            if from_node_id and to_node_id:
+                from_coords = graph.nodes[from_node_id]['coordinates']
+                to_coords = graph.nodes[to_node_id]['coordinates']
+                if building_id != to_building_id:
+                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=0)
+                else:
+                    distance = euclidean_distance(from_coords, to_coords, floor_penalty=15.0)
+                graph.add_edge(from_node_id, to_node_id, distance)
+
+        a_building_id = 'buildingA'
+        b_building_id = 'buildingB'
+        c_building_id = 'buildingC'
+        
+        ab_connect_level = 'level1'
+        a_b_corr_name = 'connectToBuildingB-p1'
+        a_b_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_b_corr_name, ab_connect_level))
+        b_a_corr_name = 'connectToBuildingAAndC-p1'
+        b_a_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_a_corr_name, ab_connect_level))
+        
+        if a_b_node_id and b_a_node_id:
+            coords_a = graph.nodes[a_b_node_id]['coordinates']
+            coords_b = graph.nodes[b_a_node_id]['coordinates']
+            distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
+            graph.add_edge(a_b_node_id, b_a_node_id, distance)
+        
+        bc_connect_level = 'level1'
+        b_c_corr_name = 'connectToBuildingAAndC-p0'
+        b_c_node_id = graph.node_id_map.get((b_building_id, 'corridor', b_c_corr_name, bc_connect_level))
+        c_b_corr_name = 'connectToBuildingB-p1'
+        c_b_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_b_corr_name, bc_connect_level))
+        
+        if b_c_node_id and c_b_node_id:
+            coords_b = graph.nodes[b_c_node_id]['coordinates']
+            coords_c = graph.nodes[c_b_node_id]['coordinates']
+            distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
+            graph.add_edge(b_c_node_id, c_b_node_id, distance)
+        
+        connect_level1 = 'level1'
+        a_corr1_name = 'connectToBuildingC-p3'
+        a_connect1_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr1_name, connect_level1))
+        c_corr1_name = 'connectToBuildingA-p0'
+        c_connect1_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr1_name, connect_level1))
+        
+        if a_connect1_node_id and c_connect1_node_id:
+            coords_a = graph.nodes[a_connect1_node_id]['coordinates']
+            coords_c = graph.nodes[c_connect1_node_id]['coordinates']
+            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+        
+        connect_level3 = 'level3'
+        a_corr3_name = 'connectToBuildingC-p2'
+        a_connect3_node_id = graph.node_id_map.get((a_building_id, 'corridor', a_corr3_name, connect_level3))
+        c_corr3_name = 'connectToBuildingA-p0'
+        c_connect3_node_id = graph.node_id_map.get((c_building_id, 'corridor', c_corr3_name, connect_level3))
+        
+        if a_connect3_node_id and c_connect3_node_id:
+            coords_a = graph.nodes[a_connect3_node_id]['coordinates']
+            coords_c = graph.nodes[c_connect3_node_id]['coordinates']
+            distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
+            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+
+    return graph
+
+def dijkstra(graph, start_node):
+    distances = {node: float('inf') for node in graph.nodes}
+    distances[start_node] = 0
+    previous_nodes = {node: None for node in graph.nodes}
+    nodes = set(graph.nodes.keys())
+
+    while nodes:
+        min_node = min(nodes, key=lambda node: distances[node])
+        nodes.remove(min_node)
+
+        if distances[min_node] == float('inf'):
+            break
+
+        for neighbor, weight in graph.nodes[min_node]['neighbors'].items():
+            alternative_route = distances[min_node] + weight
+            if alternative_route < distances[neighbor]:
+                distances[neighbor] = alternative_route
+                previous_nodes[neighbor] = min_node
+
+    return distances, previous_nodes
+
+def construct_path(previous_nodes, end_node):
+    path = []
+    current_node = end_node
+    while current_node is not None:
+        path.insert(0, current_node)
+        current_node = previous_nodes[current_node]
+    return path if len(path) > 1 else None
+
+def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
+    valid_buildings = ['A', 'B', 'C', 'Gate']
+    if start_building not in valid_buildings or end_building not in valid_buildings:
+        return None, "Invalid building selection, only Buildings A, B, C and Gate are supported", None, None
+        
+    try:
+        start_key = (start_building, start_classroom, start_level)
+        end_key = (end_building, end_classroom, end_level)
+        
+        start_node = graph.node_id_map.get(start_key)
+        end_node = graph.node_id_map.get(end_key)
+        
+        if not start_node:
+            start_node = f"{start_building}-classroom-{start_classroom}@{start_level}"
+        if not end_node:
+            end_node = f"{end_building}-classroom-{end_classroom}@{end_level}"
+
+        if start_node not in graph.nodes:
+            return None, f"Starting classroom does not exist: {start_building}{start_classroom}@{start_level}", None, None
+        if end_node not in graph.nodes:
+            return None, f"Destination classroom does not exist: {end_building}{end_classroom}@{end_level}", None, None
+
+        distances, previous_nodes = dijkstra(graph, start_node)
+        path = construct_path(previous_nodes, end_node)
+
+        if path:
+            total_distance = distances[end_node]
+            simplified_path = []
+            path_stairs = set()
+            prev_building = None
+            
+            for i in range(len(path)):
+                node_id = path[i]
+                node_info = graph.nodes[node_id]
+                node_type = node_info['type']
+                node_name = node_info['name']
+                node_level = node_info['level']
+                node_building = node_info['building']
+                
+                node_desc = ""
+                if node_type == 'stair':
+                    path_stairs.add((node_building, node_name, node_level))
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
+                elif node_type == 'classroom':
+                    node_desc = f"Building {node_building}{node_name}({node_level})"
+                elif node_type == 'corridor':
+                    if 'connectToBuilding' in node_name or 'gateTo' in node_name:
+                        if 'connectToBuildingA' in node_name or 'gateToA' in node_name:
+                            connected_building = 'A'
+                        elif 'connectToBuildingB' in node_name or 'gateToB' in node_name:
+                            connected_building = 'B'
+                        elif 'connectToBuildingC' in node_name or 'gateToC' in node_name:
+                            connected_building = 'C'
+                        elif 'gateTo' in node_name:
+                            connected_building = 'Gate'
+                        else:
+                            connected_building = 'Other'
+                            
+                        if prev_building and prev_building != node_building:
+                            node_desc = f"Cross corridor from Building {prev_building} to Building {node_building}({node_level})"
+                
+                if node_desc:
+                    if i < len(path) - 1:
+                        next_node_id = path[i+1]
+                        direction = get_direction_between_nodes(graph, node_id, next_node_id)
+                        if direction:
+                            node_desc += f" {direction}"
+                    
+                    simplified_path.append(node_desc)
+                
+                if node_type in ['classroom', 'stair', 'corridor']:
+                    prev_building = node_building
+            
+            full_path_str = " → ".join(simplified_path)
+            display_options = {
+                'start_level': start_level,
+                'end_level': end_level,
+                'path_stairs': path_stairs,
+                'show_all': False,
+                'path': path,
+                'start_building': start_building,
+                'end_building': end_building
+            }
+            return path, f"Total distance: {total_distance:.2f} units", full_path_str, display_options
+        else:
+            return None, "No available path between the two classrooms", None, None
+    except Exception as e:
+        return None, f"Navigation error: {str(e)}", None, None
+
+def get_classroom_info(school_data):
+    try:
+        buildings = [b for b in school_data.keys() if b.startswith('building') or b == 'gate']
+        building_names = []
+        for b in buildings:
+            if b == 'gate':
+                building_names.append('Gate')
+            else:
+                building_names.append(b.replace('building', ''))
+        
+        classrooms_by_building = {}
+        levels_by_building = {}
+        
+        for building_id in buildings:
+            if building_id == 'gate':
+                building_name = 'Gate'
+            else:
+                building_name = building_id.replace('building', '')
+                
+            building_data = school_data[building_id]
+            
+            levels = []
+            classrooms_by_level = {}
+            
+            for level in building_data['levels']:
+                level_name = level['name']
+                levels.append(level_name)
+                classrooms = [classroom['name'] for classroom in level['classrooms']]
+                classrooms_by_level[level_name] = classrooms
+            
+            levels_by_building[building_name] = levels
+            classrooms_by_building[building_name] = classrooms_by_level
+            
+        return building_names, levels_by_building, classrooms_by_building
+    except Exception as e:
+        st.error(f"Failed to retrieve classroom information: {str(e)}")
+        return [], {}, {}
 
 def reset_app_state():
-    st.session_state['display_options']={'start_level':None,'end_level':None,'path_stairs':set(),'show_all':True,'path':[],'start_building':None,'end_building':None}
-    st.session_state['current_path']=None
+    st.session_state['display_options'] = {
+        'start_level': None,
+        'end_level': None,
+        'path_stairs': set(),
+        'show_all': True,
+        'path': [],
+        'start_building': None,
+        'end_building': None
+    }
+    st.session_state['current_path'] = None
+    if 'path_result' in st.session_state:
+        del st.session_state['path_result']
 
 # --------------------------
-# 主程序
+# 页面逻辑
 # --------------------------
 def main():
-    if 'page' not in st.session_state:st.session_state.page='welcome'
-    if 'display_options' not in st.session_state:st.session_state.display_options={'start_level':None,'end_level':None,'path_stairs':set(),'show_all':True,'path':[],'start_building':None,'end_building':None}
-    if 'current_path' not in st.session_state:st.session_state.current_path=None
+    if 'page' not in st.session_state:
+        st.session_state['page'] = 'welcome'
+    if 'display_options' not in st.session_state:
+        st.session_state['display_options'] = {
+            'start_level': None,
+            'end_level': None,
+            'path_stairs': set(),
+            'show_all': True,
+            'path': [],
+            'start_building': None,
+            'end_building': None
+        }
+    if 'current_path' not in st.session_state:
+        st.session_state['current_path'] = None
 
-    # 只有登录页加载背景
-    if st.session_state.page == 'welcome':
-        def bg(img):
-            with open(img,'rb') as f:
-                b64=base64.b64encode(f.read()).decode()
-            st.markdown(f"""
+    # --------------------------
+    # 只有欢迎页有背景，无半透明卡片
+    # --------------------------
+    if st.session_state['page'] == 'welcome':
+        def add_bg_from_local(image_file):
+            with open(image_file, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode()
+            css = f"""
             <style>
-            [data-testid="stAppViewContainer"]{{
-                background:url(data:image/jpeg;base64,{b64}) !important;
-                background-size:cover !important;
-                background-position:center !important;
-                background-attachment:fixed !important;
+            [data-testid="stAppViewContainer"] {{
+                background-image: url("data:image/jpeg;base64,{encoded}");
+                background-size: cover !important;
+                background-position: center !important;
+                background-repeat: no-repeat !important;
+                background-attachment: fixed !important;
             }}
-            h1{{color:white !important; text-align:center !important; margin-top:22vh !important; font-size:50px !important;}}
-            div.stButton>button{{
-                margin:0 auto !important; display:block !important;
-                width:260px !important; height:60px !important;
-                font-size:20px !important; border-radius:12px !important;
-                background:#4CAF50 !important; color:white !important; border:none !important;
-            }}
-            </style>
-            """,unsafe_allow_html=True)
-        bg("background.jpg")
 
-    # 登录页
-    if st.session_state.page == 'welcome':
-        if 'ws' not in st.session_state:st.session_state.ws=init_google_sheet()
-        total=get_total_accesses(st.session_state.ws)
-        st.markdown("<h1>Welcome to SCIS Navigation</h1>",unsafe_allow_html=True)
-        if st.button("Enter System"):
-            update_access_count(st.session_state.ws)
-            st.session_state.page='main'
+            h1 {{
+                color: white !important;
+                text-align: center !important;
+                margin-top: 25vh !important;
+                font-size: 48px !important;
+                font-weight: 900 !important;
+            }}
+
+            div.stButton > button:first-child {{
+                background-color: #4CAF50 !important;
+                color: white !important;
+                font-size: 20px !important;
+                height: 60px !important;
+                width: 280px !important;
+                border-radius: 12px !important;
+                border: none !important;
+                font-weight: bold !important;
+                display: block !important;
+                margin: 30px auto !important;
+            }}
+
+            div.stButton > button:first-child:hover {{
+                background-color: #45a049 !important;
+            }}
+
+            </style>
+            """
+            st.markdown(css, unsafe_allow_html=True)
+
+        add_bg_from_local("background.jpg")
+
+    # --------------------------
+    # 欢迎页面
+    # --------------------------
+    if st.session_state['page'] == 'welcome':
+        if 'worksheet' not in st.session_state:
+            st.session_state['worksheet'] = init_google_sheet()
+        
+        total_accesses = get_total_accesses(st.session_state['worksheet'])
+        
+        st.markdown("<h1>Welcome to SCIS Navigation System</h1>", unsafe_allow_html=True)
+        
+        if st.button('Enter System'):
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
             st.rerun()
 
-    # 导航页（纯白默认）
+    # --------------------------
+    # 主界面：纯白无背景
+    # --------------------------
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
-            data=load_school_data_detailed('school_data_detailed.json')
-            if not data:st.error("Load failed");return
-            bns,lvs,cls=get_classroom_info(data)
-            st.subheader("Start")
-            sb=st.selectbox("Building",bns,key='sb')
-            sl=st.selectbox("Floor",lvs[sb],key='sl')
-            sc=st.selectbox("Classroom",cls[sb][sl],key='sc')
-            st.subheader("End")
-            eb=st.selectbox("Building",bns,key='eb')
-            el=st.selectbox("Floor",lvs[eb],key='el')
-            ec=st.selectbox("Classroom",cls[eb][el],key='ec')
-            st.divider()
-            go_btn=st.button("🔍 Find Path",use_container_width=True)
-            rst_btn=st.button("🔄 Reset",use_container_width=True)
-            back_btn=st.button("🚪 Back",use_container_width=True)
-            if rst_btn:reset_app_state();st.rerun()
-            if back_btn:reset_app_state();st.session_state.page='welcome';st.rerun()
-        st.markdown("<h2>🏫 SCIS Campus Navigation</h2>",unsafe_allow_html=True)
-        g=build_navigation_graph(data)
-        st.success("✅ Data loaded")
-        if go_btn:
-            res=navigate(g,sb,sc,sl,eb,ec,el)
-            if res[0]:
-                path,msg,text,opts=res
-                st.success(f"📊 {msg}")
-                st.markdown("#### Path")
-                st.info(text)
-                st.session_state.current_path=path
-                st.session_state.display_options=opts
-        fig=plot_3d_map(data,g,st.session_state.display_options)[0]
-        st.plotly_chart(fig,use_container_width=True)
+            school_data = load_school_data_detailed('school_data_detailed.json')
+            if school_data is None:
+                st.error("Failed to load school data!")
+                return
+            building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+            
+            st.subheader("Start Point")
+            start_building = st.selectbox("Building", building_names, key="start_building")
+            start_levels = levels_by_building.get(start_building, [])
+            start_level = st.selectbox("Floor", start_levels, key="start_level")
+            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-if __name__=='__main__':
+            st.subheader("End Point")
+            end_building = st.selectbox("Building", building_names, key="end_building")
+            end_levels = levels_by_building.get(end_building, [])
+            end_level = st.selectbox("Floor", end_levels, key="end_level")
+            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+
+            st.divider()
+            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+            reset_button = st.button("🔄 Reset View", use_container_width=True)
+            exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
+
+            if reset_button:
+                reset_app_state()
+                st.rerun()
+            if exit_button:
+                reset_app_state()
+                st.session_state['page'] = 'welcome'
+                st.rerun()
+
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        
+        school_data = load_school_data_detailed('school_data_detailed.json')
+        if school_data is None:
+            st.error("Failed to load school data file!")
+            return
+        
+        graph = build_navigation_graph(school_data)
+        st.success("✅ Campus data loaded successfully!")
+
+        if nav_button:
+            try:
+                path, message, simplified_path, display_options = navigate(
+                    graph, start_building, start_classroom, start_level,
+                    end_building, end_classroom, end_level
+                )
+                if path and display_options:
+                    st.success(f"📊 Navigation Result: {message}")
+                    st.markdown("#### 🛤️ Path Details")
+                    st.info(simplified_path)
+                    st.session_state['current_path'] = path
+                    st.session_state['display_options'] = display_options
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+        if st.session_state['current_path'] is not None:
+            fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
+        else:
+            fig = plot_3d_map(school_data, graph)[0]
+        
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={
+                'displayModeBar': True,
+                'scrollZoom': True,
+                'editable': False
+            }
+        )
+
+if __name__ == "__main__":
     main()
