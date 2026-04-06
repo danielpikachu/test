@@ -1039,7 +1039,9 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    st.info(simplified_path)
+                  
+                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
+
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
             except Exception as e:
