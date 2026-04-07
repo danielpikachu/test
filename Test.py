@@ -15,7 +15,7 @@ import base64
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="auto",  # 手机自动折叠，电脑自动展开
+    initial_sidebar_state="auto",
     menu_items=None
 )
 
@@ -368,7 +368,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600  # 移动端适配：降低固定高度
+        height=600
     )
 
     return fig
@@ -939,6 +939,15 @@ def main():
                     margin-top: 25vh !important;
                     font-size: clamp(28px, 8vw, 48px) !important;
                     font-weight: 900 !important;
+                    white-space: nowrap !important;
+                }}
+                .subtitle {{
+                    text-align: center !important;
+                    color: white !important;
+                    font-size: clamp(14px, 3vw, 20px) !important;
+                    opacity: 0.9 !important;
+                    margin-top: -10px !important;
+                    margin-bottom: 30px !important;
                 }}
                 div.stButton > button:first-child {{
                     background-color: #4682B4 !important;
@@ -952,7 +961,8 @@ def main():
                     border: none !important;
                     font-weight: bold !important;
                     display: block !important;
-                    margin: 30px auto !important;
+                    margin: 0 auto !important;
+                    white-space: nowrap !important;
                 }}
                 div.stButton > button:first-child:hover {{
                     background-color: #45a049 !important;
@@ -971,7 +981,7 @@ def main():
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:white; font-size:clamp(14px, 3vw, 20px); opacity:0.9;'>Find Classrooms, labs, resources in stunning 3D</p>", unsafe_allow_html=True)
+        st.markdown("<div class='subtitle'>Find Classrooms, labs, resources in stunning 3D</div>", unsafe_allow_html=True)
 
         if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
@@ -1037,7 +1047,6 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    # 手机自动换行
                     st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px; word-wrap:break-word; white-space:normal;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
@@ -1049,7 +1058,6 @@ def main():
         else:
             fig = plot_3d_map(school_data, graph)[0]
         
-        # 移动端 3D 图适配
         st.plotly_chart(
             fig,
             use_container_width=True,
