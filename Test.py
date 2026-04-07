@@ -9,30 +9,17 @@ from datetime import datetime
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plotly.graph_objects import Mesh3d
 import base64
 
 # ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
     menu_items=None
 )
 
 plt.switch_backend('Agg')
-
-# ====================== 【核心】设备检测：自动判断电脑/手机（无依赖版） ======================
-def is_mobile():
-    try:
-        agent = st.context.headers.get("User-Agent", "")
-        return any(x in agent for x in ['Mobile', 'Android', 'iPhone', 'iPad', 'iPod'])
-    except:
-        return False
-
-MOBILE = is_mobile()
-PLOT_HEIGHT = 400 if MOBILE else 650
-FONT_SIZE_SCALE = 0.85 if MOBILE else 1.0
 
 # --------------------------
 # Google Sheets Configuration
@@ -52,7 +39,7 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("google_service_account not found in Streamlit Secrets, please check TOM format")
+        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
         return None
     except Exception as e:
         st.error(f"Failed to load credentials: {str(e)}")
@@ -147,7 +134,7 @@ COLORS = {
 
 def load_school_data_detailed(filename):
     try:
-        with open(filename, 'r', encoding='utf-8') f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
         st.error(f"Failed to load data file: {str(e)}")
@@ -239,7 +226,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     showlegend=True
                 ))
 
-                fig.add_trace(Mesh3d(
+                fig.add_trace(go.Mesh3d(
                     x=x_vals[:4], y=y_vals[:4], z=z_vals[:4],
                     color=building_fill_color, opacity=0.3, showlegend=False
                 ))
@@ -373,45 +360,16 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 手机端工具栏向下移动，不重叠标题 ======================
-    if MOBILE:
-        fig.update_layout(
-            title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
-            scene=dict(
-                xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
-                camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
-                aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
-            ),
-            margin=dict(l=0, r=0, t=60, b=0),
-            modebar=dict(
-                bgcolor='rgba(255,255,255,0.7)',
-                yanchor='top',
-                y=0.92,
-                xanchor='right',
-                x=0.98
-            ),
-            height=PLOT_HEIGHT,
-            showlegend=False
-        )
-    else:
-        fig.update_layout(
-            title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
-            scene=dict(
-                xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
-                camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
-                aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
-            ),
-            margin=dict(l=0, r=100, t=30, b=0),
-            height=PLOT_HEIGHT,
-            legend=dict(
-                orientation="v",
-                yanchor="top",
-                y=0.99,
-                xanchor="left",
-                x=1.02,
-                font=dict(size=11)
-            )
-        )
+    fig.update_layout(
+        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+        scene=dict(
+            xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
+            camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
+            aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
+        ),
+        margin=dict(l=0, r=0, t=30, b=0),
+        height=600
+    )
 
     return fig
 
@@ -889,7 +847,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
 def get_classroom_info(school_data):
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building') || b == 'gate']
+        buildings = [b for b in school_data.keys() if b.startswith('building') or b == 'gate']
         building_names = []
         for b in buildings:
             if b == 'gate':
@@ -958,7 +916,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页 ======================
+    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -1029,83 +987,45 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面 ======================
+    # ====================== 主界面（完全不变） ======================
     else:
-        if MOBILE:
-            st.markdown("<h2 style='text-align:center; margin:10px 0;'>🏫 SCIS Campus Navigation</h2>", unsafe_allow_html=True)
-            with st.container():
-                st.subheader("📍 Start Point")
-                school_data = load_school_data_detailed('school_data_detailed.json')
-                if school_data is None:
-                    st.error("Failed to load school data!")
-                    return
-                building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-                
-                c1, c2 = st.columns(2)
-                with c1:
-                    start_building = st.selectbox("Building", building_names, key="start_building")
-                with c2:
-                    start_levels = levels_by_building.get(start_building, [])
-                    start_level = st.selectbox("Floor", start_levels, key="start_level")
-                start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-                start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+        with st.sidebar:
+            st.header("📍 Select Locations")
+            school_data = load_school_data_detailed('school_data_detailed.json')
+            if school_data is None:
+                st.error("Failed to load school data!")
+                return
+            building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+            
+            st.subheader("Start Point")
+            start_building = st.selectbox("Building", building_names, key="start_building")
+            start_levels = levels_by_building.get(start_building, [])
+            start_level = st.selectbox("Floor", start_levels, key="start_level")
+            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-                st.subheader("📍 End Point")
-                c3, c4 = st.columns(2)
-                with c3:
-                    end_building = st.selectbox("Building", building_names, key="end_building")
-                with c4:
-                    end_levels = levels_by_building.get(end_building, [])
-                    end_level = st.selectbox("Floor", end_levels, key="end_level")
-                end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-                end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+            st.subheader("End Point")
+            end_building = st.selectbox("Building", building_names, key="end_building")
+            end_levels = levels_by_building.get(end_building, [])
+            end_level = st.selectbox("Floor", end_levels, key="end_level")
+            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-                bc1, bc2, bc3 = st.columns(3)
-                with bc1:
-                    nav_button = st.button("🔍 Find Path", use_container_width=True)
-                with bc2:
-                    reset_button = st.button("🔄 Reset", use_container_width=True)
-                with bc3:
-                    exit_button = st.button("🚪 Back", use_container_width=True)
-        else:
-            with st.sidebar:
-                st.header("📍 Select Locations")
-                school_data = load_school_data_detailed('school_data_detailed.json')
-                if school_data is None:
-                    st.error("Failed to load school data!")
-                    return
-                building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-                
-                st.subheader("Start Point")
-                start_building = st.selectbox("Building", building_names, key="start_building")
-                start_levels = levels_by_building.get(start_building, [])
-                start_level = st.selectbox("Floor", start_levels, key="start_level")
-                start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-                start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+            st.divider()
+            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+            reset_button = st.button("🔄 Reset View", use_container_width=True)
+            exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
 
-                st.subheader("End Point")
-                end_building = st.selectbox("Building", building_names, key="end_building")
-                end_levels = levels_by_building.get(end_building, [])
-                end_level = st.selectbox("Floor", end_levels, key="end_level")
-                end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
-                end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+            if reset_button:
+                reset_app_state()
+                st.rerun()
+            if exit_button:
+                reset_app_state()
+                st.session_state['page'] = 'welcome'
+                st.rerun()
 
-                st.divider()
-                nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-                reset_button = st.button("🔄 Reset View", use_container_width=True)
-                exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
-
-        if reset_button:
-            reset_app_state()
-            st.rerun()
-        if exit_button:
-            reset_app_state()
-            st.session_state['page'] = 'welcome'
-            st.rerun()
-
-        if not MOBILE:
-            st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
-            st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1130,7 +1050,6 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
-        # 3D图
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
         else:
