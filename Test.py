@@ -363,16 +363,30 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
         except Exception:
             pass
 
+    # ========== 关键修改：按钮栏放在标题正下方 ==========
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+        title=dict(
+            text="Campus 3D Navigation Map",
+            font=dict(size=22, color="gray"),
+            x=0.5, xanchor="center"
+        ),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=80, b=50),
         height=600,
-        showlegend=show_legend
+        showlegend=show_legend,
+        legend=dict(
+            x=1.02, y=1.0,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="lightgray",
+            borderwidth=1
+        ),
+        # 模式栏（缩放/平移等）放在底部居中，标题正下方
+        modebar_position="bottom",
+        modebar_bgcolor="#f0f2f6"
     )
 
     return fig
@@ -919,7 +933,6 @@ def main():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
-
     # 初始化图例显示状态
     if 'show_legend' not in st.session_state:
         st.session_state['show_legend'] = True
@@ -1033,22 +1046,6 @@ def main():
                 st.rerun()
 
         st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
-        
-        # ========== 箭头切换：显示 / 隐藏图例 ==========
-        col1, col2 = st.columns([1, 15])
-        with col1:
-            # 箭头按钮
-            if st.session_state['show_legend']:
-                if st.button("◀", use_container_width=True):
-                    st.session_state['show_legend'] = False
-                    st.rerun()
-            else:
-                if st.button("▶", use_container_width=True):
-                    st.session_state['show_legend'] = True
-                    st.rerun()
-        with col2:
-            st.caption("Toggle Legend")
-        
         st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1074,6 +1071,19 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
+        # ========== 箭头按钮：放在图例上方 ==========
+        col1, col2 = st.columns([1, 0.1])
+        with col2:
+            if st.session_state['show_legend']:
+                if st.button("◀", key="btn_hide", help="Hide Legend"):
+                    st.session_state['show_legend'] = False
+                    st.rerun()
+            else:
+                if st.button("▶", key="btn_show", help="Show Legend"):
+                    st.session_state['show_legend'] = True
+                    st.rerun()
+
+        # 绘图
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, graph, st.session_state['display_options'], show_legend=st.session_state['show_legend'])[0]
         else:
