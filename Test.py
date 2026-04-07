@@ -10,16 +10,30 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
+import user_agent
 
 # ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",  # 手机默认折叠侧边栏
     menu_items=None
 )
 
 plt.switch_backend('Agg')
+
+# ====================== 【核心】设备检测：自动判断电脑/手机 ======================
+def is_mobile():
+    try:
+        user_agent_str = st.context.headers.get("User-Agent", "")
+        return "Mobile" in user_agent_str or "Android" in user_agent_str or "iPhone" in user_agent_str
+    except:
+        return False
+
+MOBILE = is_mobile()
+# 自适应高度/字体
+PLOT_HEIGHT = 400 if MOBILE else 650
+FONT_SIZE_SCALE = 0.85 if MOBILE else 1.0
 
 # --------------------------
 # Google Sheets Configuration
@@ -141,7 +155,7 @@ def load_school_data_detailed(filename):
         return None
 
 # ====================== 3D Plot Function ======================
-def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legend=True):
+def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
     if display_options is None:
@@ -223,7 +237,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
                     line=dict(color=floor_border_color, width=4),
                     name=f"Building {building_name}-{level_name}",
                     legendgroup=f"Building {building_name}",
-                    showlegend=show_legend
+                    showlegend=True
                 ))
 
                 fig.add_trace(go.Mesh3d(
@@ -299,8 +313,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
                     size = 12 if is_path else 9
                     
                     legend_name = f"{building_name}-{s_name}"
-                    show_legend_item = (legend_name not in shown_stairs_legends) and show_legend
-                    if show_legend_item:
+                    show_legend = legend_name not in shown_stairs_legends
+                    if show_legend:
                         shown_stairs_legends.add(legend_name)
                     
                     fig.add_trace(go.Scatter3d(
@@ -310,7 +324,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
                         text=s_name, textposition="top center", textfont=dict(size=9, color='darkred'),
                         name=legend_name,
                         legendgroup="Stairs",
-                        showlegend=show_legend_item
+                        showlegend=show_legend
                     ))
         
         if displayed_levels:
@@ -343,58 +357,38 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
                 mode='lines+markers',
                 line=dict(color=COLORS['path'], width=5),
                 marker=dict(color=COLORS['path'], size=4),
-                name="Path",
-                showlegend=show_legend
+                name="Path"
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[0]], y=[ys[0]], z=[zs[0]],
                 mode='markers+text', marker=dict(color=COLORS['start_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'),
-                name="Start",
-                showlegend=show_legend
+                name="Start"
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
                 mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
-                name="End",
-                showlegend=show_legend
+                name="End"
             ))
         except Exception:
             pass
 
-    # ====================== 关键：按钮放在标题正下方 ======================
     fig.update_layout(
-        title=dict(
-            text="Campus 3D Navigation Map",
-            font=dict(size=22, color="gray"),
-            x=0.5, xanchor="center"
-        ),
+        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=130, b=40),
-        height=680,
-        showlegend=show_legend,
-        legend=dict(
-            x=1.02, y=1.0,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="lightgray",
-            borderwidth=1
-        ),
-        modebar=dict(
-            orientation="h",
-            bgcolor="#f0f2f6",
-            position="top"
-        )
+        margin=dict(l=0, r=0, t=30, b=0),
+        height=PLOT_HEIGHT  # 自适应高度
     )
 
     return fig
 
-def plot_3d_map(school_data, graph=None, display_options=None, show_legend=True):
-    fig = plot_3d_map_plotly(school_data, graph, display_options, show_legend)
+def plot_3d_map(school_data, graph=None, display_options=None):
+    fig = plot_3d_map_plotly(school_data, graph, display_options)
     return fig, None
 
 # --------------------------
@@ -935,10 +929,8 @@ def main():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
-    if 'show_legend' not in st.session_state:
-        st.session_state['show_legend'] = True
 
-    # ====================== 欢迎页 ======================
+    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -1009,45 +1001,87 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面 ======================
+    # ====================== 主界面：移动端优化 ======================
     else:
-        with st.sidebar:
-            st.header("📍 Select Locations")
-            school_data = load_school_data_detailed('school_data_detailed.json')
-            if school_data is None:
-                st.error("Failed to load school data!")
-                return
-            building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
-            
-            st.subheader("Start Point")
-            start_building = st.selectbox("Building", building_names, key="start_building")
-            start_levels = levels_by_building.get(start_building, [])
-            start_level = st.selectbox("Floor", start_levels, key="start_level")
-            start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
-            start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
+        # 手机端：把选择器放到主页面，不使用侧边栏
+        if MOBILE:
+            st.markdown("<h2 style='text-align:center; margin:10px 0;'>🏫 SCIS Campus Navigation</h2>", unsafe_allow_html=True)
+            with st.container():
+                st.subheader("📍 Start Point")
+                school_data = load_school_data_detailed('school_data_detailed.json')
+                if school_data is None:
+                    st.error("Failed to load school data!")
+                    return
+                building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+                
+                c1, c2 = st.columns(2)
+                with c1:
+                    start_building = st.selectbox("Building", building_names, key="start_building")
+                with c2:
+                    start_levels = levels_by_building.get(start_building, [])
+                    start_level = st.selectbox("Floor", start_levels, key="start_level")
+                start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+                start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-            st.subheader("End Point")
-            end_building = st.selectbox("Building", building_names, key="end_building")
-            end_levels = levels_by_building.get(end_building, [])
-            end_level = st.selectbox("Floor", end_levels, key="end_level")
-            end_classrooms = classrooms_by_building.get(end_building, {}_by_building.get(end_building, {}).get(end_level, [])
-            end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
+                st.subheader("📍 End Point")
+                c3, c4 = st.columns(2)
+                with c3:
+                    end_building = st.selectbox("Building", building_names, key="end_building")
+                with c4:
+                    end_levels = levels_by_building.get(end_building, [])
+                    end_level = st.selectbox("Floor", end_levels, key="end_level")
+                end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+                end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-            st.divider()
-            nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
-            reset_button = st.button("🔄 Reset View", use_container_width=True)
-            exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
+                # 按钮行
+                bc1, bc2, bc3 = st.columns(3)
+                with bc1:
+                    nav_button = st.button("🔍 Find Path", use_container_width=True)
+                with bc2:
+                    reset_button = st.button("🔄 Reset", use_container_width=True)
+                with bc3:
+                    exit_button = st.button("🚪 Back", use_container_width=True)
+        else:
+            # 电脑端：保留侧边栏
+            with st.sidebar:
+                st.header("📍 Select Locations")
+                school_data = load_school_data_detailed('school_data_detailed.json')
+                if school_data is None:
+                    st.error("Failed to load school data!")
+                    return
+                building_names, levels_by_building, classrooms_by_building = get_classroom_info(school_data)
+                
+                st.subheader("Start Point")
+                start_building = st.selectbox("Building", building_names, key="start_building")
+                start_levels = levels_by_building.get(start_building, [])
+                start_level = st.selectbox("Floor", start_levels, key="start_level")
+                start_classrooms = classrooms_by_building.get(start_building, {}).get(start_level, [])
+                start_classroom = st.selectbox("Classroom", start_classrooms, key="start_classroom")
 
-            if reset_button:
-                reset_app_state()
-                st.rerun()
-            if exit_button:
-                reset_app_state()
-                st.session_state['page'] = 'welcome'
-                st.rerun()
+                st.subheader("End Point")
+                end_building = st.selectbox("Building", building_names, key="end_building")
+                end_levels = levels_by_building.get(end_building, [])
+                end_level = st.selectbox("Floor", end_levels, key="end_level")
+                end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+                end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
-        st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
+                st.divider()
+                nav_button = st.button("🔍 Find Shortest Path", use_container_width=True)
+                reset_button = st.button("🔄 Reset View", use_container_width=True)
+                exit_button = st.button("🚪 Back to Welcome", use_container_width=True)
+
+        if reset_button:
+            reset_app_state()
+            st.rerun()
+        if exit_button:
+            reset_app_state()
+            st.session_state['page'] = 'welcome'
+            st.rerun()
+
+        # 标题
+        if not MOBILE:
+            st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+            st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
         if school_data is None:
@@ -1072,23 +1106,11 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
-        # ========== 箭头按钮：图例上方 ==========
-        col1, col2 = st.columns([10, 1])
-        with col2:
-            if st.session_state['show_legend']:
-                if st.button("◀", help="Hide Legend"):
-                    st.session_state['show_legend'] = False
-                    st.rerun()
-            else:
-                if st.button("▶", help="Show Legend"):
-                    st.session_state['show_legend'] = True
-                    st.rerun()
-
-        # 绘制 3D 图
+        # 渲染3D图
         if st.session_state['current_path'] is not None:
-            fig = plot_3d_map(school_data, graph, st.session_state['display_options'], st.session_state['show_legend'])[0]
+            fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
         else:
-            fig = plot_3d_map(school_data, graph, show_legend=st.session_state['show_legend'])[0]
+            fig = plot_3d_map(school_data, graph)[0]
         
         st.plotly_chart(
             fig,
