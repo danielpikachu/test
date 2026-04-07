@@ -51,7 +51,7 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
+        st.error("google_service_account not found in Streamlit Secrets, please check TOM format")
         return None
     except Exception as e:
         st.error(f"Failed to load credentials: {str(e)}")
@@ -372,7 +372,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 【已调整】手机端图例彻底下移，不重合 ======================
+    # ====================== 【终极修改】图例彻底远离图表，绝对不重合 ======================
     if MOBILE:
         fig.update_layout(
             title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
@@ -381,12 +381,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
                 aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
             ),
-            margin=dict(l=0, r=0, t=30, b=120),  # 底部加大空间
+            margin=dict(l=0, r=0, t=30, b=200),  # 底部超大边距
             height=PLOT_HEIGHT,
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.25,  # 向下调更远，彻底不重合
+                y=-0.5,  # 超大下移距离
                 xanchor="center",
                 x=0.5,
                 font=dict(size=10),
