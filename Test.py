@@ -363,6 +363,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
         except Exception:
             pass
 
+    # ====================== 关键：按钮放在标题正下方 ======================
     fig.update_layout(
         title=dict(
             text="Campus 3D Navigation Map",
@@ -374,14 +375,19 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=80, b=50),
-        height=600,
+        margin=dict(l=0, r=0, t=130, b=40),
+        height=680,
         showlegend=show_legend,
         legend=dict(
             x=1.02, y=1.0,
             bgcolor="rgba(255,255,255,0.8)",
             bordercolor="lightgray",
             borderwidth=1
+        ),
+        modebar=dict(
+            orientation="h",
+            bgcolor="#f0f2f6",
+            position="top"
         )
     )
 
@@ -964,18 +970,19 @@ def main():
                 }
                 .welcome-subtitle {
                     color: white !important;
+                    font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
                     margin: 5px 0 25px 0 !important;
-                    font-size: 18px;
                 }
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
-                    font-size: 18px !important;
+                    font-size: clamp(16px, 4vw, 20px) !important;
                     padding: 16px 24px !important;
                     border-radius: 12px !important;
                     font-weight: bold !important;
                     border: none !important;
+                    width: 100%% !important;
                 }
                 </style>
                 """ % encoded
@@ -995,7 +1002,7 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-        col_empty1, col_center, col_empty2 = st.columns([1, 0.4, 1])
+        col_empty1, col_center, col_empty2 = st.columns([1, 0.5, 1])
         with col_center:
             if st.button('EXPLORE 3D MAP'):
                 update_access_count(st.session_state['worksheet'])
@@ -1023,7 +1030,7 @@ def main():
             end_building = st.selectbox("Building", building_names, key="end_building")
             end_levels = levels_by_building.get(end_building, [])
             end_level = st.selectbox("Floor", end_levels, key="end_level")
-            end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
+            end_classrooms = classrooms_by_building.get(end_building, {}_by_building.get(end_building, {}).get(end_level, [])
             end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
             st.divider()
@@ -1039,7 +1046,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
         st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1059,7 +1066,7 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px; word-wrap:break-word; white-space:normal;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
             except Exception as e:
