@@ -933,39 +933,42 @@ def main():
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
                 }}
-                h1 {{
-                    color: white !important;
+                .center-container {{
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
                     text-align: center !important;
                     margin-top: 25vh !important;
+                    gap: 0px !important;
+                }}
+                h1 {{
+                    color: white !important;
                     font-size: clamp(28px, 8vw, 48px) !important;
                     font-weight: 900 !important;
                     white-space: nowrap !important;
+                    margin:0 !important;
+                    padding:0 !important;
                 }}
                 .subtitle {{
-                    text-align: center !important;
                     color: white !important;
                     font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
-                    margin-top: -10px !important;
-                    margin-bottom: 30px !important;
+                    margin-top:5px !important;
+                    margin-bottom:15px !important;
+                    padding:0 !important;
                 }}
-                div.stButton > button:first-child {{
+                div.stButton > button {{
                     background-color: #4682B4 !important;
                     color: white !important;
                     font-size: clamp(16px, 4vw, 20px) !important;
-                    height: auto !important;
-                    padding: 16px !important;
-                    width: 80% !important;
-                    max-width: 280px !important;
+                    padding: 16px 20px !important;
                     border-radius: 12px !important;
                     border: none !important;
                     font-weight: bold !important;
-                    display: block !important;
-                    margin: 0 auto !important;
                     white-space: nowrap !important;
-                }}
-                div.stButton > button:first-child:hover {{
-                    background-color: #45a049 !important;
+                    margin:0 auto !important;
+                    display:block !important;
                 }}
                 </style>
                 """
@@ -980,8 +983,13 @@ def main():
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
-        st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
-        st.markdown("<div class='subtitle'>Find Classrooms, labs, resources in stunning 3D</div>", unsafe_allow_html=True)
+        # 完整居中布局：标题 → 副标题 → 按钮 全部垂直居中对齐
+        st.markdown("""
+        <div class="center-container">
+            <h1>NAVIGATE YOUR CAMPUS</h1>
+            <div class="subtitle">Find Classrooms, labs, resources in stunning 3D</div>
+        </div>
+        """, unsafe_allow_html=True)
 
         if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
