@@ -141,7 +141,7 @@ def load_school_data_detailed(filename):
         return None
 
 # ====================== 3D Plot Function ======================
-def plot_3d_map_plotly(school_data, graph=None, display_options=None):
+def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legend=True):
     fig = go.Figure()
 
     if display_options is None:
@@ -223,7 +223,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     line=dict(color=floor_border_color, width=4),
                     name=f"Building {building_name}-{level_name}",
                     legendgroup=f"Building {building_name}",
-                    showlegend=True
+                    showlegend=show_legend
                 ))
 
                 fig.add_trace(go.Mesh3d(
@@ -299,8 +299,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     size = 12 if is_path else 9
                     
                     legend_name = f"{building_name}-{s_name}"
-                    show_legend = legend_name not in shown_stairs_legends
-                    if show_legend:
+                    show_legend_item = (legend_name not in shown_stairs_legends) and show_legend
+                    if show_legend_item:
                         shown_stairs_legends.add(legend_name)
                     
                     fig.add_trace(go.Scatter3d(
@@ -310,7 +310,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                         text=s_name, textposition="top center", textfont=dict(size=9, color='darkred'),
                         name=legend_name,
                         legendgroup="Stairs",
-                        showlegend=show_legend
+                        showlegend=show_legend_item
                     ))
         
         if displayed_levels:
@@ -343,19 +343,22 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 mode='lines+markers',
                 line=dict(color=COLORS['path'], width=5),
                 marker=dict(color=COLORS['path'], size=4),
-                name="Path"
+                name="Path",
+                showlegend=show_legend
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[0]], y=[ys[0]], z=[zs[0]],
                 mode='markers+text', marker=dict(color=COLORS['start_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'),
-                name="Start"
+                name="Start",
+                showlegend=show_legend
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
                 mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
-                name="End"
+                name="End",
+                showlegend=show_legend
             ))
         except Exception:
             pass
@@ -368,13 +371,14 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600
+        height=600,
+        showlegend=show_legend
     )
 
     return fig
 
-def plot_3d_map(school_data, graph=None, display_options=None):
-    fig = plot_3d_map_plotly(school_data, graph, display_options)
+def plot_3d_map(school_data, graph=None, display_options=None, show_legend=True):
+    fig = plot_3d_map_plotly(school_data, graph, display_options, show_legend)
     return fig, None
 
 # --------------------------
@@ -916,7 +920,11 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：整体向下移动 35vh ======================
+    # 初始化图例显示状态
+    if 'show_legend' not in st.session_state:
+        st.session_state['show_legend'] = True
+
+    # ====================== 欢迎页 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -987,7 +995,7 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面（完全不变） ======================
+    # ====================== 主界面 ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
@@ -1025,6 +1033,22 @@ def main():
                 st.rerun()
 
         st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        
+        # ========== 箭头切换：显示 / 隐藏图例 ==========
+        col1, col2 = st.columns([1, 15])
+        with col1:
+            # 箭头按钮
+            if st.session_state['show_legend']:
+                if st.button("◀", use_container_width=True):
+                    st.session_state['show_legend'] = False
+                    st.rerun()
+            else:
+                if st.button("▶", use_container_width=True):
+                    st.session_state['show_legend'] = True
+                    st.rerun()
+        with col2:
+            st.caption("Toggle Legend")
+        
         st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1051,9 +1075,9 @@ def main():
                 st.error(f"Error: {e}")
 
         if st.session_state['current_path'] is not None:
-            fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
+            fig = plot_3d_map(school_data, graph, st.session_state['display_options'], show_legend=st.session_state['show_legend'])[0]
         else:
-            fig = plot_3d_map(school_data, graph)[0]
+            fig = plot_3d_map(school_data, graph, show_legend=st.session_state['show_legend'])[0]
         
         st.plotly_chart(
             fig,
