@@ -147,7 +147,7 @@ COLORS = {
 
 def load_school_data_detailed(filename):
     try:
-        with open(filename, 'r', encoding='utf-8') as f:
+        with open(filename, 'r', encoding='utf-8') f:
             return json.load(f)
     except Exception as e:
         st.error(f"Failed to load data file: {str(e)}")
@@ -373,7 +373,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 【彻底修复】手机端图例完全独立，不遮挡3D图 ======================
+    # ====================== 手机端工具栏向下移动，不重叠标题 ======================
     if MOBILE:
         fig.update_layout(
             title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
@@ -382,9 +382,15 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
                 aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
             ),
-            margin=dict(l=0, r=0, t=30, b=0),
+            margin=dict(l=0, r=0, t=60, b=0),
+            modebar=dict(
+                bgcolor='rgba(255,255,255,0.7)',
+                yanchor='top',
+                y=0.92,
+                xanchor='right',
+                x=0.98
+            ),
             height=PLOT_HEIGHT,
-            # 手机端：关闭图表内置图例，避免遮挡
             showlegend=False
         )
     else:
@@ -883,7 +889,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
 def get_classroom_info(school_data):
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building') or b == 'gate']
+        buildings = [b for b in school_data.keys() if b.startswith('building') || b == 'gate']
         building_names = []
         for b in buildings:
             if b == 'gate':
