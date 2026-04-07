@@ -354,7 +354,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             fig.add_trace(go.Scatter3d(
                 x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
                 mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
-                text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
+                text=f"End\n{labels[-1]}", textfont=dict(size=11, color='purple'),
                 name="End"
             ))
         except Exception:
@@ -916,7 +916,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：用 columns 100% 居中按钮 ======================
+    # ====================== 欢迎页：完美居中（水平 + 垂直）手机适配 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -924,6 +924,7 @@ def main():
                     encoded = base64.b64encode(f.read()).decode()
                 css = """
                 <style>
+                /* 页面全屏背景 */
                 .stApp {
                     background-image: url("data:image/jpeg;base64,%s");
                     background-size: cover !important;
@@ -931,30 +932,48 @@ def main():
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
                 }
+
+                /* 核心：整个欢迎内容垂直 + 水平居中 */
+                .welcome-wrapper {
+                    width: 100%;
+                    height: 85vh; /* 保证垂直居中 */
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center !important;
+                    gap: 12px !important;
+                    padding: 0 20px !important;
+                    box-sizing: border-box !important;
+                }
+
+                /* 标题样式 */
                 .welcome-title {
                     color: white !important;
-                    font-size: clamp(28px, 8vw, 48px) !important;
+                    font-size: clamp(26px, 8vw, 50px) !important;
                     font-weight: 900 !important;
-                    text-align: center !important;
-                    white-space: nowrap !important;
                     margin: 0 !important;
+                    white-space: nowrap !important;
                 }
+
+                /* 副标题样式 */
                 .welcome-subtitle {
                     color: white !important;
-                    font-size: clamp(14px, 3vw, 20px) !important;
-                    text-align: center !important;
-                    opacity: 0.9 !important;
-                    margin: 5px 0 20px 0 !important;
+                    font-size: clamp(14px, 3.5vw, 20px) !important;
+                    opacity: 0.95 !important;
+                    margin: 0 0 10px 0 !important;
                 }
+
+                /* 按钮样式 */
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
                     font-size: clamp(16px, 4vw, 20px) !important;
-                    padding: 16px 24px !important;
-                    border-radius: 12px !important;
+                    padding: 16px 32px !important;
+                    border-radius: 14px !important;
                     font-weight: bold !important;
                     border: none !important;
-                    width: 100%% !important;
+                    min-width: 220px !important;
                 }
                 </style>
                 """ % encoded
@@ -968,17 +987,19 @@ def main():
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
 
-        # 标题 + 副标题（全局居中）
+        # ✅ 所有内容放在居中容器里：标题 + 副标题 + 按钮
+        st.markdown("<div class='welcome-wrapper'>", unsafe_allow_html=True)
+
         st.markdown("<h1 class='welcome-title'>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
         st.markdown("<div class='welcome-subtitle'>Find Classrooms, labs, resources in stunning 3D</div>", unsafe_allow_html=True)
 
-        # ✅ 关键：三列布局，按钮放中间列 → 100% 居中
-        col_empty1, col_center, col_empty2 = st.columns([1, 0.5, 1])
-        with col_center:
-            if st.button('EXPLORE 3D MAP'):
-                update_access_count(st.session_state['worksheet'])
-                st.session_state['page'] = 'main'
-                st.rerun()
+        # 按钮自动居中
+        if st.button('EXPLORE 3D MAP'):
+            update_access_count(st.session_state['worksheet'])
+            st.session_state['page'] = 'main'
+            st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # ====================== 主界面（完全不变） ======================
     else:
