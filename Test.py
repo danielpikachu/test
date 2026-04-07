@@ -363,7 +363,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
         except Exception:
             pass
 
-    # ========== 关键修改：按钮栏放在标题正下方 ==========
     fig.update_layout(
         title=dict(
             text="Campus 3D Navigation Map",
@@ -383,10 +382,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None, show_legen
             bgcolor="rgba(255,255,255,0.8)",
             bordercolor="lightgray",
             borderwidth=1
-        ),
-        # 模式栏（缩放/平移等）放在底部居中，标题正下方
-        modebar_position="bottom",
-        modebar_bgcolor="#f0f2f6"
+        )
     )
 
     return fig
@@ -933,7 +929,6 @@ def main():
         }
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
-    # 初始化图例显示状态
     if 'show_legend' not in st.session_state:
         st.session_state['show_legend'] = True
 
@@ -969,19 +964,18 @@ def main():
                 }
                 .welcome-subtitle {
                     color: white !important;
-                    font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
                     margin: 5px 0 25px 0 !important;
+                    font-size: 18px;
                 }
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
-                    font-size: clamp(16px, 4vw, 20px) !important;
+                    font-size: 18px !important;
                     padding: 16px 24px !important;
                     border-radius: 12px !important;
                     font-weight: bold !important;
                     border: none !important;
-                    width: 100%% !important;
                 }
                 </style>
                 """ % encoded
@@ -1001,7 +995,7 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-        col_empty1, col_center, col_empty2 = st.columns([1, 0.5, 1])
+        col_empty1, col_center, col_empty2 = st.columns([1, 0.4, 1])
         with col_center:
             if st.button('EXPLORE 3D MAP'):
                 update_access_count(st.session_state['worksheet'])
@@ -1045,7 +1039,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
         st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1065,27 +1059,27 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px; word-wrap:break-word; white-space:normal;'>{simplified_path}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
             except Exception as e:
                 st.error(f"Error: {e}")
 
-        # ========== 箭头按钮：放在图例上方 ==========
-        col1, col2 = st.columns([1, 0.1])
+        # ========== 箭头按钮：图例上方 ==========
+        col1, col2 = st.columns([10, 1])
         with col2:
             if st.session_state['show_legend']:
-                if st.button("◀", key="btn_hide", help="Hide Legend"):
+                if st.button("◀", help="Hide Legend"):
                     st.session_state['show_legend'] = False
                     st.rerun()
             else:
-                if st.button("▶", key="btn_show", help="Show Legend"):
+                if st.button("▶", help="Show Legend"):
                     st.session_state['show_legend'] = True
                     st.rerun()
 
-        # 绘图
+        # 绘制 3D 图
         if st.session_state['current_path'] is not None:
-            fig = plot_3d_map(school_data, graph, st.session_state['display_options'], show_legend=st.session_state['show_legend'])[0]
+            fig = plot_3d_map(school_data, graph, st.session_state['display_options'], st.session_state['show_legend'])[0]
         else:
             fig = plot_3d_map(school_data, graph, show_legend=st.session_state['show_legend'])[0]
         
