@@ -1,6 +1,6 @@
 import json
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from mplako mplot3d import Axes3D
 import numpy as np
 import streamlit as st
 import gspread
@@ -9,6 +9,8 @@ from datetime import datetime
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+# 修复：导入缺失的 Mesh3d
+from plotly.graph_objects import Mesh3d
 import base64
 
 # ====================== 移动端适配核心：页面配置 ======================
