@@ -381,12 +381,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
                 aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
             ),
-            margin=dict(l=0, r=0, t=30, b=200),  # 底部超大边距
+            margin=dict(l=0, r=0, t=30, b=80),  # 底部超大边距
             height=PLOT_HEIGHT,
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.5,  # 超大下移距离
+                y=-0.02,  # 超大下移距离
                 xanchor="center",
                 x=0.5,
                 font=dict(size=10),
