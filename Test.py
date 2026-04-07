@@ -916,7 +916,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：只留一个按钮，完美居中 ======================
+    # ====================== 欢迎页：用 columns 100% 居中按钮 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -931,29 +931,21 @@ def main():
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
                 }
-                .welcome-container {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;
-                    margin-top: 25vh !important;
-                    width: 100%% !important;
-                }
                 .welcome-title {
                     color: white !important;
                     font-size: clamp(28px, 8vw, 48px) !important;
                     font-weight: 900 !important;
+                    text-align: center !important;
                     white-space: nowrap !important;
                     margin: 0 !important;
                 }
                 .welcome-subtitle {
                     color: white !important;
                     font-size: clamp(14px, 3vw, 20px) !important;
+                    text-align: center !important;
                     opacity: 0.9 !important;
                     margin: 5px 0 20px 0 !important;
                 }
-                /* 强制原生按钮居中、样式统一 */
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
@@ -962,12 +954,7 @@ def main():
                     border-radius: 12px !important;
                     font-weight: bold !important;
                     border: none !important;
-                    cursor: pointer !important;
-                    width: auto !important;
-                    max-width: 300px !important;
-                    margin: 0 auto !important;
-                    display: block !important;
-                    text-align: center !important;
+                    width: 100%% !important;
                 }
                 </style>
                 """ % encoded
@@ -981,19 +968,17 @@ def main():
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
 
-        # 标题 + 副标题（居中容器）
-        st.markdown("""
-        <div class="welcome-container">
-            <h1 class="welcome-title">NAVIGATE YOUR CAMPUS</h1>
-            <div class="welcome-subtitle">Find Classrooms, labs, resources in stunning 3D</div>
-        </div>
-        """, unsafe_allow_html=True)
+        # 标题 + 副标题（全局居中）
+        st.markdown("<h1 class='welcome-title'>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
+        st.markdown("<div class='welcome-subtitle'>Find Classrooms, labs, resources in stunning 3D</div>", unsafe_allow_html=True)
 
-        # 唯一按钮：原生 st.button()，被 CSS 强制居中在副标题正下方
-        if st.button('EXPLORE 3D MAP', use_container_width=False):
-            update_access_count(st.session_state['worksheet'])
-            st.session_state['page'] = 'main'
-            st.rerun()
+        # ✅ 关键：三列布局，按钮放中间列 → 100% 居中
+        col_empty1, col_center, col_empty2 = st.columns([1, 0.5, 1])
+        with col_center:
+            if st.button('EXPLORE 3D MAP'):
+                update_access_count(st.session_state['worksheet'])
+                st.session_state['page'] = 'main'
+                st.rerun()
 
     # ====================== 主界面（完全不变） ======================
     else:
