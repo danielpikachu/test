@@ -11,10 +11,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
 
+# ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto",  # 手机自动折叠，电脑自动展开
+    menu_items=None
 )
 
 plt.switch_backend('Agg')
@@ -366,7 +368,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=880
+        height=600  # 移动端适配：降低固定高度
     )
 
     return fig
@@ -749,7 +751,7 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
-# ====================== 导航函数：自动补全深黄色 forward ======================
+# ====================== 导航函数 ======================
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
@@ -816,7 +818,6 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
                         next_node_id = path[i+1]
                         direction = get_direction_between_nodes(graph, node_id, next_node_id)
                         
-                        # 自动补全 深黄色 forward
                         if not direction:
                             direction = "<span style='color:DarkGoldenRod; font-weight:bold;'>forward</span>"
                         
@@ -916,73 +917,69 @@ def main():
         st.session_state['current_path'] = None
 
     # --------------------------
-    # Welcome Page with Background
+    # 欢迎页：移动端完美自适应
     # --------------------------
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
-            with open(image_file, "rb") as f:
-                encoded = base64.b64encode(f.read()).decode()
-            css = f"""
-            <style>
-            [data-testid="stAppViewContainer"] {{
-                background-image: url("data:image/jpeg;base64,{encoded}");
-                background-size: cover !important;
-                background-position: center !important;
-                background-repeat: no-repeat !important;
-                background-attachment: fixed !important;
-            }}
-
-            h1 {{
-                color: white !important;
-                text-align: center !important;
-                margin-top: 25vh !important;
-                font-size: 48px !important;
-                font-weight: 900 !important;
-            }}
-
-            div.stButton > button:first-child {{
-                background-color: #4682B4 !important;
-                color: white !important;
-                font-size: 20px !important;
-                height: 60px !important;
-                width: 280px !important;
-                border-radius: 12px !important;
-                border: none !important;
-                font-weight: bold !important;
-                display: block !important;
-                margin: 30px 650px auto !important;
-            }}
-
-            div.stButton > button:first-child:hover {{
-                background-color: #45a049 !important;
-            }}
-
-            </style>
-            """
-            st.markdown(css, unsafe_allow_html=True)
+            try:
+                with open(image_file, "rb") as f:
+                    encoded = base64.b64encode(f.read()).decode()
+                css = f"""
+                <style>
+                [data-testid="stAppViewContainer"] {{
+                    background-image: url("data:image/jpeg;base64,{encoded}");
+                    background-size: cover !important;
+                    background-position: center !important;
+                    background-repeat: no-repeat !important;
+                    background-attachment: fixed !important;
+                }}
+                h1 {{
+                    color: white !important;
+                    text-align: center !important;
+                    margin-top: 25vh !important;
+                    font-size: clamp(28px, 8vw, 48px) !important;
+                    font-weight: 900 !important;
+                }}
+                div.stButton > button:first-child {{
+                    background-color: #4682B4 !important;
+                    color: white !important;
+                    font-size: clamp(16px, 4vw, 20px) !important;
+                    height: auto !important;
+                    padding: 16px !important;
+                    width: 80% !important;
+                    max-width: 280px !important;
+                    border-radius: 12px !important;
+                    border: none !important;
+                    font-weight: bold !important;
+                    display: block !important;
+                    margin: 30px auto !important;
+                }}
+                div.stButton > button:first-child:hover {{
+                    background-color: #45a049 !important;
+                }}
+                </style>
+                """
+                st.markdown(css, unsafe_allow_html=True)
+            except:
+                pass
 
         add_bg_from_local("background.jpg")
 
-    # --------------------------
-    # Welcome Page
-    # --------------------------
-    if st.session_state['page'] == 'welcome':
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
         
         total_accesses = get_total_accesses(st.session_state['worksheet'])
         
         st.markdown("<h1>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:white; font-size:20px; opacity:0.9;'>Find Classrooms, labs, resources in stunning 3D</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; color:white; font-size:clamp(14px, 3vw, 20px); opacity:0.9;'>Find Classrooms, labs, resources in stunning 3D</p>", unsafe_allow_html=True)
 
-        
         if st.button('EXPLORE 3D MAP'):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
 
     # --------------------------
-    # Main Interface
+    # 主界面：手机/电脑自适应
     # --------------------------
     else:
         with st.sidebar:
@@ -1020,7 +1017,7 @@ def main():
                 st.session_state['page'] = 'welcome'
                 st.rerun()
 
-        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2;'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
         st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
         
         school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1040,8 +1037,8 @@ def main():
                 if path and display_options:
                     st.success(f"📊 Navigation Result: {message}")
                     st.markdown("#### 🛤️ Path Details")
-                    # 启用 HTML 渲染，显示深黄色高亮
-                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px;'>{simplified_path}</div>", unsafe_allow_html=True)
+                    # 手机自动换行
+                    st.markdown(f"<div style='background-color:#f0f2f6; padding:10px; border-radius:5px; word-wrap:break-word; white-space:normal;'>{simplified_path}</div>", unsafe_allow_html=True)
                     st.session_state['current_path'] = path
                     st.session_state['display_options'] = display_options
             except Exception as e:
@@ -1052,6 +1049,7 @@ def main():
         else:
             fig = plot_3d_map(school_data, graph)[0]
         
+        # 移动端 3D 图适配
         st.plotly_chart(
             fig,
             use_container_width=True,
@@ -1059,9 +1057,7 @@ def main():
                 'displayModeBar': True,
                 'scrollZoom': True,
                 'editable': False
-            },
-            theme="streamlit",
-            kwargs={"layout": {"margin": {"t": 10}}}
+            }
         )
 
 if __name__ == "__main__":
