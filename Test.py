@@ -916,78 +916,65 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # --------------------------
-    # 欢迎页：移动端完美自适应
-    # --------------------------
+    # ====================== 欢迎页：按钮 100% 居中在副标题正下方 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
                 with open(image_file, "rb") as f:
                     encoded = base64.b64encode(f.read()).decode()
-                css = f"""
+                css = """
                 <style>
-                [data-testid="stAppViewContainer"] {{
-                    background-image: url("data:image/jpeg;base64,{encoded}");
+                .stApp {
+                    background-image: url("data:image/jpeg;base64,%s");
                     background-size: cover !important;
                     background-position: center !important;
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
-                }}
-                .center-container {{
+                }
+                .welcome-container {
                     display: flex !important;
                     flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
                     text-align: center !important;
                     margin-top: 25vh !important;
-                    gap: 0px !important;
-                }}
-                h1 {{
+                }
+                .welcome-title {
                     color: white !important;
                     font-size: clamp(28px, 8vw, 48px) !important;
                     font-weight: 900 !important;
                     white-space: nowrap !important;
-                    margin:0 !important;
-                    padding:0 !important;
-                }}
-                .subtitle {{
+                    margin: 0 !important;
+                }
+                .welcome-subtitle {
                     color: white !important;
                     font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
-                    margin-top:5px !important;
-                    margin-bottom:15px !important;
-                    padding:0 !important;
-                }}
-                div.stButton > button {{
+                    margin: 5px 0 20px 0 !important;
+                }
+                div.stButton > button {
                     background-color: #4682B4 !important;
                     color: white !important;
                     font-size: clamp(16px, 4vw, 20px) !important;
-                    padding: 16px 20px !important;
+                    padding: 16px 24px !important;
                     border-radius: 12px !important;
-                    border: none !important;
                     font-weight: bold !important;
                     white-space: nowrap !important;
-                    margin:0 auto !important;
-                    display:block !important;
-                }}
+                    margin: 0 auto !important;
+                    display: block !important;
+                }
                 </style>
-                """
+                """ % encoded
                 st.markdown(css, unsafe_allow_html=True)
             except:
                 pass
 
         add_bg_from_local("background.jpg")
 
-        if 'worksheet' not in st.session_state:
-            st.session_state['worksheet'] = init_google_sheet()
-        
-        total_accesses = get_total_accesses(st.session_state['worksheet'])
-        
-        # 完整居中布局：标题 → 副标题 → 按钮 全部垂直居中对齐
         st.markdown("""
-        <div class="center-container">
-            <h1>NAVIGATE YOUR CAMPUS</h1>
-            <div class="subtitle">Find Classrooms, labs, resources in stunning 3D</div>
+        <div class="welcome-container">
+            <h1 class="welcome-title">NAVIGATE YOUR CAMPUS</h1>
+            <div class="welcome-subtitle">Find Classrooms, labs, resources in stunning 3D</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -996,9 +983,7 @@ def main():
             st.session_state['page'] = 'main'
             st.rerun()
 
-    # --------------------------
-    # 主界面：手机/电脑自适应
-    # --------------------------
+    # ====================== 主界面 ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
