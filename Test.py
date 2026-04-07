@@ -501,7 +501,7 @@ def build_navigation_graph(school_data):
     graph = Graph()
 
     for building_id in school_data.keys():
-        if not (building_id.startswith('building') || building_id == 'gate'):
+        if not (building_id.startswith('building') or building_id == 'gate'):
             continue
             
         building_data = school_data[building_id]
