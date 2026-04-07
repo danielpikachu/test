@@ -916,7 +916,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：按钮 100% 居中在副标题正下方 ======================
+    # ====================== 欢迎页：只留一个按钮，完美居中 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -953,7 +953,8 @@ def main():
                     opacity: 0.9 !important;
                     margin: 5px 0 20px 0 !important;
                 }
-                .center-button {
+                /* 强制原生按钮居中、样式统一 */
+                div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
                     font-size: clamp(16px, 4vw, 20px) !important;
@@ -962,9 +963,11 @@ def main():
                     font-weight: bold !important;
                     border: none !important;
                     cursor: pointer !important;
-                    text-align: center !important;
                     width: auto !important;
+                    max-width: 300px !important;
                     margin: 0 auto !important;
+                    display: block !important;
+                    text-align: center !important;
                 }
                 </style>
                 """ % encoded
@@ -978,24 +981,21 @@ def main():
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
 
-        # 完整居中布局：标题 + 副标题 + HTML按钮（100%居中）
+        # 标题 + 副标题（居中容器）
         st.markdown("""
         <div class="welcome-container">
             <h1 class="welcome-title">NAVIGATE YOUR CAMPUS</h1>
             <div class="welcome-subtitle">Find Classrooms, labs, resources in stunning 3D</div>
-            <button class="center-button" onclick="parent.document.querySelector('button[kind=secondary]').click()">EXPLORE 3D MAP</button>
         </div>
         """, unsafe_allow_html=True)
 
-        # 隐藏原生按钮
-        st.markdown("<div style='display:none;'>", unsafe_allow_html=True)
-        if st.button('EXPLORE 3D MAP', key="hidden_btn"):
+        # 唯一按钮：原生 st.button()，被 CSS 强制居中在副标题正下方
+        if st.button('EXPLORE 3D MAP', use_container_width=False):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # ====================== 主界面 ======================
+    # ====================== 主界面（完全不变） ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
