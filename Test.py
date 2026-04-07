@@ -916,7 +916,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：用 columns 100% 居中按钮 ======================
+    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -931,20 +931,26 @@ def main():
                     background-repeat: no-repeat !important;
                     background-attachment: fixed !important;
                 }
+                .welcome-container {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                    width: 100%% !important;
+                    margin-top: 35vh !important;
+                }
                 .welcome-title {
                     color: white !important;
                     font-size: clamp(28px, 8vw, 48px) !important;
                     font-weight: 900 !important;
-                    text-align: center !important;
                     white-space: nowrap !important;
                     margin: 0 !important;
                 }
                 .welcome-subtitle {
                     color: white !important;
                     font-size: clamp(14px, 3vw, 20px) !important;
-                    text-align: center !important;
                     opacity: 0.9 !important;
-                    margin: 5px 0 20px 0 !important;
+                    margin: 5px 0 25px 0 !important;
                 }
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
@@ -964,15 +970,16 @@ def main():
 
         add_bg_from_local("background.jpg")
 
-        # 初始化表格
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
 
-        # 标题 + 副标题（全局居中）
-        st.markdown("<h1 class='welcome-title'>NAVIGATE YOUR CAMPUS</h1>", unsafe_allow_html=True)
-        st.markdown("<div class='welcome-subtitle'>Find Classrooms, labs, resources in stunning 3D</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="welcome-container">
+            <h1 class="welcome-title">NAVIGATE YOUR CAMPUS</h1>
+            <div class="welcome-subtitle">Find Classrooms, labs, resources in stunning 3D</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # ✅ 关键：三列布局，按钮放中间列 → 100% 居中
         col_empty1, col_center, col_empty2 = st.columns([1, 0.5, 1])
         with col_center:
             if st.button('EXPLORE 3D MAP'):
