@@ -10,28 +10,26 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
-import user_agent
 
 # ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
-    initial_sidebar_state="collapsed",  # 手机默认折叠侧边栏
+    initial_sidebar_state="collapsed",
     menu_items=None
 )
 
 plt.switch_backend('Agg')
 
-# ====================== 【核心】设备检测：自动判断电脑/手机 ======================
+# ====================== 【核心】设备检测：自动判断电脑/手机（无依赖版） ======================
 def is_mobile():
     try:
-        user_agent_str = st.context.headers.get("User-Agent", "")
-        return "Mobile" in user_agent_str or "Android" in user_agent_str or "iPhone" in user_agent_str
+        agent = st.context.headers.get("User-Agent", "")
+        return any(x in agent for x in ['Mobile', 'Android', 'iPhone', 'iPad', 'iPod'])
     except:
         return False
 
 MOBILE = is_mobile()
-# 自适应高度/字体
 PLOT_HEIGHT = 400 if MOBILE else 650
 FONT_SIZE_SCALE = 0.85 if MOBILE else 1.0
 
@@ -382,7 +380,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=PLOT_HEIGHT  # 自适应高度
+        height=PLOT_HEIGHT
     )
 
     return fig
@@ -930,7 +928,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：整体向下移动 35vh ======================
+    # ====================== 欢迎页 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -1001,9 +999,8 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面：移动端优化 ======================
+    # ====================== 主界面 ======================
     else:
-        # 手机端：把选择器放到主页面，不使用侧边栏
         if MOBILE:
             st.markdown("<h2 style='text-align:center; margin:10px 0;'>🏫 SCIS Campus Navigation</h2>", unsafe_allow_html=True)
             with st.container():
@@ -1033,7 +1030,6 @@ def main():
                 end_classrooms = classrooms_by_building.get(end_building, {}).get(end_level, [])
                 end_classroom = st.selectbox("Classroom", end_classrooms, key="end_classroom")
 
-                # 按钮行
                 bc1, bc2, bc3 = st.columns(3)
                 with bc1:
                     nav_button = st.button("🔍 Find Path", use_container_width=True)
@@ -1042,7 +1038,6 @@ def main():
                 with bc3:
                     exit_button = st.button("🚪 Back", use_container_width=True)
         else:
-            # 电脑端：保留侧边栏
             with st.sidebar:
                 st.header("📍 Select Locations")
                 school_data = load_school_data_detailed('school_data_detailed.json')
@@ -1078,7 +1073,6 @@ def main():
             st.session_state['page'] = 'welcome'
             st.rerun()
 
-        # 标题
         if not MOBILE:
             st.markdown("<h2 style='margin:0; padding:0; text-align:left; line-height:1.2; font-size:clamp(18px,5vw,26px);'>🏫 SCIS Campus Navigation System</h2>", unsafe_allow_html=True)
             st.markdown("<div style='height:5px;'></div>", unsafe_allow_html=True)
@@ -1106,7 +1100,6 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
-        # 渲染3D图
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
         else:
