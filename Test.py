@@ -372,16 +372,50 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
-        scene=dict(
-            xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
-            camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
-            aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
-        ),
-        margin=dict(l=0, r=0, t=30, b=0),
-        height=PLOT_HEIGHT
-    )
+    # ====================== 【关键修改】移动端：图例放底部；电脑端：图例放右侧 ======================
+    if MOBILE:
+        # 手机：图例水平、底部居中、不遮挡3D图
+        fig.update_layout(
+            title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+            scene=dict(
+                xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
+                camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
+                aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
+            ),
+            margin=dict(l=0, r=0, t=30, b=100),  # 底部留空间给图例
+            height=PLOT_HEIGHT,
+            # 移动端图例设置
+            legend=dict(
+                orientation="h",        # 水平排列
+                yanchor="bottom",       # 锚点在底部
+                y=-0.15,                # 放在图表下方
+                xanchor="center",       # 水平居中
+                x=0.5,
+                font=dict(size=10),     # 手机字体稍小
+                bgcolor="rgba(255,255,255,0.8)"
+            )
+        )
+    else:
+        # 电脑：保持原来右侧位置
+        fig.update_layout(
+            title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+            scene=dict(
+                xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
+                camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
+                aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
+            ),
+            margin=dict(l=0, r=100, t=30, b=0), # 右侧留空间给图例
+            height=PLOT_HEIGHT,
+            # 电脑端图例设置（右侧）
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=1.02,
+                font=dict(size=11)
+            )
+        )
 
     return fig
 
