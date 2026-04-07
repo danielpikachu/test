@@ -238,7 +238,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     showlegend=True
                 ))
 
-                fig.add_trace(go.Mesh3d(
+                fig.add_trace(Mesh3d(
                     x=x_vals[:4], y=y_vals[:4], z=z_vals[:4],
                     color=building_fill_color, opacity=0.3, showlegend=False
                 ))
@@ -372,9 +372,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 【关键修改】移动端：图例放底部；电脑端：图例放右侧 ======================
+    # ====================== 【彻底修复】手机端图例完全独立，不遮挡3D图 ======================
     if MOBILE:
-        # 手机：图例水平、底部居中、不遮挡3D图
         fig.update_layout(
             title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
             scene=dict(
@@ -382,21 +381,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
                 aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
             ),
-            margin=dict(l=0, r=0, t=30, b=100),  # 底部留空间给图例
+            margin=dict(l=0, r=0, t=30, b=0),
             height=PLOT_HEIGHT,
-            # 移动端图例设置
-            legend=dict(
-                orientation="h",        # 水平排列
-                yanchor="bottom",       # 锚点在底部
-                y=-0.15,                # 放在图表下方
-                xanchor="center",       # 水平居中
-                x=0.5,
-                font=dict(size=10),     # 手机字体稍小
-                bgcolor="rgba(255,255,255,0.8)"
-            )
+            # 手机端：关闭图表内置图例，避免遮挡
+            showlegend=False
         )
     else:
-        # 电脑：保持原来右侧位置
         fig.update_layout(
             title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
             scene=dict(
@@ -404,9 +394,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
                 aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
             ),
-            margin=dict(l=0, r=100, t=30, b=0), # 右侧留空间给图例
+            margin=dict(l=0, r=100, t=30, b=0),
             height=PLOT_HEIGHT,
-            # 电脑端图例设置（右侧）
             legend=dict(
                 orientation="v",
                 yanchor="top",
@@ -1134,6 +1123,7 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
+        # 3D图
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
         else:
