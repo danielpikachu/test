@@ -1,6 +1,6 @@
 import json
 import matplotlib.pyplot as plt
-from mplako mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import streamlit as st
 import gspread
@@ -9,7 +9,6 @@ from datetime import datetime
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-# 修复：导入缺失的 Mesh3d
 from plotly.graph_objects import Mesh3d
 import base64
 
@@ -53,7 +52,7 @@ def get_credentials():
             scopes=SCOPE
         )
     except KeyError:
-        st.error("google_service_account not found in Streamlit Secrets, please check TOML format")
+        st.error("google_service_account not found in Streamlit Secrets, please check TOM format")
         return None
     except Exception as e:
         st.error(f"Failed to load credentials: {str(e)}")
@@ -502,7 +501,7 @@ def build_navigation_graph(school_data):
     graph = Graph()
 
     for building_id in school_data.keys():
-        if not (building_id.startswith('building') or building_id == 'gate'):
+        if not (building_id.startswith('building') || building_id == 'gate'):
             continue
             
         building_data = school_data[building_id]
@@ -542,7 +541,7 @@ def build_navigation_graph(school_data):
                     )
 
     for building_id in school_data.keys():
-        if not (building_id.startswith('building') or building_id == 'gate'):
+        if not (building_id.startswith('building') || building_id == 'gate'):
             continue
             
         if building_id == 'gate':
@@ -884,7 +883,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
 def get_classroom_info(school_data):
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building') or b == 'gate']
+        buildings = [b for b in school_data.keys() if b.startswith('building') || b == 'gate']
         building_names = []
         for b in buildings:
             if b == 'gate':
