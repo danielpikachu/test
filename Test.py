@@ -938,6 +938,7 @@ def main():
                     justify-content: center !important;
                     text-align: center !important;
                     margin-top: 25vh !important;
+                    width: 100%% !important;
                 }
                 .welcome-title {
                     color: white !important;
@@ -952,16 +953,18 @@ def main():
                     opacity: 0.9 !important;
                     margin: 5px 0 20px 0 !important;
                 }
-                div.stButton > button {
+                .center-button {
                     background-color: #4682B4 !important;
                     color: white !important;
                     font-size: clamp(16px, 4vw, 20px) !important;
                     padding: 16px 24px !important;
                     border-radius: 12px !important;
                     font-weight: bold !important;
-                    white-space: nowrap !important;
+                    border: none !important;
+                    cursor: pointer !important;
+                    text-align: center !important;
+                    width: auto !important;
                     margin: 0 auto !important;
-                    display: block !important;
                 }
                 </style>
                 """ % encoded
@@ -971,17 +974,26 @@ def main():
 
         add_bg_from_local("background.jpg")
 
+        # 初始化表格
+        if 'worksheet' not in st.session_state:
+            st.session_state['worksheet'] = init_google_sheet()
+
+        # 完整居中布局：标题 + 副标题 + HTML按钮（100%居中）
         st.markdown("""
         <div class="welcome-container">
             <h1 class="welcome-title">NAVIGATE YOUR CAMPUS</h1>
             <div class="welcome-subtitle">Find Classrooms, labs, resources in stunning 3D</div>
+            <button class="center-button" onclick="parent.document.querySelector('button[kind=secondary]').click()">EXPLORE 3D MAP</button>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button('EXPLORE 3D MAP'):
+        # 隐藏原生按钮
+        st.markdown("<div style='display:none;'>", unsafe_allow_html=True)
+        if st.button('EXPLORE 3D MAP', key="hidden_btn"):
             update_access_count(st.session_state['worksheet'])
             st.session_state['page'] = 'main'
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # ====================== 主界面 ======================
     else:
