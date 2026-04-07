@@ -883,7 +883,7 @@ def navigate(graph, start_building, start_classroom, start_level, end_building, 
 
 def get_classroom_info(school_data):
     try:
-        buildings = [b for b in school_data.keys() if b.startswith('building') || b == 'gate']
+        buildings = [b for b in school_data.keys() if b.startswith('building') or b == 'gate']
         building_names = []
         for b in buildings:
             if b == 'gate':
