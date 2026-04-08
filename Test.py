@@ -410,7 +410,7 @@ class Graph:
         }
         
         map_key = (building_id, node_type, name, level)
-        self.node_id_map[map_key = node_id
+        self.node_id_map[map_key] = node_id
         if node_type == 'classroom':
             class_key = (building_name, name, level)
             self.node_id_map[class_key] = node_id
