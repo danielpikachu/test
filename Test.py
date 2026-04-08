@@ -360,9 +360,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 关键：自动判断手机 / 电脑，控制图例 ======================
-    is_mobile = st.session_state.get('is_mobile', False)
-
     fig.update_layout(
         title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
@@ -371,8 +368,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600,
-        showlegend=False if is_mobile else True   # 手机关图例，电脑显示图例
+        height=600
     )
 
     return fig
@@ -905,19 +901,6 @@ def reset_app_state():
 # Page Logic
 # --------------------------
 def main():
-    # ====================== 自动判断是否为手机 ======================
-    try:
-        import streamlit.components.v1 as components
-        mobile_js = """
-        <script>
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        window.parent.postMessage({type: 'streamlit:setSessionState', key: 'is_mobile', value: isMobile}, '*');
-        </script>
-        """
-        components.html(mobile_js, height=0, width=0)
-    except:
-        st.session_state['is_mobile'] = False
-
     if 'page' not in st.session_state:
         st.session_state['page'] = 'welcome'
     if 'display_options' not in st.session_state:
@@ -942,7 +925,7 @@ def main():
                 css = """
                 <style>
                 .stApp {
-                    background-image: url("data:image/jpeg;base6,%s");
+                    background-image: url("data:image/jpeg;base64,%s");
                     background-size: cover !important;
                     background-position: center !important;
                     background-repeat: no-repeat !important;
