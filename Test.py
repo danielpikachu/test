@@ -360,7 +360,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 手机端自动关闭图例 ======================
+    # ====================== 手机端自动关闭图例，电脑端显示图例 ======================
     is_mobile = False
     try:
         ua = st.context.headers.get("User-Agent", "").lower()
@@ -369,18 +369,12 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         pass
 
     fig.update_layout(
-        title=dict(
-            text="Campus 3D Navigation Map", 
-            font=dict(size=22, color="gray"), 
-            x=0.5, xanchor='center',
-            y=0.98, yanchor='top'
-        ),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=50, b=0),
+        margin=dict(l=0, r=0, t=30, b=0),
         height=600,
         showlegend=False if is_mobile else True
     )
@@ -1064,6 +1058,13 @@ def main():
             except Exception as e:
                 st.error(f"Error: {e}")
 
+        # 新增：独立标题，不与Plotly工具栏重叠
+        st.markdown("""
+        <h3 style='text-align:center; color:gray; font-size:22px; margin:10px 0;'>
+        Campus 3D Navigation Map
+        </h3>
+        """, unsafe_allow_html=True)
+        
         if st.session_state['current_path'] is not None:
             fig = plot_3d_map(school_data, graph, st.session_state['display_options'])[0]
         else:
@@ -1075,9 +1076,7 @@ def main():
             config={
                 'displayModeBar': True,
                 'scrollZoom': True,
-                'editable': False,
-                'modeBarPosition': 'top',
-                'displaylogo': False
+                'editable': False
             }
         )
 
