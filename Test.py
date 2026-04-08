@@ -21,34 +21,33 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
-# ====================== 设备判断：宽度>768 为电脑 ======================
-st.session_state.is_mobile = False
+# ====================== 稳定设备判断：电脑/手机 ======================
+import streamlit.components.v1 as components
 
-# JS 获取屏幕宽度
-device_js = """
+device_check = """
 <script>
-window.addEventListener('load', function() {
-    const width = window.innerWidth;
-    window.parent.postMessage({type: 'device_width', width: width}, '*');
-});
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+window.parent.postMessage({
+    type: 'device_type',
+    isMobile: isMobile
+}, '*');
 </script>
 """
-st.components.v1.html(device_js, height=0, scrolling=False)
+components.html(device_check, height=0)
 
-# 监听消息
-if 'device_width' not in st.session_state:
-    st.session_state.device_width = 1000
+# 初始化设备状态
+if 'is_mobile' not in st.session_state:
+    st.session_state.is_mobile = False
 
+# 监听前端消息
 try:
-    import streamlit.components.v1 as components
-    msg = st.experimental_get_query_params()
-    if 'width' in msg:
-        st.session_state.device_width = int(msg['width'][0])
+    from streamlit.web.server import Server
+    import streamlit.runtime as runtime
+    msg = st.runtime.get_instance()._session_mgr.list_active_sessions()[0].client_state
+    if 'isMobile' in msg:
+        st.session_state.is_mobile = msg['isMobile']
 except:
     pass
-
-# 最终判断
-st.session_state.is_mobile = st.session_state.device_width <= 768
 
 # --------------------------
 # Google Sheets Configuration
@@ -173,7 +172,7 @@ def load_school_data_detailed(filename):
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
-    # 核心开关
+    # 核心：手机端彻底关闭图例
     SHOW_LEGEND = not st.session_state.is_mobile
 
     if display_options is None:
@@ -402,7 +401,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         ),
         margin=dict(l=0, r=0, t=30, b=0),
         height=600,
-        showlegend=SHOW_LEGEND  # 全局控制图例显示
+        showlegend=SHOW_LEGEND  # 全局强制控制图例
     )
 
     return fig
