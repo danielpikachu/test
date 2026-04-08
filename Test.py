@@ -10,7 +10,6 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
-import streamlit.components.v1 as components
 
 # ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
@@ -21,6 +20,24 @@ st.set_page_config(
 )
 
 plt.switch_backend('Agg')
+
+# ====================== 新增：设备类型检测（移动端/桌面端） ======================
+if 'is_mobile' not in st.session_state:
+    st.session_state.is_mobile = False
+
+# 使用JS检测屏幕宽度，判断是否为移动端
+mobile_js = """
+<script>
+const isMobile = window.innerWidth <= 768;
+window.parent.document.querySelector('iframe').contentWindow.streamlit.setComponentValue(isMobile);
+</script>
+"""
+try:
+    mobile_detected = st.components.v1.html(mobile_js, height=0, scrolling=False)
+    if mobile_detected is not None:
+        st.session_state.is_mobile = mobile_detected
+except:
+    st.session_state.is_mobile = False
 
 # --------------------------
 # Google Sheets Configuration
@@ -141,30 +158,11 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 自动判断手机 / 电脑 ======================
-def detect_mobile():
-    try:
-        mobile_js = """
-        <script>
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        window.parent.postMessage({
-            type: 'streamlit:setSessionState',
-            key: 'is_mobile',
-            value: isMobile
-        }, '*');
-        </script>
-        """
-        components.html(mobile_js, height=0, width=0)
-    except:
-        st.session_state['is_mobile'] = False
-
-if 'is_mobile' not in st.session_state:
-    st.session_state['is_mobile'] = False
-detect_mobile()
-
-# ====================== 3D Plot Function ======================
+# ====================== 3D Plot Function（已适配移动端隐藏图例） ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
+    # 核心：移动端强制关闭图例，电脑端正常显示
+    SHOW_LEGEND = not st.session_state.is_mobile
 
     if display_options is None:
         display_options = {
@@ -245,7 +243,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     line=dict(color=floor_border_color, width=4),
                     name=f"Building {building_name}-{level_name}",
                     legendgroup=f"Building {building_name}",
-                    showlegend=True
+                    showlegend=SHOW_LEGEND
                 ))
 
                 fig.add_trace(go.Mesh3d(
@@ -321,7 +319,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     size = 12 if is_path else 9
                     
                     legend_name = f"{building_name}-{s_name}"
-                    show_legend = legend_name not in shown_stairs_legends
+                    show_legend = (legend_name not in shown_stairs_legends) and SHOW_LEGEND
                     if show_legend:
                         shown_stairs_legends.add(legend_name)
                     
@@ -365,24 +363,26 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 mode='lines+markers',
                 line=dict(color=COLORS['path'], width=5),
                 marker=dict(color=COLORS['path'], size=4),
-                name="Path"
+                name="Path",
+                showlegend=SHOW_LEGEND
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[0]], y=[ys[0]], z=[zs[0]],
                 mode='markers+text', marker=dict(color=COLORS['start_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'),
-                name="Start"
+                name="Start",
+                showlegend=SHOW_LEGEND
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
                 mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
-                name="End"
+                name="End",
+                showlegend=SHOW_LEGEND
             ))
         except Exception:
             pass
 
-    # ====================== 核心：手机隐藏图例，电脑显示图例 ======================
     fig.update_layout(
         title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
@@ -391,8 +391,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600,
-        showlegend=False if st.session_state.get('is_mobile', False) else True
+        height=600
     )
 
     return fig
@@ -940,7 +939,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 登录界面：完全保持你原来的样子 ======================
+    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -1011,7 +1010,7 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面 ======================
+    # ====================== 主界面（完全不变） ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
