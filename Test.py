@@ -1077,7 +1077,7 @@ def main():
         else:
             fig = plot_3d_map(school_data, graph)[0]
 
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
         st.plotly_chart(
             fig,
