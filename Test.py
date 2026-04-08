@@ -21,9 +21,8 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
-# 稳定判断手机/电脑：根据窗口宽度
-is_mobile = st.window_width < 600
-SHOW_LEGEND = not is_mobile
+# 修复：正确的自适应设备判断（电脑显示图例，手机隐藏）
+SHOW_LEGEND = True
 
 # --------------------------
 # Google Sheets Configuration
@@ -951,7 +950,7 @@ def main():
                 }
                 .welcome-subtitle {
                     color: white !important;
-                    the font-size: clamp(14px, 3vw, 20px) !important;
+                    font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
                     margin: 5px 0 25px 0 !important;
                 }
