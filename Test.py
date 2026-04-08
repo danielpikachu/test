@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
 
-# ====================== 页面配置 ======================
+# ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
@@ -20,9 +20,6 @@ st.set_page_config(
 )
 
 plt.switch_backend('Agg')
-
-# 修复：正确的自适应设备判断（电脑显示图例，手机隐藏）
-SHOW_LEGEND = True
 
 # --------------------------
 # Google Sheets Configuration
@@ -143,7 +140,7 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D 绘图 ======================
+# ====================== 3D Plot Function ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
@@ -183,6 +180,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         max_displayed_z = -float('inf')
         max_displayed_y = -float('inf')
         corresponding_x = 0
+        level_count = 0
         
         for level in building_data['levels']:
             level_name = level['name']
@@ -209,6 +207,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     max_displayed_y = current_max_y
                     corresponding_x = (fp['minX'] + fp['maxX']) / 2
             
+            level_count += 1
             floor_border_color = COLORS['floor_z'].get(raw_z, 'gray')
             building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
@@ -224,7 +223,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     line=dict(color=floor_border_color, width=4),
                     name=f"Building {building_name}-{level_name}",
                     legendgroup=f"Building {building_name}",
-                    showlegend=SHOW_LEGEND
+                    showlegend=True
                 ))
 
                 fig.add_trace(go.Mesh3d(
@@ -300,7 +299,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     size = 12 if is_path else 9
                     
                     legend_name = f"{building_name}-{s_name}"
-                    show_legend = (legend_name not in shown_stairs_legends) and SHOW_LEGEND
+                    show_legend = legend_name not in shown_stairs_legends
                     if show_legend:
                         shown_stairs_legends.add(legend_name)
                     
@@ -344,25 +343,30 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                 mode='lines+markers',
                 line=dict(color=COLORS['path'], width=5),
                 marker=dict(color=COLORS['path'], size=4),
-                name="Path",
-                showlegend=SHOW_LEGEND
+                name="Path"
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[0]], y=[ys[0]], z=[zs[0]],
                 mode='markers+text', marker=dict(color=COLORS['start_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"Start\n{labels[0]}", textposition="top center", textfont=dict(size=11, color='green'),
-                name="Start",
-                showlegend=SHOW_LEGEND
+                name="Start"
             ))
             fig.add_trace(go.Scatter3d(
                 x=[xs[-1]], y=[ys[-1]], z=[zs[-1]],
                 mode='markers+text', marker=dict(color=COLORS['end_marker'], size=14, symbol='square', line=dict(width=2)),
                 text=f"End\n{labels[-1]}", textposition="top center", textfont=dict(size=11, color='purple'),
-                name="End",
-                showlegend=SHOW_LEGEND
+                name="End"
             ))
         except Exception:
             pass
+
+    # ====================== 手机端自动关闭图例，电脑端显示图例 ======================
+    is_mobile = False
+    try:
+        ua = st.context.headers.get("User-Agent", "").lower()
+        is_mobile = any(m in ua for m in ["mobile", "android", "iphone", "ipad", "phone"])
+    except:
+        pass
 
     fig.update_layout(
         title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
@@ -373,7 +377,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         ),
         margin=dict(l=0, r=0, t=30, b=0),
         height=600,
-        showlegend=SHOW_LEGEND
+        showlegend=False if is_mobile else True  # 核心适配
     )
 
     return fig
@@ -431,6 +435,7 @@ def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     total_dist = base_dist + penalty
     return total_dist
 
+# ====================== 方向函数：全部改为深黄色高亮 ======================
 def get_direction_between_nodes(graph, current_node_id, next_node_id):
     current_node = graph.nodes[current_node_id]
     next_node = graph.nodes[next_node_id]
@@ -755,6 +760,7 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
+# ====================== 导航函数 ======================
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
@@ -919,6 +925,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
+    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -989,6 +996,7 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
+    # ====================== 主界面 ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
