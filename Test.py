@@ -706,7 +706,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_b_node_id]['coordinates']
             coords_b = graph.nodes[b_a_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
-            graph.add_edge(a_b_node_id, b_a_node_id)
+            graph.add_edge(a_b_node_id, b_a_node_id, distance)
         
         bc_connect_level = 'level1'
         b_c_corr_name = 'connectToBuildingAAndC-p0'
@@ -718,7 +718,7 @@ def build_navigation_graph(school_data):
             coords_b = graph.nodes[b_c_node_id]['coordinates']
             coords_c = graph.nodes[c_b_node_id]['coordinates']
             distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
-            graph.add_edge(b_c_node_id, c_b_node_id)
+            graph.add_edge(b_c_node_id, c_b_node_id, distance)
         
         connect_level1 = 'level1'
         a_corr1_name = 'connectToBuildingC-p3'
@@ -730,7 +730,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_connect1_node_id]['coordinates']
             coords_c = graph.nodes[c_connect1_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect1_node_id, c_connect1_node_id)
+            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
         
         connect_level3 = 'level3'
         a_corr3_name = 'connectToBuildingC-p2'
@@ -742,7 +742,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_connect3_node_id]['coordinates']
             coords_c = graph.nodes[c_connect3_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect3_node_id, c_connect3_node_id)
+            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
 
     return graph
 
