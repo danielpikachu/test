@@ -360,7 +360,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
-    # ====================== 手机端自动关闭图例，电脑端显示图例 ======================
+    # ====================== 手机端自动关闭图例+调整工具栏位置，电脑端不变 ======================
     is_mobile = False
     try:
         ua = st.context.headers.get("User-Agent", "").lower()
@@ -368,16 +368,29 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     except:
         pass
 
+    # 手机端：增加顶部margin，把工具栏往下移；电脑端保持原margin
+    mobile_margin = dict(l=0, r=0, t=60, b=0)
+    desktop_margin = dict(l=0, r=0, t=30, b=0)
+    current_margin = mobile_margin if is_mobile else desktop_margin
+
+    # 手机端微调标题位置，避免与工具栏冲突
+    title_y = 0.98 if is_mobile else 0.95
+
     fig.update_layout(
-        title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
+        title=dict(
+            text="Campus 3D Navigation Map", 
+            font=dict(size=22, color="gray"), 
+            x=0.5, xanchor='center',
+            y=title_y, yanchor='top'
+        ),
         scene=dict(
             xaxis_title="X", yaxis_title="Y", zaxis_title="Floor (Z+10)",
             camera=dict(eye=dict(x=1.4, y=1.4, z=1.0)),
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=current_margin,
         height=600,
-        showlegend=False if is_mobile else True  # 核心适配
+        showlegend=False if is_mobile else True
     )
 
     return fig
