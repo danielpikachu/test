@@ -21,6 +21,10 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
+# 稳定判断手机/电脑：根据窗口宽度
+is_mobile = st.window_width < 600
+SHOW_LEGEND = not is_mobile
+
 # --------------------------
 # Google Sheets Configuration
 # --------------------------
@@ -140,12 +144,9 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D 绘图：电脑显示图例，手机自动隐藏 ======================
+# ====================== 3D 绘图 ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
-
-    # 强制电脑显示图例，手机自动隐藏（自适应屏幕宽度）
-    SHOW_LEGEND = True
 
     if display_options is None:
         display_options = {
@@ -373,18 +374,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         ),
         margin=dict(l=0, r=0, t=30, b=0),
         height=600,
-        showlegend=SHOW_LEGEND,
-        # 关键：手机自动隐藏图例
-        legend=dict(
-            orientation="v",
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="gray",
-            borderwidth=1,
-            font=dict(size=10),
-            # 自动适应：屏幕小就自动隐藏
-            itemwidth=30,
-            itemsizing="constant"
-        )
+        showlegend=SHOW_LEGEND
     )
 
     return fig
@@ -422,7 +412,7 @@ class Graph:
         }
         
         map_key = (building_id, node_type, name, level)
-        self.node_id_map[map_key] = node_id
+        self.node_id_map[map_key = node_id
         if node_type == 'classroom':
             class_key = (building_name, name, level)
             self.node_id_map[class_key] = node_id
@@ -961,7 +951,7 @@ def main():
                 }
                 .welcome-subtitle {
                     color: white !important;
-                    font-size: clamp(14px, 3vw, 20px) !important;
+                    the font-size: clamp(14px, 3vw, 20px) !important;
                     opacity: 0.9 !important;
                     margin: 5px 0 25px 0 !important;
                 }
@@ -1067,7 +1057,6 @@ def main():
         else:
             fig = plot_3d_map(school_data, graph)[0]
         
-        # 最终渲染：手机自动隐藏图例
         st.plotly_chart(
             fig,
             use_container_width=True,
