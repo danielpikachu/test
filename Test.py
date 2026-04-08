@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
 
-# ====================== 移动端适配核心：页面配置 ======================
+# ====================== 页面配置 ======================
 st.set_page_config(
     page_title="SCIS Navigation System",
     layout="wide",
@@ -21,23 +21,34 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
-# ====================== 新增：设备类型检测（移动端/桌面端） ======================
-if 'is_mobile' not in st.session_state:
-    st.session_state.is_mobile = False
+# ====================== 设备判断：宽度>768 为电脑 ======================
+st.session_state.is_mobile = False
 
-# 使用JS检测屏幕宽度，判断是否为移动端
-mobile_js = """
+# JS 获取屏幕宽度
+device_js = """
 <script>
-const isMobile = window.innerWidth <= 768;
-window.parent.document.querySelector('iframe').contentWindow.streamlit.setComponentValue(isMobile);
+window.addEventListener('load', function() {
+    const width = window.innerWidth;
+    window.parent.postMessage({type: 'device_width', width: width}, '*');
+});
 </script>
 """
+st.components.v1.html(device_js, height=0, scrolling=False)
+
+# 监听消息
+if 'device_width' not in st.session_state:
+    st.session_state.device_width = 1000
+
 try:
-    mobile_detected = st.components.v1.html(mobile_js, height=0, scrolling=False)
-    if mobile_detected is not None:
-        st.session_state.is_mobile = mobile_detected
+    import streamlit.components.v1 as components
+    msg = st.experimental_get_query_params()
+    if 'width' in msg:
+        st.session_state.device_width = int(msg['width'][0])
 except:
-    st.session_state.is_mobile = False
+    pass
+
+# 最终判断
+st.session_state.is_mobile = st.session_state.device_width <= 768
 
 # --------------------------
 # Google Sheets Configuration
@@ -158,10 +169,11 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D Plot Function（已适配移动端隐藏图例） ======================
+# ====================== 3D 绘图：电脑显示图例，手机隐藏 ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
-    # 核心：移动端强制关闭图例，电脑端正常显示
+
+    # 核心开关
     SHOW_LEGEND = not st.session_state.is_mobile
 
     if display_options is None:
@@ -200,7 +212,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         max_displayed_z = -float('inf')
         max_displayed_y = -float('inf')
         corresponding_x = 0
-        level_count = 0
         
         for level in building_data['levels']:
             level_name = level['name']
@@ -227,7 +238,6 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
                     max_displayed_y = current_max_y
                     corresponding_x = (fp['minX'] + fp['maxX']) / 2
             
-            level_count += 1
             floor_border_color = COLORS['floor_z'].get(raw_z, 'gray')
             building_fill_color = COLORS['building'].get(building_name, 'lightgray')
 
@@ -391,7 +401,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600
+        height=600,
+        showlegend=SHOW_LEGEND  # 全局控制图例显示
     )
 
     return fig
@@ -449,7 +460,6 @@ def euclidean_distance(coords1, coords2, floor_penalty=15.0):
     total_dist = base_dist + penalty
     return total_dist
 
-# ====================== 方向函数：全部改为深黄色高亮 ======================
 def get_direction_between_nodes(graph, current_node_id, next_node_id):
     current_node = graph.nodes[current_node_id]
     next_node = graph.nodes[next_node_id]
@@ -774,7 +784,6 @@ def construct_path(previous_nodes, end_node):
         current_node = previous_nodes[current_node]
     return path if len(path) > 1 else None
 
-# ====================== 导航函数 ======================
 def navigate(graph, start_building, start_classroom, start_level, end_building, end_classroom, end_level):
     valid_buildings = ['A', 'B', 'C', 'Gate']
     if start_building not in valid_buildings or end_building not in valid_buildings:
@@ -939,7 +948,6 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：整体向下移动 35vh ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -1010,7 +1018,6 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面（完全不变） ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
