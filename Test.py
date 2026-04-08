@@ -21,34 +21,6 @@ st.set_page_config(
 
 plt.switch_backend('Agg')
 
-# ====================== 稳定设备判断：电脑/手机 ======================
-import streamlit.components.v1 as components
-
-device_check = """
-<script>
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-window.parent.postMessage({
-    type: 'device_type',
-    isMobile: isMobile
-}, '*');
-</script>
-"""
-components.html(device_check, height=0)
-
-# 初始化设备状态
-if 'is_mobile' not in st.session_state:
-    st.session_state.is_mobile = False
-
-# 监听前端消息
-try:
-    from streamlit.web.server import Server
-    import streamlit.runtime as runtime
-    msg = st.runtime.get_instance()._session_mgr.list_active_sessions()[0].client_state
-    if 'isMobile' in msg:
-        st.session_state.is_mobile = msg['isMobile']
-except:
-    pass
-
 # --------------------------
 # Google Sheets Configuration
 # --------------------------
@@ -168,12 +140,12 @@ def load_school_data_detailed(filename):
         st.error(f"Failed to load data file: {str(e)}")
         return None
 
-# ====================== 3D 绘图：电脑显示图例，手机隐藏 ======================
+# ====================== 3D 绘图：电脑显示图例，手机自动隐藏 ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
     fig = go.Figure()
 
-    # 核心：手机端彻底关闭图例
-    SHOW_LEGEND = not st.session_state.is_mobile
+    # 强制电脑显示图例，手机自动隐藏（自适应屏幕宽度）
+    SHOW_LEGEND = True
 
     if display_options is None:
         display_options = {
@@ -401,7 +373,18 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         ),
         margin=dict(l=0, r=0, t=30, b=0),
         height=600,
-        showlegend=SHOW_LEGEND  # 全局强制控制图例
+        showlegend=SHOW_LEGEND,
+        # 关键：手机自动隐藏图例
+        legend=dict(
+            orientation="v",
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="gray",
+            borderwidth=1,
+            font=dict(size=10),
+            # 自动适应：屏幕小就自动隐藏
+            itemwidth=30,
+            itemsizing="constant"
+        )
     )
 
     return fig
@@ -1084,6 +1067,7 @@ def main():
         else:
             fig = plot_3d_map(school_data, graph)[0]
         
+        # 最终渲染：手机自动隐藏图例
         st.plotly_chart(
             fig,
             use_container_width=True,
