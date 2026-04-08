@@ -942,7 +942,7 @@ def main():
                 css = """
                 <style>
                 .stApp {
-                    background-image: url("data:image/jpeg;base64,%s");
+                    background-image: url("data:image/jpeg;base6,%s");
                     background-size: cover !important;
                     background-position: center !important;
                     background-repeat: no-repeat !important;
