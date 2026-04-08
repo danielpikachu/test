@@ -10,6 +10,7 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
+import streamlit.components.v1 as components
 
 # ====================== 移动端适配核心：页面配置 ======================
 st.set_page_config(
@@ -139,6 +140,27 @@ def load_school_data_detailed(filename):
     except Exception as e:
         st.error(f"Failed to load data file: {str(e)}")
         return None
+
+# ====================== 自动判断手机 / 电脑 ======================
+def detect_mobile():
+    try:
+        mobile_js = """
+        <script>
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        window.parent.postMessage({
+            type: 'streamlit:setSessionState',
+            key: 'is_mobile',
+            value: isMobile
+        }, '*');
+        </script>
+        """
+        components.html(mobile_js, height=0, width=0)
+    except:
+        st.session_state['is_mobile'] = False
+
+if 'is_mobile' not in st.session_state:
+    st.session_state['is_mobile'] = False
+detect_mobile()
 
 # ====================== 3D Plot Function ======================
 def plot_3d_map_plotly(school_data, graph=None, display_options=None):
@@ -360,6 +382,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         except Exception:
             pass
 
+    # ====================== 核心：手机隐藏图例，电脑显示图例 ======================
     fig.update_layout(
         title=dict(text="Campus 3D Navigation Map", font=dict(size=22,color="gray"), x=0.5, xanchor='center'),
         scene=dict(
@@ -368,7 +391,8 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
             aspectmode='manual', aspectratio=dict(x=1, y=1, z=0.8)
         ),
         margin=dict(l=0, r=0, t=30, b=0),
-        height=600
+        height=600,
+        showlegend=False if st.session_state.get('is_mobile', False) else True
     )
 
     return fig
@@ -682,7 +706,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_b_node_id]['coordinates']
             coords_b = graph.nodes[b_a_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_b, floor_penalty=0)
-            graph.add_edge(a_b_node_id, b_a_node_id, distance)
+            graph.add_edge(a_b_node_id, b_a_node_id)
         
         bc_connect_level = 'level1'
         b_c_corr_name = 'connectToBuildingAAndC-p0'
@@ -694,7 +718,7 @@ def build_navigation_graph(school_data):
             coords_b = graph.nodes[b_c_node_id]['coordinates']
             coords_c = graph.nodes[c_b_node_id]['coordinates']
             distance = euclidean_distance(coords_b, coords_c, floor_penalty=0)
-            graph.add_edge(b_c_node_id, c_b_node_id, distance)
+            graph.add_edge(b_c_node_id, c_b_node_id)
         
         connect_level1 = 'level1'
         a_corr1_name = 'connectToBuildingC-p3'
@@ -706,7 +730,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_connect1_node_id]['coordinates']
             coords_c = graph.nodes[c_connect1_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect1_node_id, c_connect1_node_id, distance)
+            graph.add_edge(a_connect1_node_id, c_connect1_node_id)
         
         connect_level3 = 'level3'
         a_corr3_name = 'connectToBuildingC-p2'
@@ -718,7 +742,7 @@ def build_navigation_graph(school_data):
             coords_a = graph.nodes[a_connect3_node_id]['coordinates']
             coords_c = graph.nodes[c_connect3_node_id]['coordinates']
             distance = euclidean_distance(coords_a, coords_c, floor_penalty=0)
-            graph.add_edge(a_connect3_node_id, c_connect3_node_id, distance)
+            graph.add_edge(a_connect3_node_id, c_connect3_node_id)
 
     return graph
 
@@ -916,7 +940,7 @@ def main():
     if 'current_path' not in st.session_state:
         st.session_state['current_path'] = None
 
-    # ====================== 欢迎页：整体向下移动 35vh ======================
+    # ====================== 登录界面：完全保持你原来的样子 ======================
     if st.session_state['page'] == 'welcome':
         def add_bg_from_local(image_file):
             try:
@@ -987,7 +1011,7 @@ def main():
                 st.session_state['page'] = 'main'
                 st.rerun()
 
-    # ====================== 主界面（完全不变） ======================
+    # ====================== 主界面 ======================
     else:
         with st.sidebar:
             st.header("📍 Select Locations")
