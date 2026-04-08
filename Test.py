@@ -369,7 +369,7 @@ def plot_3d_map_plotly(school_data, graph=None, display_options=None):
         pass
 
     # 手机端：增加顶部margin，把工具栏往下移；电脑端保持原margin
-    mobile_margin = dict(l=0, r=0, t=60, b=0)
+    mobile_margin = dict(l=0, r=0, t=30, b=0)
     desktop_margin = dict(l=0, r=0, t=30, b=0)
     current_margin = mobile_margin if is_mobile else desktop_margin
 
