@@ -1219,7 +1219,7 @@ def main():
             # ===== 在按钮正下方显示访问次数 =====
             st.markdown(f"""
             <div class="visit-counter">
-                👀 总访问次数: {total_visits}
+                👀 Total Visits: {total_visits}
             </div>
             """, unsafe_allow_html=True)
 
