@@ -1,4 +1,3 @@
-
 import json
 from config_reader import get_latest_people_flow
 import matplotlib.pyplot as plt
@@ -1172,6 +1171,13 @@ def main():
                     opacity: 0.9 !important;
                     margin: 5px 0 25px 0 !important;
                 }
+                /* 访问次数样式 - 白色字体 */
+                .visit-counter {
+                    color: white !important;
+                    font-size: clamp(14px, 2vw, 18px) !important;
+                    opacity: 0.85 !important;
+                    margin-top: 10px !important;
+                }
                 div.stButton > button:first-child {
                     background-color: #4682B4 !important;
                     color: white !important;
@@ -1193,6 +1199,9 @@ def main():
         if 'worksheet' not in st.session_state:
             st.session_state['worksheet'] = init_google_sheet()
 
+        # ===== 获取访问次数 =====
+        total_visits = get_total_accesses(st.session_state['worksheet'])
+
         st.markdown(f"""
         <div class="welcome-container">
             <h1 class="welcome-title">{get_text('welcome_title')}</h1>
@@ -1206,6 +1215,13 @@ def main():
                 update_access_count(st.session_state['worksheet'])
                 st.session_state['page'] = 'main'
                 st.rerun()
+            
+            # ===== 在按钮正下方显示访问次数 =====
+            st.markdown(f"""
+            <div class="visit-counter">
+                👀 总访问次数: {total_visits}
+            </div>
+            """, unsafe_allow_html=True)
 
     # 主导航界面
     else:
