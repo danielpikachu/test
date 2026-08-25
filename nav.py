@@ -1306,7 +1306,14 @@ def main():
 
         # Render 3D map
         fig, _ = plot_3d_map(school_data, graph, display_options)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig, 
+            use_container_width=True,
+            config={
+                'displayModeBar': False,
+                'responsive': True
+             }
+         )
 
 if __name__ == "__main__":
     main()
